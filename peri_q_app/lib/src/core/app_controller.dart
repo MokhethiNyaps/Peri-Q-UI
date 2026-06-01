@@ -12,12 +12,12 @@ import '../repositories/store_repository.dart';
 
 class AppController extends ChangeNotifier {
   AppController({
-    required AuthRepository authRepository,
+    required this._authRepository,
     required this._menuRepository,
     required this._orderRepository,
     required this._preferencesRepository,
     required this._storeRepository,
-  }) : _authRepository = authRepository {
+  }) {
     bootstrapFuture = _bootstrap();
   }
 
