@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Rasta's Peri Q - Menu</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600&amp;family=Oswald:wght@500;600;700&amp;family=Public+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        peri: {
+                            red: '#C8240B',
+                            light: '#FFF8F5'
+                        },
+                        chesa: {
+                            orange: '#F07820'
+                        },
+                        smoke: {
+                            charcoal: '#1A1A1A'
+                        },
+                        ash: {
+                            grey: '#4A4A4A',
+                            light: '#BEBEBE'
+                        },
+                        surface: {
+                            cream: '#FFF8F5',
+                            light: '#FFFFFF',
+                            muted: '#F5F0ED'
+                        },
+                        status: {
+                            success: '#2A8C5A',
+                            warning: '#E8A400',
+                            info: '#1A6AB1'
+                        }
+                    },
+                    fontFamily: {
+                        headline: ["Public Sans", "sans-serif"],
+                        display: ["Public Sans", "sans-serif"],
+                        body: ["Nunito Sans", "sans-serif"],
+                        label: ["Nunito Sans", "sans-serif"],
+                        oswald: ["Oswald", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FFF8F5;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="font-body text-smoke-charcoal pb-32">
+<!-- Top App Bar -->
+<header class="fixed top-0 w-full z-50 bg-white shadow-sm flex items-center justify-between px-4 h-16 border-b border-[#F5F0ED]">
+<button class="p-2 -ml-2 text-[#4A4A4A] active:scale-95 transition-transform">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="font-oswald font-semibold text-[20px] text-smoke-charcoal">Menu</h1>
+<button class="p-2 -mr-2 text-[#4A4A4A] active:scale-95 transition-transform">
+<span class="material-symbols-outlined">search</span>
+</button>
+</header>
+<main class="pt-16 px-4 max-w-[390px] mx-auto">
+<!-- Search Bar -->
+<div class="mt-4 relative">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-ash-grey">search</span>
+</div>
+<input class="w-full h-14 pl-10 pr-4 bg-surface-muted border-transparent rounded-lg text-sm focus:border-peri-red focus:ring-0 placeholder-ash-grey font-body" placeholder="Search for a meal..." type="text"/>
+</div>
+<!-- Category Filter Tabs -->
+<div class="mt-4 -mx-4 px-4 overflow-x-auto hide-scrollbar">
+<div class="flex space-x-6 border-b border-surface-muted pb-[1px]">
+<button class="pb-2 text-sm font-semibold text-ash-grey whitespace-nowrap">All</button>
+<button class="pb-2 text-sm font-semibold text-peri-red border-b-2 border-peri-red whitespace-nowrap">Kota</button>
+<button class="pb-2 text-sm font-semibold text-ash-grey whitespace-nowrap">Pap &amp; Meat</button>
+<button class="pb-2 text-sm font-semibold text-ash-grey whitespace-nowrap">Burgers</button>
+<button class="pb-2 text-sm font-semibold text-ash-grey whitespace-nowrap">Drinks</button>
+<button class="pb-2 text-sm font-semibold text-ash-grey whitespace-nowrap">Desserts</button>
+</div>
+</div>
+<!-- Menu List: KOTA -->
+<div class="mt-6">
+<div class="flex items-center space-x-4 mb-4">
+<h2 class="font-oswald font-bold text-[14px] text-ash-grey uppercase tracking-wider">KOTA</h2>
+<div class="flex-grow h-px bg-surface-muted"></div>
+</div>
+<div class="space-y-4">
+<!-- Item 1 -->
+<div class="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-3 flex space-x-3 active:scale-[0.98] transition-transform">
+<div class="w-[90px] h-[90px] rounded-lg overflow-hidden flex-shrink-0 bg-surface-muted">
+<img alt="Chicken Kota" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/ADBb0ugeE3A1IAIxB6YVSO1xA_AzNIEudHoNJENCTflCLAcLaEDjBvsml2Myvd4CSJIEqJ416HYjjnAVydzC-rTTv3OrxFmbdgLtEMZJUGnflAcu_IZp4T_93G6EiNdiVZYx1onUqHSohmAhLoj4qrzMUH498ueaiBxva8hFfLCcYpKfQeaMWN1RUXrzmuTl0Yw3bG-_KdUVm9ZunAfa4jyRLZYFwXyxM0cWXs9xo4ZmiaBfHNrcC-STz3tvfluT"/>
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-oswald font-semibold text-[16px] leading-tight">Chicken Kota</h3>
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-status-success"></div>
+<span class="text-[10px] text-status-success font-semibold uppercase">Available</span>
+</div>
+</div>
+<p class="font-body text-[13px] text-ash-grey leading-snug mt-1 line-clamp-2">Flame-grilled chicken, crispy chips, cheese, special peri sauce.</p>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-oswald font-bold text-[18px] text-peri-red">R65</span>
+<div class="flex items-center bg-surface-muted rounded-full overflow-hidden">
+<button class="w-8 h-8 flex items-center justify-center text-ash-grey active:bg-ash-light/20">
+<span class="material-symbols-outlined text-[18px]">remove</span>
+</button>
+<span class="w-6 text-center font-semibold text-sm">1</span>
+<button class="w-8 h-8 flex items-center justify-center text-peri-red active:bg-peri-light">
+<span class="material-symbols-outlined text-[18px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 2 -->
+<div class="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-3 flex space-x-3 active:scale-[0.98] transition-transform">
+<div class="w-[90px] h-[90px] rounded-lg overflow-hidden flex-shrink-0 bg-surface-muted bg-cover bg-center" data-alt="Close up photography of a delicious South African street food sandwich containing beef patty, chips, and cheese, rich warm lighting, dark background." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBV_iijOxWTmgIMMuPPqu7BYvq5BaY6DZkSKgLUFfLww2Z8QYB7z3QqHJmx0vysxd4efvB9tCbps_Hh9maYgYMSu2QQ1DQhONqulHfJWofM8Wjx8W7kaoNsKHWFWoyBNzt77TulOXw3xHJVXKmOwbUMH3laoa893eSxh-qye306hZAH-2fGNJLeYa3jFUAM23y-40cv7AlnWBjJv7eNeUVTpEd5p1VERPQ2IM8xwaeSvTfKf4e34uOdD_NMC5orxLmDxfDepsQlzmzx')">
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-oswald font-semibold text-[16px] leading-tight">Beef Kota</h3>
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-status-success"></div>
+</div>
+</div>
+<p class="font-body text-[13px] text-ash-grey leading-snug mt-1 line-clamp-2">Juicy beef patty, chips, egg, cheese, and spicy chakalaka.</p>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-oswald font-bold text-[18px] text-peri-red">R70</span>
+<button class="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center text-peri-red active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Item 3 -->
+<div class="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-3 flex space-x-3 active:scale-[0.98] transition-transform">
+<div class="w-[90px] h-[90px] rounded-lg overflow-hidden flex-shrink-0 bg-surface-muted bg-cover bg-center" data-alt="A vibrant vegetarian sandwich or burger with visible fresh ingredients, chips, and colorful sauce on a textured dark plate. Appetizing commercial style lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD3Zhy53LYCkEXJBXibvtjrul46Ljq6SP1PKs1WGjpUjrkNjYaUGBLNlOFE7IHN2j5m4bYgLpPFcFdGxv17jWIl39h9c-9_XZ3SP4PgEZ6NJh8sH2TA4akUrm0-8VHrwlX_gM4wjAgGrtoA_A7Qjn3lpl1pRZyKUmFYhora4arn2o3zFd9BQHVoDaykAFBudza-BFFqa5nKdC6qMvZpKXc11R7DPIU2xZxfwRM-RwNYIMSM1v0gYA8a7bqEWCCQ-SWndfek_92_w1Q0')">
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-oswald font-semibold text-[16px] leading-tight">Veg Kota</h3>
+<div class="flex items-center space-x-1">
+<div class="w-2 h-2 rounded-full bg-status-success"></div>
+</div>
+</div>
+<p class="font-body text-[13px] text-ash-grey leading-snug mt-1 line-clamp-2">Plant-based patty, chips, vegan cheese, fresh greens.</p>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-oswald font-bold text-[18px] text-peri-red">R55</span>
+<button class="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center text-peri-red active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Menu List: PAP & MEAT -->
+<div class="mt-8">
+<div class="flex items-center space-x-4 mb-4">
+<h2 class="font-oswald font-bold text-[14px] text-ash-grey uppercase tracking-wider">PAP &amp; MEAT</h2>
+<div class="flex-grow h-px bg-surface-muted"></div>
+</div>
+<div class="space-y-4">
+<!-- Item 1 -->
+<div class="bg-white rounded-xl shadow-[0_2px_12px_rgba(0,0,0,0.08)] p-3 flex space-x-3 active:scale-[0.98] transition-transform">
+<div class="w-[90px] h-[90px] rounded-lg overflow-hidden flex-shrink-0 bg-surface-muted bg-cover bg-center" data-alt="A traditional South African dish showing grilled boerewors sausage alongside stiff maize porridge (pap) and a rich tomato-based sauce. Warm rustic lighting." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAK03RU3fxIUcLcNbP13E9j1_DlNrsAG36Ps1XM27uNp1Iv2ilbMIPk6d2fqicvF61gy0c7YUfTcoiTE5W673RszYDHM0WIvJcS9iA30i0YSXgAaER46rfuyucOkIDWSbyF6QEw3jfzP55JwxhsyZQ7JKiHQy1vD6YDF2VcGW498QfKya4ttjMaRbR5vm_hEUn6PlRsW0Er8vVSTRpPLVZds8mcjurn0uimkchTeep2cb1rXS9TGIjYtkgJueMhiUi5Xq4CVFGuJ_HD')">
+</div>
+<div class="flex-grow flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-start">
+<h3 class="font-oswald font-semibold text-[16px] leading-tight">Pap &amp; Wors</h3>
+</div>
+<p class="font-body text-[13px] text-ash-grey leading-snug mt-1 line-clamp-2">Traditional stiff pap with premium boerewors and chakalaka.</p>
+</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-oswald font-bold text-[18px] text-peri-red">R55</span>
+<button class="w-8 h-8 rounded-full bg-surface-muted flex items-center justify-center text-peri-red active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-[20px]">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Cart Button -->
+<div class="fixed bottom-[80px] w-full px-4 max-w-[390px] left-1/2 -translate-x-1/2 z-40">
+<div class="bg-white rounded-xl shadow-lg border border-surface-muted p-3 flex items-center justify-between">
+<div class="font-body text-sm font-semibold text-smoke-charcoal pl-2">
+                1 item in cart • <span class="text-peri-red">R65</span>
+</div>
+<button class="bg-peri-red text-white font-label font-semibold text-sm px-6 py-2.5 rounded-lg flex items-center space-x-2 active:scale-95 transition-transform shadow-md">
+<span>View Cart</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Bottom Nav Bar -->
+<nav class="bg-white dark:bg-zinc-900 fixed bottom-0 w-full z-50 h-20 rounded-t-xl border-t border-[#F5F0ED] dark:border-zinc-800 shadow-[0_-2px_12px_rgba(0,0,0,0.08)] flex justify-around items-center px-2 pb-4 relative max-w-[390px] left-1/2 -translate-x-1/2">
+<button class="flex flex-col items-center text-[#4A4A4A] dark:text-zinc-400 hover:text-[#F07820] transition-all duration-300 ease-in-out active:scale-90 w-16">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">home</span>
+<span class="font-label text-xs font-semibold mt-1">Home</span>
+</button>
+<button class="flex flex-col items-center text-[#C8240B] scale-105 transition-all duration-300 ease-in-out active:scale-90 w-16">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">restaurant_menu</span>
+<span class="font-label text-xs font-semibold mt-1">Menu</span>
+</button>
+<!-- Center FAB space -->
+<div class="w-16 flex justify-center">
+<button class="absolute -top-6 bg-peri-red w-14 h-14 rounded-full flex items-center justify-center text-white shadow-lg active:scale-90 transition-transform border-4 border-white">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<div class="absolute top-0 right-0 bg-status-success text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white">1</div>
+</button>
+</div>
+<button class="flex flex-col items-center text-[#4A4A4A] dark:text-zinc-400 hover:text-[#F07820] transition-all duration-300 ease-in-out active:scale-90 w-16">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">receipt_long</span>
+<span class="font-label text-xs font-semibold mt-1">Orders</span>
+</button>
+<button class="flex flex-col items-center text-[#4A4A4A] dark:text-zinc-400 hover:text-[#F07820] transition-all duration-300 ease-in-out active:scale-90 w-16">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">person</span>
+<span class="font-label text-xs font-semibold mt-1">Profile</span>
+</button>
+</nav>
+</body></html>

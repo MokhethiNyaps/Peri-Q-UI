@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>My Orders - Peri Q</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&amp;family=Oswald:wght@500;600;700&amp;family=Public+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#C8240B', // Peri Red
+                        },
+                        secondary: {
+                            DEFAULT: '#F07820', // Chesa Orange
+                        },
+                        surface: {
+                            DEFAULT: '#FFF8F5', // Cream White
+                            light: '#FFFFFF',   // Light Surface
+                            muted: '#F5F0ED',   // Muted Surface
+                        },
+                        text: {
+                            main: '#1A1A1A',    // Smoke Charcoal
+                            muted: '#4A4A4A',   // Ash Grey
+                        },
+                        status: {
+                            success: '#2A8C5A', // Success Green
+                            warning: '#E8A400', // Warning Amber
+                            error: '#C8240B',   // Error Red
+                            info: '#1A6AB1',    // Info Blue
+                        }
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.5rem", // 8px
+                        lg: "0.75rem",     // 12px
+                        xl: "1rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Oswald", "sans-serif"],
+                        body: ["Nunito Sans", "sans-serif"],
+                    },
+                    spacing: {
+                        xs: '4px',
+                        sm: '8px',
+                        md: '16px',
+                        lg: '24px',
+                        xl: '32px',
+                        'safe-bottom': 'env(safe-area-inset-bottom, 34px)',
+                        'safe-top': 'env(safe-area-inset-top, 48px)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            background-color: theme('colors.surface.DEFAULT');
+            color: theme('colors.text.main');
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Typography Scale Overrides based on Design System */
+        .font-display { font-family: theme('fontFamily.headline'); font-weight: 700; font-size: 32px; }
+        .font-h1 { font-family: theme('fontFamily.headline'); font-weight: 600; font-size: 28px; }
+        .font-h2 { font-family: theme('fontFamily.headline'); font-weight: 600; font-size: 22px; }
+        .font-h3 { font-family: theme('fontFamily.headline'); font-weight: 500; font-size: 18px; }
+        .font-body-large { font-family: theme('fontFamily.body'); font-weight: 400; font-size: 16px; line-height: 1.6; }
+        .font-body-medium { font-family: theme('fontFamily.body'); font-weight: 400; font-size: 14px; }
+        .font-body-small { font-family: theme('fontFamily.body'); font-weight: 400; font-size: 12px; }
+        .font-label { font-family: theme('fontFamily.body'); font-weight: 600; font-size: 14px; }
+        .font-price { font-family: theme('fontFamily.headline'); font-weight: 700; font-size: 20px; color: theme('colors.primary.DEFAULT'); }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .active-scale:active {
+            transform: scale(0.97);
+            transition: transform 0.15s ease;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased min-h-screen flex flex-col pt-[calc(64px+env(safe-area-inset-top))] pb-[calc(80px+env(safe-area-inset-bottom))]">
+<!-- TopAppBar -->
+<header class="bg-[#FFF8F5] dark:bg-[#1A1A1A] shadow-sm dark:border-b dark:border-[#4A4A4A] flex justify-between items-center px-4 h-16 w-full fixed top-0 z-50 pt-[env(safe-area-inset-top)]">
+<div class="w-10"></div> <!-- Placeholder for layout balance -->
+<h1 class="font-headline font-semibold text-[20px] text-text-main flex-1 text-center">My Orders</h1>
+<div class="w-10 flex justify-end">
+<!-- Trailing action if needed, empty for now based on prompt -->
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 w-full max-w-[390px] mx-auto px-4 flex flex-col gap-6 pt-4">
+<!-- Filter Tabs -->
+<div class="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
+<button class="shrink-0 h-10 px-6 rounded-full bg-primary text-white font-label active-scale flex items-center justify-center shadow-sm">
+                Active (2)
+            </button>
+<button class="shrink-0 h-10 px-6 rounded-full border border-text-muted text-text-muted bg-surface-light font-label active-scale flex items-center justify-center">
+                Completed
+            </button>
+<button class="shrink-0 h-10 px-6 rounded-full border border-text-muted text-text-muted bg-surface-light font-label active-scale flex items-center justify-center">
+                Cancelled
+            </button>
+</div>
+<!-- Active Orders Section -->
+<section class="flex flex-col gap-4">
+<h2 class="font-headline font-semibold text-[16px] text-text-main">Active Orders</h2>
+<!-- Order Card 1 -->
+<article class="bg-surface-light rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.08)] relative overflow-hidden flex flex-col active-scale cursor-pointer border border-transparent">
+<!-- Red left accent stripe -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="p-4 pl-5 flex flex-col gap-4">
+<!-- Header -->
+<div class="flex justify-between items-center">
+<div>
+<h3 class="font-headline font-bold text-[15px] text-text-main">Order #1047</h3>
+<p class="font-body-small text-text-muted mt-0.5">Placed 2:34 PM • Today</p>
+</div>
+<div class="bg-secondary text-white font-label text-[12px] px-3 py-1 rounded-full uppercase tracking-wide">
+                            Preparing
+                        </div>
+</div>
+<!-- Details -->
+<div class="flex justify-between items-start pt-2 border-t border-surface-muted">
+<div class="flex-1 pr-4">
+<p class="font-body-medium text-text-main leading-snug">1x Chicken Kota, 1x Peri Wings, 1x Mixed Grill...</p>
+</div>
+<div class="flex items-center gap-1 text-text-muted bg-surface-muted px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">storefront</span>
+<span class="font-body-small font-semibold">Pickup</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="mt-2 flex justify-between items-center relative">
+<!-- Connecting Line -->
+<div class="absolute top-2 left-4 right-4 h-0.5 bg-surface-muted z-0"></div>
+<div class="absolute top-2 left-4 w-[33%] h-0.5 bg-secondary z-0"></div>
+<!-- Step 1 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-status-success flex items-center justify-center ring-2 ring-surface-light">
+<span class="material-symbols-outlined text-white text-[10px]" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-body-small text-[10px] text-text-muted text-center leading-tight">Received</span>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-secondary flex items-center justify-center ring-2 ring-surface-light">
+<div class="w-2 h-2 rounded-full bg-white"></div>
+</div>
+<span class="font-body-small text-[10px] text-text-main font-semibold text-center leading-tight">Preparing</span>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-surface-muted ring-2 ring-surface-light"></div>
+<span class="font-body-small text-[10px] text-text-muted text-center leading-tight">Ready</span>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-surface-muted ring-2 ring-surface-light"></div>
+<span class="font-body-small text-[10px] text-text-muted text-center leading-tight">Done</span>
+</div>
+</div>
+<!-- Footer -->
+<div class="flex justify-between items-center pt-3 border-t border-surface-muted mt-1">
+<span class="font-headline font-bold text-[16px] text-primary">R319</span>
+<button class="text-primary font-label flex items-center gap-1 hover:opacity-80 transition-opacity">
+                            Track Order <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Order Card 2 -->
+<article class="bg-surface-light rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.08)] relative overflow-hidden flex flex-col active-scale cursor-pointer border border-transparent">
+<!-- Red left accent stripe -->
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-primary"></div>
+<div class="p-4 pl-5 flex flex-col gap-4">
+<!-- Header -->
+<div class="flex justify-between items-center">
+<div>
+<h3 class="font-headline font-bold text-[15px] text-text-main">Order #1046</h3>
+<p class="font-body-small text-text-muted mt-0.5">Placed 2:20 PM • Today</p>
+</div>
+<div class="bg-status-warning text-white font-label text-[12px] px-3 py-1 rounded-full uppercase tracking-wide">
+                            Pending
+                        </div>
+</div>
+<!-- Details -->
+<div class="flex justify-between items-start pt-2 border-t border-surface-muted">
+<div class="flex-1 pr-4">
+<p class="font-body-medium text-text-main leading-snug">2x Coke 500ml, 1x Beef Burger</p>
+</div>
+<div class="flex items-center gap-1 text-text-muted bg-surface-muted px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' 1;">delivery_dining</span>
+<span class="font-body-small font-semibold">Delivery</span>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="mt-2 flex justify-between items-center relative">
+<!-- Connecting Line -->
+<div class="absolute top-2 left-4 right-4 h-0.5 bg-surface-muted z-0"></div>
+<!-- Step 1 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-status-success flex items-center justify-center ring-2 ring-surface-light">
+<div class="w-2 h-2 rounded-full bg-white"></div>
+</div>
+<span class="font-body-small text-[10px] text-text-main font-semibold text-center leading-tight">Received</span>
+</div>
+<!-- Step 2 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-surface-muted ring-2 ring-surface-light"></div>
+<span class="font-body-small text-[10px] text-text-muted text-center leading-tight">Preparing</span>
+</div>
+<!-- Step 3 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-surface-muted ring-2 ring-surface-light"></div>
+<span class="font-body-small text-[10px] text-text-muted text-center leading-tight">Ready</span>
+</div>
+<!-- Step 4 -->
+<div class="flex flex-col items-center gap-1 z-10 w-1/4">
+<div class="w-4 h-4 rounded-full bg-surface-muted ring-2 ring-surface-light"></div>
+<span class="font-body-small text-[10px] text-text-muted text-center leading-tight">Done</span>
+</div>
+</div>
+<!-- Footer -->
+<div class="flex justify-between items-center pt-3 border-t border-surface-muted mt-1">
+<span class="font-headline font-bold text-[16px] text-primary">R117</span>
+<button class="text-primary font-label flex items-center gap-1 hover:opacity-80 transition-opacity">
+                            View Details <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</article>
+</section>
+<!-- Bottom padding for nav -->
+<div class="h-4"></div>
+</main>
+<!-- BottomNavBar -->
+<nav class="bg-white dark:bg-[#1A1A1A] shadow-[0_-2px_10px_rgba(0,0,0,0.05)] dark:border-t dark:border-[#4A4A4A] docked full-width bottom-0 rounded-t-xl fixed bottom-0 w-full h-[calc(80px+env(safe-area-inset-bottom))] z-50 flex justify-around items-center px-2 pb-[env(safe-area-inset-bottom)]">
+<button class="flex flex-col items-center justify-center text-[#4A4A4A] dark:text-[#BEBEBE] hover:text-[#C8240B] dark:hover:text-[#F07820] w-16 gap-1">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-body font-semibold text-[10px]">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#4A4A4A] dark:text-[#BEBEBE] hover:text-[#C8240B] dark:hover:text-[#F07820] w-16 gap-1">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">restaurant_menu</span>
+<span class="font-body font-semibold text-[10px]">Menu</span>
+</button>
+<!-- Cart FAB -->
+<div class="relative -top-5">
+<button class="w-14 h-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg active-scale border-4 border-surface-light dark:border-[#1A1A1A]">
+<span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+</button>
+</div>
+<button class="flex flex-col items-center justify-center text-[#C8240B] dark:text-[#F07820] scale-110 w-16 gap-1 active-scale transition-transform">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-body font-semibold text-[10px]">Orders</span>
+</button>
+<button class="flex flex-col items-center justify-center text-[#4A4A4A] dark:text-[#BEBEBE] hover:text-[#C8240B] dark:hover:text-[#F07820] w-16 gap-1">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="font-body font-semibold text-[10px]">Profile</span>
+</button>
+</nav>
+</body></html>

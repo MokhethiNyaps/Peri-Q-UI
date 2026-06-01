@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Checkout - Rasta's Peri Q</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&amp;family=Nunito+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#C8240B',
+                        secondary: '#F07820',
+                        charcoal: '#1A1A1A',
+                        ash: '#4A4A4A',
+                        cream: '#FFF8F5',
+                        surface: '#FFFFFF',
+                        muted: '#F5F0ED',
+                        success: '#2A8C5A',
+                        warning: '#E8A400',
+                        info: '#1A6AB1'
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    fontFamily: {
+                        headline: ["Oswald", "sans-serif"],
+                        body: ["Nunito Sans", "sans-serif"],
+                        label: ["Nunito Sans", "sans-serif"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Nunito Sans', sans-serif;
+            background-color: #FFF8F5; /* Cream */
+            color: #1A1A1A; /* Smoke Charcoal */
+            -webkit-tap-highlight-color: transparent;
+        }
+        h1, h2, h3, h4, h5, h6, .font-headline {
+            font-family: 'Oswald', sans-serif;
+        }
+        /* Custom Radio Button Styles */
+        .custom-radio {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4A4A4A;
+            border-radius: 50%;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            background-color: transparent;
+        }
+        .custom-radio:checked {
+            border-color: #C8240B;
+        }
+        .custom-radio:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            background-color: #C8240B;
+            border-radius: 50%;
+        }
+        .custom-radio:disabled {
+            border-color: #BEBEBE;
+            cursor: not-allowed;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-cream pb-32">
+<!-- TOP APP BAR -->
+<header class="bg-surface shadow-sm fixed top-0 w-full z-50 flex items-center justify-between px-4 h-14 w-full">
+<button class="text-charcoal p-2 -ml-2 rounded-full hover:bg-muted active:scale-95 transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<h1 class="font-headline text-[20px] font-semibold text-charcoal absolute left-1/2 transform -translate-x-1/2">Checkout</h1>
+<div class="w-10"></div> <!-- Placeholder for balancing -->
+</header>
+<main class="pt-20 px-4 max-w-[390px] mx-auto">
+<!-- PROGRESS STEPS -->
+<div class="flex items-center justify-between mb-8 px-2 relative">
+<div class="absolute top-4 left-6 right-6 h-0.5 bg-muted -z-10"></div>
+<!-- Step 1: Active -->
+<div class="flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm mb-1 shadow-sm">1</div>
+<span class="font-label text-xs font-bold text-primary">Details</span>
+</div>
+<!-- Step 2: Inactive -->
+<div class="flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface border-2 border-muted text-ash flex items-center justify-center font-bold text-sm mb-1">2</div>
+<span class="font-label text-xs font-semibold text-ash">Delivery</span>
+</div>
+<!-- Step 3: Inactive -->
+<div class="flex flex-col items-center">
+<div class="w-8 h-8 rounded-full bg-surface border-2 border-muted text-ash flex items-center justify-center font-bold text-sm mb-1">3</div>
+<span class="font-label text-xs font-semibold text-ash">Payment</span>
+</div>
+</div>
+<!-- YOUR DETAILS SECTION -->
+<section class="mb-6">
+<h2 class="font-headline text-[16px] font-semibold text-charcoal mb-3">Your Details</h2>
+<div class="bg-surface rounded-lg p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] flex flex-col gap-4">
+<div class="relative">
+<label class="block font-label text-sm font-semibold text-charcoal mb-1">Full Name</label>
+<input class="w-full h-14 bg-muted border-none rounded-lg px-4 text-charcoal font-body text-base focus:ring-2 focus:ring-primary focus:bg-surface transition-colors" type="text" value="Thabo Mokhethi"/>
+</div>
+<div class="relative">
+<label class="block font-label text-sm font-semibold text-charcoal mb-1">Phone Number</label>
+<input class="w-full h-14 bg-muted border-none rounded-lg px-4 text-charcoal font-body text-base focus:ring-2 focus:ring-primary focus:bg-surface transition-colors" type="tel" value="+27 71 234 5678"/>
+</div>
+</div>
+</section>
+<!-- ORDER TYPE SECTION -->
+<section class="mb-6">
+<h2 class="font-headline text-[16px] font-semibold text-charcoal mb-3">Order Type</h2>
+<div class="flex flex-col gap-3">
+<!-- Pickup (Selected) -->
+<label class="bg-surface rounded-lg p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] border-2 border-primary cursor-pointer flex items-center gap-4 transition-all active:scale-[0.98]">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">storefront</span>
+</div>
+<div class="flex-1">
+<h3 class="font-headline text-lg font-medium text-charcoal leading-tight">Pickup in Store</h3>
+<p class="font-body text-sm text-success font-medium">Ready in ~25 mins • No delivery fee</p>
+</div>
+<input checked="" class="custom-radio shrink-0" name="orderType" type="radio" value="pickup"/>
+</label>
+<!-- Delivery (Unselected) -->
+<label class="bg-surface rounded-lg p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] border-2 border-transparent cursor-pointer flex items-center gap-4 transition-all active:scale-[0.98] opacity-80 hover:opacity-100">
+<div class="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0 text-ash">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">two_wheeler</span>
+</div>
+<div class="flex-1">
+<h3 class="font-headline text-lg font-medium text-charcoal leading-tight">Home Delivery</h3>
+<p class="font-body text-sm text-ash">+R30 delivery fee • ~45-60 mins</p>
+</div>
+<input class="custom-radio shrink-0" name="orderType" type="radio" value="delivery"/>
+</label>
+</div>
+</section>
+<!-- PAYMENT METHOD SECTION -->
+<section class="mb-6">
+<h2 class="font-headline text-[16px] font-semibold text-charcoal mb-3">Payment Method</h2>
+<div class="bg-surface rounded-lg shadow-[0_2px_12px_rgba(0,0,0,0.05)] overflow-hidden">
+<!-- Cash on Collection (Selected) -->
+<label class="flex items-center gap-4 p-4 border-b border-muted cursor-pointer hover:bg-muted/50 transition-colors">
+<div class="text-2xl w-8 text-center shrink-0">💵</div>
+<div class="flex-1">
+<h3 class="font-headline text-base font-medium text-charcoal">Cash on Collection</h3>
+</div>
+<input checked="" class="custom-radio shrink-0" name="paymentMethod" type="radio" value="cash_collection"/>
+</label>
+<!-- Cash on Delivery (Disabled) -->
+<label class="flex items-center gap-4 p-4 border-b border-muted cursor-not-allowed opacity-50 bg-muted/30">
+<div class="text-2xl w-8 text-center shrink-0 grayscale">💸</div>
+<div class="flex-1">
+<h3 class="font-headline text-base font-medium text-ash">Cash on Delivery</h3>
+</div>
+<input class="custom-radio shrink-0" disabled="" name="paymentMethod" type="radio" value="cash_delivery"/>
+</label>
+<!-- EFT -->
+<label class="flex items-center gap-4 p-4 border-b border-muted cursor-pointer hover:bg-muted/50 transition-colors">
+<div class="text-2xl w-8 text-center shrink-0">🏦</div>
+<div class="flex-1">
+<h3 class="font-headline text-base font-medium text-charcoal">EFT / Bank Transfer</h3>
+<p class="font-body text-xs text-ash">Upload proof after ordering</p>
+</div>
+<input class="custom-radio shrink-0" name="paymentMethod" type="radio" value="eft"/>
+</label>
+<!-- Card (Coming Soon) -->
+<label class="flex items-center gap-4 p-4 cursor-not-allowed opacity-60">
+<div class="text-2xl w-8 text-center shrink-0 grayscale">💳</div>
+<div class="flex-1 flex items-center gap-2">
+<h3 class="font-headline text-base font-medium text-ash">Card Payment</h3>
+<span class="bg-muted text-ash text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Coming Soon</span>
+</div>
+<input class="custom-radio shrink-0 opacity-0" disabled="" name="paymentMethod" type="radio" value="card"/>
+</label>
+</div>
+</section>
+<!-- ORDER SUMMARY MINI -->
+<section class="mb-8">
+<div class="bg-surface rounded-lg p-4 shadow-[0_2px_12px_rgba(0,0,0,0.05)] flex items-center justify-between cursor-pointer active:scale-[0.98] transition-transform">
+<div>
+<h3 class="font-headline text-base font-medium text-charcoal">Order Summary</h3>
+<p class="font-body text-sm text-ash">4 items • <span class="font-headline font-bold text-primary text-base">R319</span> total</p>
+</div>
+<span class="material-symbols-outlined text-ash" style="font-variation-settings: 'FILL' 0;">expand_more</span>
+</div>
+</section>
+</main>
+<!-- STICKY BOTTOM ACTION -->
+<div class="fixed bottom-0 left-0 w-full bg-surface shadow-[0_-4px_20px_rgba(0,0,0,0.08)] p-4 pb-safe flex flex-col items-center z-40 border-t border-muted">
+<div class="w-full max-w-[390px] mx-auto">
+<button class="w-full h-12 bg-primary text-white font-label font-semibold text-base rounded-lg flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
+                Place Order • R319
+            </button>
+<p class="text-center font-body text-[11px] text-ash mt-3">By placing your order, you agree to our Terms</p>
+</div>
+</div>
+<!-- PADDING FOR SAFE AREA ON iOS -->
+<style>
+        .pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+    </style>
+</body></html>

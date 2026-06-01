@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Peri Q - Your Cart</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&amp;family=Oswald:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#C8240B',
+                            orange: '#F07820',
+                            charcoal: '#1A1A1A',
+                            ash: '#4A4A4A',
+                            cream: '#FFF8F5',
+                            surface: '#FFFFFF',
+                            muted: '#F5F0ED',
+                            green: '#2A8C5A',
+                            amber: '#E8A400',
+                            blue: '#1A6AB1'
+                        }
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "0.75rem", // 12px for cards
+                        "full": "9999px"
+                    },
+                    spacing: {
+                        'xs': '4px',
+                        'sm': '8px',
+                        'md': '16px',
+                        'lg': '24px',
+                        'xl': '32px',
+                        '2xl': '48px',
+                        '3xl': '64px'
+                    },
+                    fontFamily: {
+                        "headline": ["Oswald", "sans-serif"],
+                        "display": ["Oswald", "sans-serif"],
+                        "body": ["Nunito Sans", "sans-serif"],
+                        "label": ["Nunito Sans", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'card': '0 2px 12px rgba(0,0,0,0.08)',
+                        'nav': '0 -2px 12px rgba(0,0,0,0.08)'
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #FFF8F5; /* brand.cream */
+            color: #1A1A1A; /* brand.charcoal */
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Hide scrollbar for clean UI */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        .safe-area-pt { padding-top: max(48px, env(safe-area-inset-top)); }
+        .safe-area-pb { padding-bottom: max(34px, env(safe-area-inset-bottom)); }
+        
+        /* Touch ripples & animations */
+        .touch-active:active { transform: scale(0.97); transition: transform 0.1s; }
+    </style>
+</head>
+<body class="font-body text-[16px] leading-[1.6] antialiased w-full h-full min-h-screen flex flex-col mx-auto bg-brand-cream max-w-[390px] relative">
+<!-- TopAppBar -->
+<header class="bg-brand-surface text-brand-charcoal fixed top-0 w-full max-w-[390px] z-50 shadow-sm flex items-center justify-between px-md h-16 safe-area-pt transition-colors duration-200">
+<button class="text-brand-charcoal hover:bg-brand-muted p-2 rounded-full transition-colors active:scale-95 flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+<h1 class="font-headline font-semibold text-[20px] text-brand-charcoal absolute left-1/2 transform -translate-x-1/2">Your Cart</h1>
+<button class="text-brand-red font-label font-semibold text-[14px] px-2 py-1 hover:bg-brand-cream rounded transition-colors active:scale-95">Clear All</button>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto px-md pt-[calc(64px+48px+16px)] pb-[calc(80px+80px+34px)]"> <!-- Account for TopBar + Safe Area + Bottom Nav + Checkout Bar -->
+<!-- Cart Items List -->
+<div class="space-y-sm mb-lg">
+<!-- Item 1: Chicken Kota -->
+<div class="bg-brand-surface rounded-2xl shadow-card p-sm flex items-center gap-md relative overflow-hidden group">
+<div class="absolute right-0 top-0 bottom-0 w-24 bg-brand-red flex items-center justify-center translate-x-full group-hover:translate-x-0 transition-transform duration-300 z-0">
+<span class="material-symbols-outlined text-white" data-icon="delete">delete</span>
+</div>
+<div class="w-[100px] h-[100px] flex-shrink-0 rounded-lg overflow-hidden relative z-10 bg-brand-muted">
+<img alt="Chicken Kota" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/ADBb0ug-RtXMD25qXcdSs7K0xnSayFz-c8vs0JS5eMj5QQMjVaJK_nH2yozFVZiGmjMQgggmv34n2aG3YdJTHQHZfFPdIUyLApOdLVJkdELwc_FlRb00lyaxo4Xwq0c_lhKBsoVjI9ZYSSNxFEMt1t2ZsDe0UJUYYO5gnXYWH-KABsoFbs3GAf2Xhk7argEGu4DVKkW5geYwTRb4PdV-lIFL_scLQEo40BB_gexVyJEw1CJJqh_CQ0UNqYuJo34"/>
+</div>
+<div class="flex-1 py-1 z-10 bg-brand-surface">
+<div class="flex justify-between items-start">
+<h3 class="font-headline font-medium text-[18px] text-brand-charcoal leading-tight">Chicken Kota</h3>
+<span class="font-headline font-bold text-[20px] text-brand-red ml-2">R70</span>
+</div>
+<p class="font-body text-[12px] text-brand-ash mt-1 truncate">Spice: Hot | Extra Sauce</p>
+<div class="flex justify-between items-center mt-3">
+<div class="flex items-center bg-brand-muted rounded-full border border-brand-ash/20">
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="font-label font-semibold w-6 text-center text-brand-charcoal text-[14px]">1</span>
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 2: Peri Peri Wings -->
+<div class="bg-brand-surface rounded-2xl shadow-card p-sm flex items-center gap-md relative overflow-hidden group">
+<div class="absolute right-0 top-0 bottom-0 w-24 bg-brand-red flex items-center justify-center translate-x-full group-hover:translate-x-0 transition-transform duration-300 z-0">
+<span class="material-symbols-outlined text-white" data-icon="delete">delete</span>
+</div>
+<div class="w-[100px] h-[100px] flex-shrink-0 rounded-lg overflow-hidden relative z-10 bg-brand-muted">
+<img alt="Peri Peri Wings" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/ADBb0ugJCv94NT-H7_LIcdEPrQZT4gB-DxBUuRMIrFhDFUzBlNpaBWYfNhGGjDcmA6CVI8nR0seX8q0lSB1drrvF8C8iFSl6bRrolx7uycfg1-5_Aivowx4tETqPzJbigXEgnq7Dec6nMgBLXonUhHXzoHon-QJiETw1Gf4fd48LAxgCKA3y2m218IEh3W_ViJ89izTsAWsrG-MphGMdyGFfrAmCmqINIDo8byGJt5yaS0BxZWrC4NPSfPo7x3VI"/>
+</div>
+<div class="flex-1 py-1 z-10 bg-brand-surface">
+<div class="flex justify-between items-start">
+<h3 class="font-headline font-medium text-[18px] text-brand-charcoal leading-tight">Peri Peri Wings</h3>
+<span class="font-headline font-bold text-[20px] text-brand-red ml-2">R85</span>
+</div>
+<p class="font-body text-[12px] text-brand-ash mt-1 truncate">Spice: Extra Hot</p>
+<div class="flex justify-between items-center mt-3">
+<div class="flex items-center bg-brand-muted rounded-full border border-brand-ash/20">
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="font-label font-semibold w-6 text-center text-brand-charcoal text-[14px]">1</span>
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 3: Mixed Grill Plate -->
+<div class="bg-brand-surface rounded-2xl shadow-card p-sm flex items-center gap-md relative overflow-hidden group">
+<div class="absolute right-0 top-0 bottom-0 w-24 bg-brand-red flex items-center justify-center translate-x-full group-hover:translate-x-0 transition-transform duration-300 z-0">
+<span class="material-symbols-outlined text-white" data-icon="delete">delete</span>
+</div>
+<div class="w-[100px] h-[100px] flex-shrink-0 rounded-lg overflow-hidden relative z-10 bg-brand-muted">
+<img alt="Mixed Grill Plate" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/ADBb0ujrOZ_Hi_5daNLA5db5kplWEqR1QGGvCsAoaYXfdx8uoa9xURX7ITRkWIonAekTz-w3nZ61zNaupw-8oKIPMm6gZ9waHRtl5gFzVV1UOblIDqEHX9MJZ7aRqZzlqBQNLNt7w69WC7YQYhTran7OjdgInOC2p97EWEu8WBQPqXIoTfJitbluEP53VXNsEMZuhTnAY7W7OBRiBm4__4C72gWqP4FlIRU48XwYiPjPvw54F8iqjJdalcrP3DI"/>
+</div>
+<div class="flex-1 py-1 z-10 bg-brand-surface">
+<div class="flex justify-between items-start">
+<h3 class="font-headline font-medium text-[18px] text-brand-charcoal leading-tight">Mixed Grill Plate</h3>
+<span class="font-headline font-bold text-[20px] text-brand-red ml-2">R120</span>
+</div>
+<p class="font-body text-[12px] text-brand-ash mt-1 truncate">No special requests</p>
+<div class="flex justify-between items-center mt-3">
+<div class="flex items-center bg-brand-muted rounded-full border border-brand-ash/20">
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="font-label font-semibold w-6 text-center text-brand-charcoal text-[14px]">1</span>
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Item 4: Coke 500ml -->
+<div class="bg-brand-surface rounded-2xl shadow-card p-sm flex items-center gap-md relative overflow-hidden group">
+<div class="absolute right-0 top-0 bottom-0 w-24 bg-brand-red flex items-center justify-center translate-x-full group-hover:translate-x-0 transition-transform duration-300 z-0">
+<span class="material-symbols-outlined text-white" data-icon="delete">delete</span>
+</div>
+<div class="w-[100px] h-[100px] flex-shrink-0 rounded-lg bg-brand-muted flex items-center justify-center relative z-10">
+<span class="material-symbols-outlined text-brand-ash text-[40px]" data-icon="local_drink">local_drink</span>
+</div>
+<div class="flex-1 py-1 z-10 bg-brand-surface">
+<div class="flex justify-between items-start">
+<h3 class="font-headline font-medium text-[18px] text-brand-charcoal leading-tight">Coke 500ml</h3>
+<span class="font-headline font-bold text-[20px] text-brand-red ml-2">R22</span>
+</div>
+<p class="font-body text-[12px] text-brand-ash mt-1 truncate">Chilled</p>
+<div class="flex justify-between items-center mt-3">
+<div class="flex items-center bg-brand-muted rounded-full border border-brand-ash/20">
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="remove">remove</span>
+</button>
+<span class="font-label font-semibold w-6 text-center text-brand-charcoal text-[14px]">2</span>
+<button class="w-8 h-8 flex items-center justify-center text-brand-red touch-active">
+<span class="material-symbols-outlined text-[18px]" data-icon="add">add</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<p class="text-center font-body text-[12px] text-brand-ash/70 mt-2 flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="swipe_left">swipe_left</span> Swipe left on an item to remove
+            </p>
+</div>
+<!-- Add More Items Button -->
+<button class="w-full h-12 rounded-lg border-2 border-brand-red text-brand-red font-label font-semibold text-[14px] flex items-center justify-center gap-2 mb-lg touch-active bg-brand-surface">
+<span class="material-symbols-outlined text-[20px]" data-icon="add">add</span>
+            Add More Items
+        </button>
+<!-- Special Instructions -->
+<div class="bg-brand-surface rounded-2xl shadow-card p-md mb-lg">
+<h2 class="font-headline font-semibold text-[16px] text-brand-charcoal mb-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-brand-ash text-[20px]" data-icon="edit_note">edit_note</span>
+                Special Instructions
+            </h2>
+<textarea class="w-full bg-brand-muted border-none rounded-lg p-sm font-body text-[14px] text-brand-charcoal placeholder-brand-ash focus:ring-1 focus:ring-brand-red resize-none h-20" placeholder="Any instructions for the store? (e.g. allergies, extra napkins)"></textarea>
+</div>
+<!-- Order Summary -->
+<div class="bg-brand-surface rounded-2xl shadow-card p-md mb-md">
+<h2 class="font-headline font-semibold text-[16px] text-brand-charcoal mb-md border-b border-brand-muted pb-2">Order Summary</h2>
+<div class="space-y-2 mb-4">
+<div class="flex justify-between font-body text-[14px] text-brand-charcoal">
+<span>Subtotal</span>
+<span>R319</span>
+</div>
+<div class="flex justify-between font-body text-[14px] text-brand-ash">
+<span>Delivery Fee</span>
+<span>R30</span>
+</div>
+</div>
+<div class="flex justify-between items-center border-t border-brand-muted pt-3">
+<span class="font-headline font-semibold text-[16px] text-brand-charcoal">TOTAL</span>
+<span class="font-headline font-bold text-[22px] text-brand-red">R349</span>
+</div>
+</div>
+</main>
+<!-- Sticky Checkout Bar -->
+<div class="fixed bottom-[80px] w-full max-w-[390px] bg-brand-surface p-md border-t border-brand-muted z-40 pb-[calc(16px+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.05)]">
+<button class="w-full bg-brand-red text-white h-12 rounded-lg font-label font-semibold text-[16px] flex items-center justify-between px-lg touch-active shadow-md">
+<span>Proceed to Checkout</span>
+<span class="font-headline font-bold text-[18px]">R349</span>
+</button>
+<p class="text-center font-body text-[12px] text-brand-ash mt-2 flex items-center justify-center gap-1">
+<span class="material-symbols-outlined text-[14px]" data-icon="lock">lock</span> Secure checkout
+        </p>
+</div>
+<!-- BottomNavBar -->
+<nav class="bg-white fixed bottom-0 w-full max-w-[390px] z-50 h-20 rounded-t-xl border-t border-[#F5F0ED] shadow-nav flex justify-around items-center px-2 pb-4 relative safe-area-pb transition-all duration-300 ease-in-out">
+<!-- Home -->
+<a class="flex flex-col items-center text-[#4A4A4A] hover:text-[#F07820] active:scale-90 transition-all w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1" data-icon="home">home</span>
+<span class="font-label text-[10px] font-semibold">Home</span>
+</a>
+<!-- Menu -->
+<a class="flex flex-col items-center text-[#4A4A4A] hover:text-[#F07820] active:scale-90 transition-all w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1" data-icon="restaurant_menu">restaurant_menu</span>
+<span class="font-label text-[10px] font-semibold">Menu</span>
+</a>
+<!-- Cart FAB (Active) -->
+<a class="flex flex-col items-center justify-center relative -top-6 w-16" href="#">
+<div class="bg-brand-red w-14 h-14 rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform border-4 border-brand-cream relative">
+<span class="material-symbols-outlined text-white text-[28px]" data-icon="shopping_cart" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span class="absolute top-0 right-0 bg-brand-orange text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-brand-surface translate-x-1 -translate-y-1">4</span>
+</div>
+<span class="font-label text-[10px] font-semibold text-brand-red mt-1">Cart</span>
+</a>
+<!-- Orders -->
+<a class="flex flex-col items-center text-[#4A4A4A] hover:text-[#F07820] active:scale-90 transition-all w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1" data-icon="receipt_long">receipt_long</span>
+<span class="font-label text-[10px] font-semibold">Orders</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center text-[#4A4A4A] hover:text-[#F07820] active:scale-90 transition-all w-16" href="#">
+<span class="material-symbols-outlined text-[24px] mb-1" data-icon="person">person</span>
+<span class="font-label text-[10px] font-semibold">Profile</span>
+</a>
+</nav>
+</body></html>
