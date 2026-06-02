@@ -2,8 +2,8 @@ class AppPreferences {
   const AppPreferences({
     this.hasReturningSession = false,
     this.isGuest = true,
-    this.customerName = 'Thabo Mokhethi',
-    this.customerPhone = '+27 71 234 5678',
+    this.customerName = '',
+    this.customerPhone = '',
     this.storeOpen = true,
     this.selectedMenuCategory = 'All',
   });
@@ -37,8 +37,8 @@ class AppPreferences {
     return AppPreferences(
       hasReturningSession: json['hasReturningSession'] as bool? ?? false,
       isGuest: json['isGuest'] as bool? ?? true,
-      customerName: json['customerName'] as String? ?? 'Thabo Mokhethi',
-      customerPhone: json['customerPhone'] as String? ?? '+27 71 234 5678',
+      customerName: json['customerName'] as String? ?? '',
+      customerPhone: json['customerPhone'] as String? ?? '',
       storeOpen: json['storeOpen'] as bool? ?? true,
       selectedMenuCategory: json['selectedMenuCategory'] as String? ?? 'All',
     );

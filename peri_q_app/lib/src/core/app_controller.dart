@@ -33,8 +33,8 @@ class AppController extends ChangeNotifier {
   List<OrderModel> orders = [];
   List<CartItemModel> cart = [];
 
-  String customerName = 'Thabo Mokhethi';
-  String customerPhone = '+27 71 234 5678';
+  String customerName = '';
+  String customerPhone = '';
   String? userId;
   String? userEmail;
   bool isGuest = true;
@@ -175,10 +175,9 @@ class AppController extends ChangeNotifier {
     isAdmin = false;
     hasReturningSession = false;
     isGuest = true;
-    orders = await _orderRepository.fetchOrders(
-      userId: null,
-      includeAll: false,
-    );
+    customerName = '';
+    customerPhone = '';
+    orders = [];
     selectedMenuCategory = 'All';
     cart = [];
     await _savePreferences();
@@ -189,7 +188,7 @@ class AppController extends ChangeNotifier {
     required String name,
     required String phone,
   }) async {
-    customerName = name;
+    customerName = name.trim();
     customerPhone = _normalizePhone(phone);
     if (hasReturningSession) {
       await _savePreferences();
@@ -211,7 +210,7 @@ class AppController extends ChangeNotifier {
     try {
       storeOpen = await _storeRepository.updateStoreOpenStatus(value);
       await _savePreferences();
-    } catch (error) {
+    } catch (_) {
       storeOpen = previousValue;
       notifyListeners();
       rethrow;
@@ -349,6 +348,15 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteMenuItem(String menuItemId) async {
+    await _menuRepository.deleteMenuItem(menuItemId);
+    menuItems = [
+      for (final item in menuItems)
+        if (item.id != menuItemId) item,
+    ];
+    notifyListeners();
+  }
+
   Future<void> _activateSession(
     AppAuthSession session, {
     required bool guest,
@@ -375,10 +383,7 @@ class AppController extends ChangeNotifier {
     userId = session.userId;
     userEmail = session.email;
     isAdmin = session.isAdmin;
-    hasReturningSession =
-        session.hasSession ||
-        (!_authRepository.usesAuthoritativeSessions &&
-            fallbackPreferences.hasReturningSession);
+    hasReturningSession = session.hasSession;
     isGuest = session.hasSession
         ? (session.isAnonymous ? fallbackPreferences.isGuest : false)
         : fallbackPreferences.isGuest;

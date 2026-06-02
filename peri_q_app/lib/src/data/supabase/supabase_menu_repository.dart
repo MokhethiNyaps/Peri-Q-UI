@@ -44,6 +44,11 @@ class SupabaseMenuRepository implements MenuRepository {
     return _fromRow(response);
   }
 
+  @override
+  Future<void> deleteMenuItem(String menuItemId) async {
+    await _client.from('menu_items').delete().eq('id', menuItemId);
+  }
+
   MenuItemModel _fromRow(Map<String, dynamic> row) {
     return MenuItemModel(
       id: row['id'] as String? ?? '',

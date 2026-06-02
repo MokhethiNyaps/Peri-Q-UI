@@ -343,11 +343,12 @@ class _ChoiceCard extends StatelessWidget {
                 ],
               ),
             ),
-            Radio<bool>(
-              value: true,
-              groupValue: selected,
-              onChanged: (_) => onTap(),
-              activeColor: AppTheme.periRed,
+            IgnorePointer(
+              child: RadioGroup<bool>(
+                groupValue: selected,
+                onChanged: (_) {},
+                child: Radio<bool>(value: true, activeColor: AppTheme.periRed),
+              ),
             ),
           ],
         ),
@@ -401,11 +402,12 @@ class _PaymentTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Radio<bool>(
-                value: true,
-                groupValue: selected,
-                onChanged: enabled ? (_) => onTap?.call() : null,
-                activeColor: AppTheme.periRed,
+              IgnorePointer(
+                child: RadioGroup<bool>(
+                  groupValue: selected,
+                  onChanged: (_) {},
+                  child: Radio<bool>(value: true, activeColor: AppTheme.periRed),
+                ),
               ),
             ],
           ),

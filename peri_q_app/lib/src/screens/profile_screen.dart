@@ -36,7 +36,7 @@ class ProfileScreen extends StatelessWidget {
                       child: Text(
                         controller.customerName.isNotEmpty
                             ? controller.customerName.substring(0, 1).toUpperCase()
-                            : 'P',
+                            : 'U',
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                               color: Colors.white,
                             ),
@@ -48,13 +48,17 @@ class ProfileScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            controller.customerName,
+                            controller.customerName.isNotEmpty
+                                ? controller.customerName
+                                : 'Guest Customer',
                             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                   color: Colors.white,
                                 ),
                           ),
                           Text(
-                            controller.customerPhone,
+                            controller.customerPhone.isNotEmpty
+                                ? controller.customerPhone
+                                : 'No phone number yet',
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Colors.white70,
                                 ),

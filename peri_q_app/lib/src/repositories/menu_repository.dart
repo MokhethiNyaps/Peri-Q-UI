@@ -4,4 +4,5 @@ abstract class MenuRepository {
   Future<List<MenuItemModel>> fetchMenuItems();
   Future<MenuItemModel> addMenuItem(MenuItemModel item);
   Future<MenuItemModel> updateMenuItem(MenuItemModel item);
+  Future<void> deleteMenuItem(String menuItemId);
 }

@@ -34,6 +34,41 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _deleteMenuItem(BuildContext context, MenuItemModel item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete this item?'),
+          content: Text('${item.name} will be removed from the menu.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+
+    await controller.deleteMenuItem(item.id);
+    if (!context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text('${item.name} deleted.')));
+  }
+
   Future<void> _rejectOrder(BuildContext context, OrderModel order) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -194,25 +229,33 @@ class AdminDashboardScreen extends StatelessWidget {
                   ),
                 ),
               const SizedBox(height: 24),
-              Text(
-                'Menu Management',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Add new dishes or update availability and pricing from one place.',
-                style: Theme.of(context).textTheme.bodyMedium,
+              Row(
+                children: [
+                  Text(
+                    'Menu Items',
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const Spacer(),
+                  TextButton(
+                    onPressed: () => _openMenuEditor(context),
+                    child: const Text('Add New'),
+                  ),
+                ],
               ),
               const SizedBox(height: 14),
-              ...controller.menuItems.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 14),
-                  child: _MenuItemCard(
-                    item: item,
-                    onEdit: () => _openMenuEditor(context, item: item),
+              if (controller.menuItems.isEmpty)
+                const _EmptyAdminState(message: 'No menu items found.')
+              else
+                ...controller.menuItems.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 14),
+                    child: _MenuItemCard(
+                      item: item,
+                      onEdit: () => _openMenuEditor(context, item: item),
+                      onDelete: () => _deleteMenuItem(context, item),
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         );
@@ -332,10 +375,15 @@ class _IncomingOrderCard extends StatelessWidget {
 }
 
 class _MenuItemCard extends StatelessWidget {
-  const _MenuItemCard({required this.item, required this.onEdit});
+  const _MenuItemCard({
+    required this.item,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   final MenuItemModel item;
   final VoidCallback onEdit;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +448,18 @@ class _MenuItemCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          OutlinedButton(onPressed: onEdit, child: const Text('Edit')),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              OutlinedButton(onPressed: onEdit, child: const Text('Edit')),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: onDelete,
+                style: TextButton.styleFrom(foregroundColor: AppTheme.periRed),
+                child: const Text('Delete'),
+              ),
+            ],
+          ),
         ],
       ),
     );
