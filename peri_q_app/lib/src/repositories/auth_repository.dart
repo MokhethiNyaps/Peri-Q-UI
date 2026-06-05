@@ -12,10 +12,16 @@ abstract class AuthRepository {
     required String password,
   });
 
-  Future<void> signOut();
-
-  Future<void> upsertProfile({
+  Future<AppAuthSession> signUpWithEmail({
+    required String email,
+    required String password,
     required String name,
     required String phone,
   });
+
+  Future<void> resetPasswordForEmail({required String email});
+
+  Future<void> signOut();
+
+  Future<void> upsertProfile({required String name, required String phone});
 }

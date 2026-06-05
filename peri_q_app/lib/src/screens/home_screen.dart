@@ -29,8 +29,8 @@ class HomeScreen extends StatelessWidget {
           final heroItem = controller.todaysSpecials.isNotEmpty
               ? controller.todaysSpecials.first
               : controller.featuredItems.isNotEmpty
-                  ? controller.featuredItems.first
-                  : null;
+              ? controller.featuredItems.first
+              : null;
 
           return CustomScrollView(
             slivers: [
@@ -56,9 +56,7 @@ class HomeScreen extends StatelessWidget {
                               const SizedBox(width: 10),
                               Text(
                                 'Peri Q',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineLarge
+                                style: Theme.of(context).textTheme.headlineLarge
                                     ?.copyWith(color: AppTheme.periRed),
                               ),
                             ],
@@ -92,9 +90,7 @@ class HomeScreen extends StatelessWidget {
                                   controller.storeOpen
                                       ? 'Open Now • Closes 9PM'
                                       : 'Closed • Opens 10AM',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
+                                  style: Theme.of(context).textTheme.bodySmall
                                       ?.copyWith(
                                         color: AppTheme.success,
                                         fontWeight: FontWeight.w800,
@@ -107,8 +103,9 @@ class HomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 20),
                       _HeroBanner(
-                        onOrderNow:
-                            heroItem == null ? null : () => onOpenItem(heroItem),
+                        onOrderNow: heroItem == null
+                            ? null
+                            : () => onOpenItem(heroItem),
                       ),
                       const SizedBox(height: 22),
                       const SectionHeader(title: 'Categories'),
@@ -118,8 +115,10 @@ class HomeScreen extends StatelessWidget {
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemBuilder: (context, index) {
-                            final category = controller.categories[index];
-                            final selected = category == controller.selectedMenuCategory;
+                            final category =
+                                controller.customerCategories[index];
+                            final selected =
+                                category == controller.selectedMenuCategory;
                             return ChoiceChip(
                               selected: selected,
                               onSelected: (_) => onBrowseCategory(category),
@@ -132,14 +131,16 @@ class HomeScreen extends StatelessWidget {
                               label: Text(
                                 category,
                                 style: TextStyle(
-                                  color: selected ? Colors.white : AppTheme.ashGrey,
+                                  color: selected
+                                      ? Colors.white
+                                      : AppTheme.ashGrey,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
                             );
                           },
                           separatorBuilder: (_, _) => const SizedBox(width: 10),
-                          itemCount: controller.categories.length,
+                          itemCount: controller.customerCategories.length,
                         ),
                       ),
                       const SizedBox(height: 22),
@@ -157,19 +158,20 @@ class HomeScreen extends StatelessWidget {
                 sliver: SliverLayoutBuilder(
                   builder: (context, constraints) {
                     final width = constraints.crossAxisExtent;
-                    final crossAxisCount = width > 760 ? 4 : width > 560 ? 3 : 2;
+                    final crossAxisCount = width > 760
+                        ? 4
+                        : width > 560
+                        ? 3
+                        : 2;
                     return SliverGrid(
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final item = controller.featuredItems[index];
-                          return FoodCard(
-                            item: item,
-                            onTap: () => onOpenItem(item),
-                            onAdd: () => controller.addToCart(item),
-                          );
-                        },
-                        childCount: controller.featuredItems.length,
-                      ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final item = controller.featuredItems[index];
+                        return FoodCard(
+                          item: item,
+                          onTap: () => onOpenItem(item),
+                          onAdd: () => controller.addToCart(item),
+                        );
+                      }, childCount: controller.featuredItems.length),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                         mainAxisSpacing: 16,
@@ -266,25 +268,25 @@ class _HeroBanner extends StatelessWidget {
                   Text(
                     "TODAY'S SPECIAL",
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppTheme.chesaOrange,
-                          letterSpacing: 2.2,
-                        ),
+                      color: AppTheme.chesaOrange,
+                      letterSpacing: 2.2,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     'Flame-Grilled\nChicken Kota',
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                          color: Colors.white,
-                          fontSize: 30,
-                          height: 1.0,
-                        ),
+                      color: Colors.white,
+                      fontSize: 30,
+                      height: 1.0,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'R65 • Chips, Russian and Sauce included',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white70,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.white70),
                   ),
                   const SizedBox(height: 14),
                   ElevatedButton(

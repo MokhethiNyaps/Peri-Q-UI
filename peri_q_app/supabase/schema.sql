@@ -32,10 +32,18 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email)
+  insert into public.profiles (id, email, full_name, phone)
+  values (
+    new.id,
+    new.email,
+    new.raw_user_meta_data ->> 'full_name',
+    new.raw_user_meta_data ->> 'phone'
+  )
   on conflict (id) do update
-    set email = excluded.email;
+    set
+      email = excluded.email,
+      full_name = coalesce(excluded.full_name, public.profiles.full_name),
+      phone = coalesce(excluded.phone, public.profiles.phone);
 
   return new;
 end;
@@ -215,6 +223,13 @@ for update
 to authenticated
 using (public.is_admin())
 with check (public.is_admin());
+
+drop policy if exists "menu_items_admin_delete" on public.menu_items;
+create policy "menu_items_admin_delete"
+on public.menu_items
+for delete
+to authenticated
+using (public.is_admin());
 
 drop policy if exists "orders_select_owner_or_admin" on public.orders;
 create policy "orders_select_owner_or_admin"

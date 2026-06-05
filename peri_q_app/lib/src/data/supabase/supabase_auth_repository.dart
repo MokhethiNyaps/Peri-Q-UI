@@ -50,6 +50,41 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AppAuthSession> signUpWithEmail({
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+  }) async {
+    final normalizedEmail = email.trim();
+    final response = await _client.auth.signUp(
+      email: normalizedEmail,
+      password: password,
+      data: {'full_name': name.trim(), 'phone': phone.trim()},
+    );
+    final user = response.user ?? _client.auth.currentUser;
+    final session = response.session ?? _client.auth.currentSession;
+
+    if (user == null) {
+      throw StateError('Supabase did not return a user account.');
+    }
+
+    if (session == null) {
+      throw StateError(
+        'Account created. Check your email to confirm it, then sign in.',
+      );
+    }
+
+    await upsertProfile(name: name, phone: phone);
+    return _buildSession(user);
+  }
+
+  @override
+  Future<void> resetPasswordForEmail({required String email}) {
+    return _client.auth.resetPasswordForEmail(email.trim());
+  }
+
+  @override
   Future<void> signOut() async {
     await _client.auth.signOut();
   }

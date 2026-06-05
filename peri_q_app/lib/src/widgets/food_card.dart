@@ -24,7 +24,7 @@ class FoodCard extends StatelessWidget {
 
     if (compact) {
       return InkWell(
-        onTap: onTap,
+        onTap: item.isAvailable ? onTap : null,
         borderRadius: radius,
         child: Ink(
           padding: const EdgeInsets.all(10),
@@ -117,7 +117,7 @@ class FoodCard extends StatelessWidget {
     }
 
     return InkWell(
-      onTap: onTap,
+      onTap: item.isAvailable ? onTap : null,
       borderRadius: radius,
       child: Ink(
         decoration: BoxDecoration(
@@ -167,7 +167,7 @@ class FoodCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   InkWell(
-                    onTap: onAdd,
+                    onTap: item.isAvailable ? onAdd : null,
                     borderRadius: BorderRadius.circular(999),
                     child: Ink(
                       width: 38,

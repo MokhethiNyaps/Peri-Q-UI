@@ -59,11 +59,18 @@ class AppController extends ChangeNotifier {
     );
   }
 
-  List<String> get categories {
+  List<String> get categories => _categoriesFor(menuItems);
+
+  List<MenuItemModel> get availableMenuItems =>
+      menuItems.where((item) => item.isAvailable).toList();
+
+  List<String> get customerCategories => _categoriesFor(availableMenuItems);
+
+  List<String> _categoriesFor(List<MenuItemModel> items) {
     final categorySet = <String>{};
     final values = <String>['All'];
 
-    for (final item in menuItems) {
+    for (final item in items) {
       if (categorySet.add(item.category)) {
         values.add(item.category);
       }
@@ -72,16 +79,16 @@ class AppController extends ChangeNotifier {
     return values;
   }
 
-  List<MenuItemModel> get featuredItems => menuItems.take(4).toList();
+  List<MenuItemModel> get featuredItems => availableMenuItems.take(4).toList();
 
   List<MenuItemModel> get todaysSpecials {
-    final specials = menuItems.where((item) {
+    final specials = availableMenuItems.where((item) {
       return item.id == 'wings-1' ||
           item.id == 'kota-1' ||
           item.id == 'burger-1';
     }).toList();
 
-    return specials.isNotEmpty ? specials : menuItems.take(3).toList();
+    return specials.isNotEmpty ? specials : availableMenuItems.take(3).toList();
   }
 
   List<OrderModel> get activeOrders =>
@@ -166,6 +173,33 @@ class AppController extends ChangeNotifier {
       password: password,
     );
     await _activateSession(session, guest: false);
+  }
+
+  Future<void> registerWithEmail({
+    required String name,
+    required String phone,
+    required String email,
+    required String password,
+  }) async {
+    final normalizedPhone = _normalizePhone(phone);
+    final trimmedName = name.trim();
+    final session = await _authRepository.signUpWithEmail(
+      email: email,
+      password: password,
+      name: trimmedName,
+      phone: normalizedPhone,
+    );
+    customerName = trimmedName;
+    customerPhone = normalizedPhone;
+    await _activateSession(session, guest: false);
+    await _authRepository.upsertProfile(
+      name: customerName,
+      phone: customerPhone,
+    );
+  }
+
+  Future<void> requestPasswordReset({required String email}) {
+    return _authRepository.resetPasswordForEmail(email: email);
   }
 
   Future<void> signOut() async {
@@ -334,26 +368,20 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> addMenuItem(MenuItemModel item) async {
-    final savedItem = await _menuRepository.addMenuItem(item);
-    menuItems = [savedItem, ...menuItems];
+    await _menuRepository.addMenuItem(item);
+    await _reloadMenuItems();
     notifyListeners();
   }
 
   Future<void> updateMenuItem(MenuItemModel updatedItem) async {
-    final savedItem = await _menuRepository.updateMenuItem(updatedItem);
-    menuItems = [
-      for (final item in menuItems)
-        if (item.id == savedItem.id) savedItem else item,
-    ];
+    await _menuRepository.updateMenuItem(updatedItem);
+    await _reloadMenuItems();
     notifyListeners();
   }
 
   Future<void> deleteMenuItem(String menuItemId) async {
     await _menuRepository.deleteMenuItem(menuItemId);
-    menuItems = [
-      for (final item in menuItems)
-        if (item.id != menuItemId) item,
-    ];
+    await _reloadMenuItems();
     notifyListeners();
   }
 
@@ -404,6 +432,13 @@ class AppController extends ChangeNotifier {
         if (order.id == updatedOrder.id) updatedOrder else order,
     ];
     notifyListeners();
+  }
+
+  Future<void> _reloadMenuItems() async {
+    menuItems = await _menuRepository.fetchMenuItems();
+    if (!categories.contains(selectedMenuCategory)) {
+      selectedMenuCategory = 'All';
+    }
   }
 
   CartItemModel _cloneCartItem(CartItemModel item) {

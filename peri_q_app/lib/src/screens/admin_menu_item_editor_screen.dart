@@ -125,7 +125,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Changes stay in mock app state for now and are ready to connect to the backend later.',
+              'Changes save directly to the Peri Q database and update the app menu after saving.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),

@@ -46,7 +46,18 @@ class SupabaseMenuRepository implements MenuRepository {
 
   @override
   Future<void> deleteMenuItem(String menuItemId) async {
-    await _client.from('menu_items').delete().eq('id', menuItemId);
+    final deletedRow = await _client
+        .from('menu_items')
+        .delete()
+        .eq('id', menuItemId)
+        .select('id')
+        .maybeSingle();
+
+    if (deletedRow == null) {
+      throw StateError(
+        'Menu item was not deleted. Check that the item exists and your account has admin access.',
+      );
+    }
   }
 
   MenuItemModel _fromRow(Map<String, dynamic> row) {

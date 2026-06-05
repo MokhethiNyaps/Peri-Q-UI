@@ -6,10 +6,7 @@ import 'admin_dashboard_screen.dart';
 import 'auth_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({
-    super.key,
-    required this.controller,
-  });
+  const ProfileScreen({super.key, required this.controller});
 
   final AppController controller;
 
@@ -35,11 +32,12 @@ class ProfileScreen extends StatelessWidget {
                       backgroundColor: Colors.white24,
                       child: Text(
                         controller.customerName.isNotEmpty
-                            ? controller.customerName.substring(0, 1).toUpperCase()
+                            ? controller.customerName
+                                  .substring(0, 1)
+                                  .toUpperCase()
                             : 'U',
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              color: Colors.white,
-                            ),
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(color: Colors.white),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -51,22 +49,23 @@ class ProfileScreen extends StatelessWidget {
                             controller.customerName.isNotEmpty
                                 ? controller.customerName
                                 : 'Guest Customer',
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: Colors.white,
-                                ),
+                            style: Theme.of(context).textTheme.headlineMedium
+                                ?.copyWith(color: Colors.white),
                           ),
                           Text(
                             controller.customerPhone.isNotEmpty
                                 ? controller.customerPhone
                                 : 'No phone number yet',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Colors.white70,
-                                ),
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(color: Colors.white70),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            controller.isGuest ? 'Guest checkout enabled' : 'Signed in',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            controller.isGuest
+                                ? 'Guest checkout enabled'
+                                : 'Signed in',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
                                   color: AppTheme.chesaOrange,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -95,7 +94,8 @@ class ProfileScreen extends StatelessWidget {
                   onTap: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (_) => AdminDashboardScreen(controller: controller),
+                        builder: (_) =>
+                            AdminDashboardScreen(controller: controller),
                       ),
                     );
                   },
@@ -122,13 +122,15 @@ class ProfileScreen extends StatelessWidget {
                         const SizedBox(width: 14),
                         Expanded(
                           child: Text(
-                            'Switch to Admin Portal',
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  color: AppTheme.periRed,
-                                ),
+                            'Open Owner Dashboard',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(color: AppTheme.periRed),
                           ),
                         ),
-                        const Icon(Icons.chevron_right_rounded, color: AppTheme.periRed),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppTheme.periRed,
+                        ),
                       ],
                     ),
                   ),
@@ -181,10 +183,7 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _ProfileTile extends StatelessWidget {
-  const _ProfileTile({
-    required this.title,
-    required this.icon,
-  });
+  const _ProfileTile({required this.title, required this.icon});
 
   final String title;
   final IconData icon;

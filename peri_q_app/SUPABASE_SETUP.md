@@ -25,7 +25,7 @@ Open the SQL editor in your Supabase project and run:
 
 In the Supabase dashboard:
 
-1. Enable `Email` sign-in if you want staff/admin logins.
+1. Enable `Email` sign-in for customer registration, password login, and owner/admin logins.
 2. Enable `Anonymous` sign-ins for guest checkout and phone-first sessions.
 
 Anonymous sign-ins are required because customer ordering is currently backed by anonymous authenticated sessions instead of SMS OTP.
@@ -64,5 +64,6 @@ flutter build apk --debug --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supaba
 ## Notes
 
 - Google sign-in still needs OAuth provider setup and mobile deep-link configuration before it can be enabled in-app.
+- Password reset uses Supabase email templates, so configure the sender and redirect URL in the Supabase dashboard before using it in production.
 - The app uses the Supabase publishable key on the client, so RLS policies are what protect your data.
 - If you launch the app without Supabase values in `.env` or `--dart-define`, the app will show a configuration screen instead of falling back to mock data.

@@ -8,10 +8,7 @@ import 'cart_screen.dart';
 import 'item_customization_flow.dart';
 
 class MenuScreen extends StatefulWidget {
-  const MenuScreen({
-    super.key,
-    required this.controller,
-  });
+  const MenuScreen({super.key, required this.controller});
 
   final AppController controller;
 
@@ -29,11 +26,13 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 
   List<MenuItemModel> get filteredItems {
-    return widget.controller.menuItems.where((item) {
-      final categoryMatch = widget.controller.selectedMenuCategory == 'All' ||
+    return widget.controller.availableMenuItems.where((item) {
+      final categoryMatch =
+          widget.controller.selectedMenuCategory == 'All' ||
           item.category == widget.controller.selectedMenuCategory;
       final query = searchController.text.toLowerCase();
-      final searchMatch = query.isEmpty ||
+      final searchMatch =
+          query.isEmpty ||
           item.name.toLowerCase().contains(query) ||
           item.description.toLowerCase().contains(query);
       return categoryMatch && searchMatch;
@@ -55,7 +54,10 @@ class _MenuScreenState extends State<MenuScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Full Menu', style: Theme.of(context).textTheme.displayLarge),
+                        Text(
+                          'Full Menu',
+                          style: Theme.of(context).textTheme.displayLarge,
+                        ),
                         const SizedBox(height: 14),
                         TextField(
                           controller: searchController,
@@ -70,16 +72,20 @@ class _MenuScreenState extends State<MenuScreen> {
                           height: 42,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            itemCount: widget.controller.categories.length,
-                            separatorBuilder: (_, _) => const SizedBox(width: 10),
+                            itemCount:
+                                widget.controller.customerCategories.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 10),
                             itemBuilder: (context, index) {
-                              final category = widget.controller.categories[index];
+                              final category =
+                                  widget.controller.customerCategories[index];
                               final selected =
-                                  category == widget.controller.selectedMenuCategory;
+                                  category ==
+                                  widget.controller.selectedMenuCategory;
                               return ChoiceChip(
                                 selected: selected,
-                                onSelected: (_) =>
-                                    widget.controller.setSelectedMenuCategory(category),
+                                onSelected: (_) => widget.controller
+                                    .setSelectedMenuCategory(category),
                                 selectedColor: AppTheme.periRed,
                                 backgroundColor: Colors.white,
                                 side: BorderSide.none,
@@ -89,7 +95,9 @@ class _MenuScreenState extends State<MenuScreen> {
                                 label: Text(
                                   category,
                                   style: TextStyle(
-                                    color: selected ? Colors.white : AppTheme.ashGrey,
+                                    color: selected
+                                        ? Colors.white
+                                        : AppTheme.ashGrey,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -131,12 +139,16 @@ class _MenuScreenState extends State<MenuScreen> {
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => CartScreen(controller: widget.controller),
+                          builder: (_) =>
+                              CartScreen(controller: widget.controller),
                         ),
                       );
                     },
                     child: Ink(
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
                         color: AppTheme.periRed,
                         borderRadius: BorderRadius.circular(18),
@@ -153,21 +165,20 @@ class _MenuScreenState extends State<MenuScreen> {
                           Expanded(
                             child: Text(
                               '${widget.controller.cartCount} item${widget.controller.cartCount == 1 ? '' : 's'} in cart',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
+                              style: Theme.of(context).textTheme.labelLarge
                                   ?.copyWith(color: Colors.white),
                             ),
                           ),
                           Text(
                             'R${widget.controller.subtotal.toStringAsFixed(0)}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
+                            style: Theme.of(context).textTheme.titleLarge
                                 ?.copyWith(color: Colors.white),
                           ),
                           const SizedBox(width: 10),
-                          const Icon(Icons.shopping_bag_rounded, color: Colors.white),
+                          const Icon(
+                            Icons.shopping_bag_rounded,
+                            color: Colors.white,
+                          ),
                         ],
                       ),
                     ),
