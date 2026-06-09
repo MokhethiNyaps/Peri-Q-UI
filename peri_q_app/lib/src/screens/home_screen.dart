@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/menu_item.dart';
+import '../models/todays_special_settings.dart';
 import '../widgets/food_card.dart';
 import '../widgets/section_header.dart';
 
@@ -26,11 +27,8 @@ class HomeScreen extends StatelessWidget {
       child: AnimatedBuilder(
         animation: controller,
         builder: (context, _) {
-          final heroItem = controller.todaysSpecials.isNotEmpty
-              ? controller.todaysSpecials.first
-              : controller.featuredItems.isNotEmpty
-              ? controller.featuredItems.first
-              : null;
+          final heroItem = controller.todaysSpecialItem;
+          final specialSettings = controller.todaysSpecialSettings;
 
           return CustomScrollView(
             slivers: [
@@ -102,12 +100,15 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      _HeroBanner(
-                        onOrderNow: heroItem == null
-                            ? null
-                            : () => onOpenItem(heroItem),
-                      ),
-                      const SizedBox(height: 22),
+                      if (specialSettings.enabled) ...[
+                        _HeroBanner(
+                          settings: specialSettings,
+                          onOrderNow: heroItem == null
+                              ? null
+                              : () => onOpenItem(heroItem),
+                        ),
+                        const SizedBox(height: 22),
+                      ],
                       const SectionHeader(title: 'Categories'),
                       const SizedBox(height: 12),
                       SizedBox(
@@ -213,8 +214,9 @@ class HomeScreen extends StatelessWidget {
 }
 
 class _HeroBanner extends StatelessWidget {
-  const _HeroBanner({required this.onOrderNow});
+  const _HeroBanner({required this.settings, required this.onOrderNow});
 
+  final TodaysSpecialSettings settings;
   final VoidCallback? onOrderNow;
 
   @override
@@ -250,8 +252,8 @@ class _HeroBanner extends StatelessWidget {
                 topRight: Radius.circular(26),
                 bottomRight: Radius.circular(26),
               ),
-              child: Image.asset(
-                'assets/images/chicken_kota.png',
+              child: _PromoImage(
+                imagePath: settings.imagePath,
                 width: 170,
                 fit: BoxFit.cover,
               ),
@@ -266,7 +268,9 @@ class _HeroBanner extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    "TODAY'S SPECIAL",
+                    settings.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: AppTheme.chesaOrange,
                       letterSpacing: 2.2,
@@ -274,7 +278,9 @@ class _HeroBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Flame-Grilled\nChicken Kota',
+                    settings.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
                       color: Colors.white,
                       fontSize: 30,
@@ -283,7 +289,9 @@ class _HeroBanner extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'R65 • Chips, Russian and Sauce included',
+                    settings.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: Colors.white70),
@@ -302,6 +310,37 @@ class _HeroBanner extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _PromoImage extends StatelessWidget {
+  const _PromoImage({
+    required this.imagePath,
+    required this.width,
+    required this.fit,
+  });
+
+  final String imagePath;
+  final double width;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final isRemote =
+        imagePath.startsWith('http://') || imagePath.startsWith('https://');
+
+    return Image(
+      image: isRemote ? NetworkImage(imagePath) : AssetImage(imagePath),
+      width: width,
+      fit: fit,
+      errorBuilder: (context, _, _) {
+        return Image.asset(
+          'assets/images/brand_mark.png',
+          width: width,
+          fit: fit,
+        );
+      },
     );
   }
 }

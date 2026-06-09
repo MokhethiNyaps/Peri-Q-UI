@@ -40,6 +40,18 @@ set role = 'admin'
 where email = 'owner@example.com';
 ```
 
+Admins can add, edit, and delete menu items, update store availability, and
+manage the Today's Special banner. To remove access later:
+
+```sql
+update public.profiles
+set role = 'customer'
+where email = 'owner@example.com';
+```
+
+The app enforces this through the `profiles.role = 'admin'` value and the RLS
+policies in `supabase/schema.sql`.
+
 ## 5. Run the Flutter app against Supabase
 
 ```bash
@@ -56,10 +68,35 @@ flutter build apk --debug --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supaba
 ## 6. Connected tables
 
 - `profiles`: stores app profile data and admin role.
-- `app_settings`: stores shared store state like `store_open`.
+- `app_settings`: stores shared store state like `store_open` plus Today's
+  Special text, image path/URL, visibility, and linked menu item.
 - `menu_items`: public menu catalog.
 - `orders`: order headers tied to the signed-in user.
 - `order_items`: snapshot of the items inside each order.
+
+## Production services
+
+Mandatory for the current production APK:
+
+- Supabase project with `supabase/schema.sql` applied.
+- Supabase Auth email/password enabled.
+- Anonymous sign-ins enabled for guest and phone-first checkout.
+- Custom SMTP provider for reliable auth emails and password resets.
+- A production signing key before publishing to an app store.
+
+Optional or future-facing:
+
+- Google Sign-In: configure Google OAuth in Supabase and add mobile redirect
+  handling before exposing a Google button in-app.
+- Apple Sign-In: required for iOS App Store distribution if other third-party
+  social login is offered; not required for Android-only release.
+- Push notifications: use Firebase Cloud Messaging if order status alerts are
+  needed outside the open app.
+- File/image storage: use Supabase Storage or another CDN if admins need to
+  upload new promotional/menu images. The current admin form accepts bundled
+  asset paths or public HTTPS image URLs.
+- Domain/hosting: needed for branded email sender domains, privacy/support
+  pages, OAuth redirect URLs, and password reset/deep-link callbacks.
 
 ## Notes
 

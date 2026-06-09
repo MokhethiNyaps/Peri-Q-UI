@@ -4,6 +4,7 @@ import '../models/app_auth_session.dart';
 import '../models/app_preferences.dart';
 import '../models/menu_item.dart';
 import '../models/order.dart';
+import '../models/todays_special_settings.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/menu_repository.dart';
 import '../repositories/order_repository.dart';
@@ -40,6 +41,7 @@ class AppController extends ChangeNotifier {
   bool isGuest = true;
   bool isAdmin = false;
   bool storeOpen = true;
+  TodaysSpecialSettings todaysSpecialSettings = const TodaysSpecialSettings();
   bool hasReturningSession = false;
   String selectedMenuCategory = 'All';
 
@@ -82,13 +84,36 @@ class AppController extends ChangeNotifier {
   List<MenuItemModel> get featuredItems => availableMenuItems.take(4).toList();
 
   List<MenuItemModel> get todaysSpecials {
+    final configuredItem = todaysSpecialItem;
     final specials = availableMenuItems.where((item) {
       return item.id == 'wings-1' ||
           item.id == 'kota-1' ||
           item.id == 'burger-1';
     }).toList();
 
-    return specials.isNotEmpty ? specials : availableMenuItems.take(3).toList();
+    final ordered = <MenuItemModel>[
+      ?configuredItem,
+      ...specials.where((item) => item.id != configuredItem?.id),
+    ];
+
+    return ordered.isNotEmpty ? ordered : availableMenuItems.take(3).toList();
+  }
+
+  MenuItemModel? get todaysSpecialItem {
+    if (!todaysSpecialSettings.enabled) {
+      return null;
+    }
+
+    final configuredId = todaysSpecialSettings.menuItemId;
+    if (configuredId != null && configuredId.isNotEmpty) {
+      for (final item in availableMenuItems) {
+        if (item.id == configuredId) {
+          return item;
+        }
+      }
+    }
+
+    return availableMenuItems.isEmpty ? null : availableMenuItems.first;
   }
 
   List<OrderModel> get activeOrders =>
@@ -114,6 +139,8 @@ class AppController extends ChangeNotifier {
       final authSession = await _authRepository.restoreSession();
       final fetchedMenuItems = await _menuRepository.fetchMenuItems();
       final fetchedStoreOpen = await _storeRepository.fetchStoreOpenStatus();
+      final fetchedTodaysSpecialSettings = await _storeRepository
+          .fetchTodaysSpecialSettings();
 
       _applySessionState(authSession, fallbackPreferences: preferences);
 
@@ -125,6 +152,7 @@ class AppController extends ChangeNotifier {
       selectedMenuCategory = preferences.selectedMenuCategory;
       menuItems = fetchedMenuItems;
       storeOpen = fetchedStoreOpen;
+      todaysSpecialSettings = fetchedTodaysSpecialSettings;
       orders = fetchedOrders;
 
       if (!categories.contains(selectedMenuCategory)) {
@@ -136,6 +164,7 @@ class AppController extends ChangeNotifier {
       userId = null;
       userEmail = null;
       isAdmin = false;
+      todaysSpecialSettings = const TodaysSpecialSettings();
       menuItems = [];
       orders = [];
       cart = [];
@@ -246,6 +275,25 @@ class AppController extends ChangeNotifier {
       await _savePreferences();
     } catch (_) {
       storeOpen = previousValue;
+      notifyListeners();
+      rethrow;
+    }
+
+    notifyListeners();
+  }
+
+  Future<void> updateTodaysSpecialSettings(
+    TodaysSpecialSettings settings,
+  ) async {
+    final previousSettings = todaysSpecialSettings;
+    todaysSpecialSettings = settings;
+    notifyListeners();
+
+    try {
+      todaysSpecialSettings = await _storeRepository
+          .updateTodaysSpecialSettings(settings);
+    } catch (_) {
+      todaysSpecialSettings = previousSettings;
       notifyListeners();
       rethrow;
     }

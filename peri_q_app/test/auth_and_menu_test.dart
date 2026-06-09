@@ -5,6 +5,7 @@ import 'package:peri_q_app/src/models/app_auth_session.dart';
 import 'package:peri_q_app/src/models/app_preferences.dart';
 import 'package:peri_q_app/src/models/menu_item.dart';
 import 'package:peri_q_app/src/models/order.dart';
+import 'package:peri_q_app/src/models/todays_special_settings.dart';
 import 'package:peri_q_app/src/repositories/auth_repository.dart';
 import 'package:peri_q_app/src/repositories/menu_repository.dart';
 import 'package:peri_q_app/src/repositories/order_repository.dart';
@@ -107,6 +108,41 @@ void main() {
     );
   });
 
+  group("AppController Today's Special management", () {
+    test(
+      'loads and updates promotional settings through the store repository',
+      () async {
+        final harness = _ControllerHarness(
+          todaysSpecialSettings: const TodaysSpecialSettings(
+            title: 'Lunch Deal',
+            subtitle: 'Kota and chips',
+            imagePath: 'assets/images/kota_alt.png',
+            menuItemId: 'kota',
+          ),
+          menuItems: [_menuItem(id: 'kota', name: 'Kota')],
+        );
+        await harness.controller.bootstrapFuture;
+
+        expect(harness.controller.todaysSpecialSettings.title, 'Lunch Deal');
+        expect(harness.controller.todaysSpecialItem?.id, 'kota');
+
+        await harness.controller.updateTodaysSpecialSettings(
+          const TodaysSpecialSettings(
+            enabled: false,
+            title: 'Dinner Deal',
+            subtitle: 'Wings and chips',
+            imagePath: 'https://example.com/wings.png',
+            menuItemId: 'wings',
+          ),
+        );
+
+        expect(harness.store.todaysSpecialSettings.title, 'Dinner Deal');
+        expect(harness.controller.todaysSpecialSettings.enabled, isFalse);
+        expect(harness.controller.todaysSpecialItem, isNull);
+      },
+    );
+  });
+
   group('AuthScreen', () {
     testWidgets('exposes sign up and password reset flows with validation', (
       tester,
@@ -159,12 +195,14 @@ void main() {
 }
 
 class _ControllerHarness {
-  _ControllerHarness({List<MenuItemModel>? menuItems})
-    : auth = _FakeAuthRepository(),
-      menu = _FakeMenuRepository(menuItems ?? const []),
-      orders = _FakeOrderRepository(),
-      preferences = _FakePreferencesRepository(),
-      store = _FakeStoreRepository() {
+  _ControllerHarness({
+    List<MenuItemModel>? menuItems,
+    TodaysSpecialSettings? todaysSpecialSettings,
+  }) : auth = _FakeAuthRepository(),
+       menu = _FakeMenuRepository(menuItems ?? const []),
+       orders = _FakeOrderRepository(),
+       preferences = _FakePreferencesRepository(),
+       store = _FakeStoreRepository(todaysSpecialSettings) {
     controller = AppController(
       authRepository: auth,
       menuRepository: menu,
@@ -331,7 +369,12 @@ class _FakePreferencesRepository implements PreferencesRepository {
 }
 
 class _FakeStoreRepository implements StoreRepository {
+  _FakeStoreRepository(TodaysSpecialSettings? todaysSpecialSettings)
+    : todaysSpecialSettings =
+          todaysSpecialSettings ?? const TodaysSpecialSettings();
+
   bool storeOpen = true;
+  TodaysSpecialSettings todaysSpecialSettings;
 
   @override
   Future<bool> fetchStoreOpenStatus() async {
@@ -342,6 +385,19 @@ class _FakeStoreRepository implements StoreRepository {
   Future<bool> updateStoreOpenStatus(bool isOpen) async {
     storeOpen = isOpen;
     return storeOpen;
+  }
+
+  @override
+  Future<TodaysSpecialSettings> fetchTodaysSpecialSettings() async {
+    return todaysSpecialSettings;
+  }
+
+  @override
+  Future<TodaysSpecialSettings> updateTodaysSpecialSettings(
+    TodaysSpecialSettings settings,
+  ) async {
+    todaysSpecialSettings = settings;
+    return todaysSpecialSettings;
   }
 }
 

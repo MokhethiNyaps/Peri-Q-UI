@@ -72,9 +72,23 @@ $$;
 create table if not exists public.app_settings (
   id text primary key,
   store_open boolean not null default true,
+  todays_special_enabled boolean not null default true,
+  todays_special_label text not null default 'TODAY''S SPECIAL',
+  todays_special_title text not null default 'Flame-Grilled Chicken Kota',
+  todays_special_subtitle text not null default 'R65 - Chips, Russian and Sauce included',
+  todays_special_image_path text not null default 'assets/images/chicken_kota.png',
+  todays_special_menu_item_id text default 'kota-1',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.app_settings
+  add column if not exists todays_special_enabled boolean not null default true,
+  add column if not exists todays_special_label text not null default 'TODAY''S SPECIAL',
+  add column if not exists todays_special_title text not null default 'Flame-Grilled Chicken Kota',
+  add column if not exists todays_special_subtitle text not null default 'R65 - Chips, Russian and Sauce included',
+  add column if not exists todays_special_image_path text not null default 'assets/images/chicken_kota.png',
+  add column if not exists todays_special_menu_item_id text default 'kota-1';
 
 drop trigger if exists app_settings_touch_updated_at on public.app_settings;
 create trigger app_settings_touch_updated_at

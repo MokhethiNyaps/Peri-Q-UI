@@ -6,6 +6,7 @@ import '../models/menu_item.dart';
 import '../models/order.dart';
 import '../widgets/order_status_chip.dart';
 import 'admin_menu_item_editor_screen.dart';
+import 'admin_todays_special_editor_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key, required this.controller});
@@ -67,6 +68,22 @@ class AdminDashboardScreen extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text('${item.name} deleted.')));
+  }
+
+  Future<void> _openTodaysSpecialEditor(BuildContext context) async {
+    final didSave = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AdminTodaysSpecialEditorScreen(controller: controller),
+      ),
+    );
+
+    if (didSave != true || !context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text("Today's Special updated.")));
   }
 
   Future<void> _rejectOrder(BuildContext context, OrderModel order) async {
@@ -186,6 +203,13 @@ class AdminDashboardScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              _TodaysSpecialAdminCard(
+                title: controller.todaysSpecialSettings.title,
+                subtitle: controller.todaysSpecialSettings.subtitle,
+                enabled: controller.todaysSpecialSettings.enabled,
+                onEdit: () => _openTodaysSpecialEditor(context),
+              ),
+              const SizedBox(height: 20),
               Wrap(
                 spacing: 14,
                 runSpacing: 14,
@@ -260,6 +284,74 @@ class AdminDashboardScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _TodaysSpecialAdminCard extends StatelessWidget {
+  const _TodaysSpecialAdminCard({
+    required this.title,
+    required this.subtitle,
+    required this.enabled,
+    required this.onEdit,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool enabled;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: AppTheme.periRed.withValues(alpha: 0.1),
+            child: const Icon(
+              Icons.local_fire_department_rounded,
+              color: AppTheme.periRed,
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Today's Special",
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  enabled ? title : 'Hidden from customers',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                if (enabled)
+                  Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+              ],
+            ),
+          ),
+          TextButton.icon(
+            onPressed: onEdit,
+            icon: const Icon(Icons.edit_outlined),
+            label: const Text('Edit'),
+          ),
+        ],
+      ),
     );
   }
 }

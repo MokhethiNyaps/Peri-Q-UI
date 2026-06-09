@@ -8,10 +8,7 @@ import 'auth_screen.dart';
 import 'customer_shell.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({
-    super.key,
-    required this.controller,
-  });
+  const SplashScreen({super.key, required this.controller});
 
   final AppController controller;
 
@@ -94,38 +91,41 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(32),
-                    child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
+                    child: Image.asset(
+                      'assets/images/brand_mark.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 28),
                 Text(
                   "RASTA'S",
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white70,
-                        letterSpacing: 5,
-                      ),
+                    color: Colors.white70,
+                    letterSpacing: 5,
+                  ),
                 ),
                 Text(
                   'PERI Q',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
-                        fontSize: 48,
-                      ),
+                    color: Colors.white,
+                    fontSize: 48,
+                  ),
                 ),
                 Text(
                   'CHESANYAMA',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white70,
-                        letterSpacing: 6,
-                        fontWeight: FontWeight.w700,
-                      ),
+                    color: Colors.white70,
+                    letterSpacing: 6,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: 18),
                 Text(
                   'Authentically Grilled. Delivered Hot.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white60,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.white60),
                 ),
               ],
             ),
