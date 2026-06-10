@@ -330,6 +330,11 @@ class AdminDashboardScreen extends StatelessWidget {
                       item: item,
                       onEdit: () => _openMenuEditor(context, item: item),
                       onDelete: () => _deleteMenuItem(context, item),
+                      onToggleAvailability: () async {
+                        await controller.updateMenuItem(
+                          item.copyWith(isAvailable: !item.isAvailable),
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -584,182 +589,161 @@ class _MenuItemCard extends StatelessWidget {
     required this.item,
     required this.onEdit,
     required this.onDelete,
+    required this.onToggleAvailability,
   });
 
   final MenuItemModel item;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onToggleAvailability;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isMobile = constraints.maxWidth < 600;
+    final imageSize = MediaQuery.sizeOf(context).width < 400 ? 60.0 : 72.0;
+    final horizontalGap = MediaQuery.sizeOf(context).width < 400 ? 8.0 : 12.0;
 
-        return Card(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onEdit,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: isMobile ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            AppImage(
+              imagePath: item.imagePath,
+              width: imageSize,
+              height: imageSize,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            SizedBox(width: horizontalGap),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  AppImage(
-                    imagePath: item.imagePath,
-                    width: 72,
-                    height: 72,
-                    borderRadius: BorderRadius.circular(12),
+                  Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: isMobile
-                        ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item.name,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.2,
-                                    ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item.category,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: AppTheme.ashGrey,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                              const SizedBox(height: 12),
-                              Wrap(
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                spacing: 16,
-                                runSpacing: 12,
-                                children: [
-                                  Text(
-                                    'R${item.price.toStringAsFixed(0)}',
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                  ),
-                                  _AvailabilityPill(isAvailable: item.isAvailable),
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        onPressed: onEdit,
-                                        icon: const Icon(Icons.edit_outlined),
-                                        tooltip: 'Edit',
-                                        color: Colors.grey[700],
-                                        constraints: const BoxConstraints(),
-                                        padding: const EdgeInsets.all(8),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        onPressed: onDelete,
-                                        icon: const Icon(Icons.delete_outline_rounded),
-                                        tooltip: 'Delete',
-                                        color: AppTheme.periRed,
-                                        constraints: const BoxConstraints(),
-                                        padding: const EdgeInsets.all(8),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ],
-                          )
-                        : Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      item.name,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      item.category,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                            color: AppTheme.ashGrey,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                flex: 1,
-                                child: Text(
-                                  'R${item.price.toStringAsFixed(0)}',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                flex: 2,
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: _AvailabilityPill(isAvailable: item.isAvailable),
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    onPressed: onEdit,
-                                    icon: const Icon(Icons.edit_outlined),
-                                    tooltip: 'Edit',
-                                    color: Colors.grey[700],
-                                    iconSize: 22,
-                                    splashRadius: 24,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  IconButton(
-                                    onPressed: onDelete,
-                                    icon: const Icon(Icons.delete_outline_rounded),
-                                    tooltip: 'Delete',
-                                    color: AppTheme.periRed,
-                                    iconSize: 22,
-                                    splashRadius: 24,
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                  ),
+                  const SizedBox(height: 4),
+                  _CategoryChip(label: item.category),
                 ],
               ),
             ),
+            SizedBox(width: horizontalGap),
+            Text(
+              'R${item.price.toStringAsFixed(0)}',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            SizedBox(width: horizontalGap),
+            _AvailabilityPill(isAvailable: item.isAvailable),
+            _MenuItemActions(
+              isAvailable: item.isAvailable,
+              onEdit: onEdit,
+              onDelete: onDelete,
+              onToggleAvailability: onToggleAvailability,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryChip extends StatelessWidget {
+  const _CategoryChip({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(
+          color: AppTheme.mutedSurface,
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppTheme.ashGrey,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MenuItemActions extends StatelessWidget {
+  const _MenuItemActions({
+    required this.isAvailable,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleAvailability,
+  });
+
+  final bool isAvailable;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleAvailability;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          onPressed: onToggleAvailability,
+          icon: Icon(
+            isAvailable
+                ? Icons.toggle_on_rounded
+                : Icons.toggle_off_rounded,
           ),
-        );
-      },
+          tooltip: isAvailable ? 'Mark unavailable' : 'Mark available',
+          color: isAvailable ? AppTheme.success : AppTheme.ashGrey,
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          padding: EdgeInsets.zero,
+        ),
+        IconButton(
+          onPressed: onEdit,
+          icon: const Icon(Icons.edit_outlined),
+          tooltip: 'Edit',
+          color: Colors.grey[700],
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          padding: EdgeInsets.zero,
+        ),
+        IconButton(
+          onPressed: onDelete,
+          icon: const Icon(Icons.delete_outline_rounded),
+          tooltip: 'Delete',
+          color: AppTheme.periRed,
+          visualDensity: VisualDensity.compact,
+          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+          padding: EdgeInsets.zero,
+        ),
+      ],
     );
   }
 }
