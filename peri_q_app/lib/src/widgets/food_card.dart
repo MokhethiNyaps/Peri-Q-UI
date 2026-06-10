@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
 import '../models/menu_item.dart';
+import 'app_image.dart';
 
 class FoodCard extends StatelessWidget {
   const FoodCard({
@@ -41,14 +42,11 @@ class FoodCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              ClipRRect(
+              AppImage(
+                imagePath: item.imagePath,
+                width: 84,
+                height: 84,
                 borderRadius: BorderRadius.circular(14),
-                child: Image.asset(
-                  item.imagePath,
-                  width: 84,
-                  height: 84,
-                  fit: BoxFit.cover,
-                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -137,13 +135,11 @@ class FoodCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: ClipRRect(
+                child: AppImage(
+                  imagePath: item.imagePath,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.asset(
-                    item.imagePath,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                  ),
                 ),
               ),
               const SizedBox(height: 10),

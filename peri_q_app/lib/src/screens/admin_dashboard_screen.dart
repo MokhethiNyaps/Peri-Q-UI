@@ -4,7 +4,10 @@ import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/menu_item.dart';
 import '../models/order.dart';
+import '../widgets/app_image.dart';
 import '../widgets/order_status_chip.dart';
+import 'admin_app_settings_screen.dart';
+import 'admin_category_manager_screen.dart';
 import 'admin_menu_item_editor_screen.dart';
 import 'admin_todays_special_editor_screen.dart';
 
@@ -84,6 +87,30 @@ class AdminDashboardScreen extends StatelessWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text("Today's Special updated.")));
+  }
+
+  Future<void> _openAppSettings(BuildContext context) async {
+    final didSave = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => AdminAppSettingsScreen(controller: controller),
+      ),
+    );
+
+    if (didSave != true || !context.mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('App settings updated.')));
+  }
+
+  Future<void> _openCategoryManager(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminCategoryManagerScreen(controller: controller),
+      ),
+    );
   }
 
   Future<void> _rejectOrder(BuildContext context, OrderModel order) async {
@@ -169,16 +196,21 @@ class AdminDashboardScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            controller.storeOpen
+                            controller.isStoreOpenNow
                                 ? 'Store Open'
                                 : 'Store Closed',
                             style: Theme.of(context).textTheme.headlineMedium
                                 ?.copyWith(color: Colors.white),
                           ),
                           Text(
-                            'Switch store availability for customers instantly.',
+                            controller.storeStatusLabel,
                             style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(color: Colors.white70),
+                          ),
+                          Text(
+                            '${controller.appSettings.openingTime} - ${controller.appSettings.closingTime}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: Colors.white54),
                           ),
                         ],
                       ),
@@ -201,6 +233,27 @@ class AdminDashboardScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'App Controls',
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 14),
+              _AdminActionCard(
+                icon: Icons.tune_rounded,
+                title: 'App Settings',
+                subtitle:
+                    'Store hours, availability, and Today\'s Special content.',
+                onTap: () => _openAppSettings(context),
+              ),
+              const SizedBox(height: 12),
+              _AdminActionCard(
+                icon: Icons.category_outlined,
+                title: 'Food Categories',
+                subtitle:
+                    '${controller.menuCategories.length} categories available for menu items.',
+                onTap: () => _openCategoryManager(context),
               ),
               const SizedBox(height: 20),
               _TodaysSpecialAdminCard(
@@ -356,6 +409,66 @@ class _TodaysSpecialAdminCard extends StatelessWidget {
   }
 }
 
+class _AdminActionCard extends StatelessWidget {
+  const _AdminActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Ink(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: AppTheme.periRed.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(icon, color: AppTheme.periRed),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.chevron_right_rounded, color: AppTheme.ashGrey),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MetricCard extends StatelessWidget {
   const _MetricCard({required this.title, required this.value});
 
@@ -480,79 +593,100 @@ class _MenuItemCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
+          AppImage(
+            imagePath: item.imagePath,
+            width: 86,
+            height: 86,
             borderRadius: BorderRadius.circular(14),
-            child: Image.asset(
-              item.imagePath,
-              width: 72,
-              height: 72,
-              fit: BoxFit.cover,
-            ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name, style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _AvailabilityPill(isAvailable: item.isAvailable),
+                  ],
+                ),
+                const SizedBox(height: 6),
                 Text(
                   item.category,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'R${item.price.toStringAsFixed(0)}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(color: AppTheme.periRed),
-                ),
                 const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: item.isAvailable
-                        ? AppTheme.success.withValues(alpha: 0.12)
-                        : AppTheme.periRed.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    item.isAvailable ? 'Available' : 'Hidden',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: item.isAvailable
-                          ? AppTheme.success
-                          : AppTheme.periRed,
-                      fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Text(
+                      'R${item.price.toStringAsFixed(0)}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(color: AppTheme.periRed),
                     ),
-                  ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined),
+                      tooltip: 'Edit',
+                    ),
+                    IconButton(
+                      onPressed: onDelete,
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      tooltip: 'Delete',
+                      color: AppTheme.periRed,
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 12),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              OutlinedButton(onPressed: onEdit, child: const Text('Edit')),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: onDelete,
-                style: TextButton.styleFrom(foregroundColor: AppTheme.periRed),
-                child: const Text('Delete'),
-              ),
-            ],
-          ),
         ],
+      ),
+    );
+  }
+}
+
+class _AvailabilityPill extends StatelessWidget {
+  const _AvailabilityPill({required this.isAvailable});
+
+  final bool isAvailable;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isAvailable ? AppTheme.success : AppTheme.periRed;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        isAvailable ? 'Available' : 'Hidden',
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
       ),
     );
   }

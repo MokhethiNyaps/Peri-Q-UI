@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../models/app_settings.dart';
 import '../../models/todays_special_settings.dart';
 import '../../repositories/store_repository.dart';
 
@@ -10,7 +11,10 @@ class SupabaseStoreRepository implements StoreRepository {
 
   static const _settingsId = 'default';
 
-  static const _todaysSpecialSelect = '''
+  static const _settingsSelect = '''
+store_open,
+opening_time,
+closing_time,
 todays_special_enabled,
 todays_special_label,
 todays_special_title,
@@ -18,6 +22,44 @@ todays_special_subtitle,
 todays_special_image_path,
 todays_special_menu_item_id
 ''';
+
+  @override
+  Future<AppSettings> fetchAppSettings() async {
+    try {
+      final response = await _client
+          .from('app_settings')
+          .select(_settingsSelect)
+          .eq('id', _settingsId)
+          .maybeSingle();
+
+      return AppSettings.fromJson(response);
+    } on PostgrestException catch (error) {
+      if (_isMissingSettingsColumns(error)) {
+        return const AppSettings();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<AppSettings> updateAppSettings(AppSettings settings) async {
+    try {
+      final response = await _client
+          .from('app_settings')
+          .upsert({'id': _settingsId, ...settings.toJson()})
+          .select(_settingsSelect)
+          .single();
+
+      return AppSettings.fromJson(response);
+    } on PostgrestException catch (error) {
+      if (_isMissingSettingsColumns(error)) {
+        throw StateError(
+          'Apply the latest supabase/schema.sql before updating app settings.',
+        );
+      }
+      rethrow;
+    }
+  }
 
   @override
   Future<bool> fetchStoreOpenStatus() async {
@@ -43,45 +85,24 @@ todays_special_menu_item_id
 
   @override
   Future<TodaysSpecialSettings> fetchTodaysSpecialSettings() async {
-    try {
-      final response = await _client
-          .from('app_settings')
-          .select(_todaysSpecialSelect)
-          .eq('id', _settingsId)
-          .maybeSingle();
-
-      return TodaysSpecialSettings.fromJson(response);
-    } on PostgrestException catch (error) {
-      if (_isMissingTodaysSpecialColumns(error)) {
-        return const TodaysSpecialSettings();
-      }
-      rethrow;
-    }
+    return (await fetchAppSettings()).todaysSpecial;
   }
 
   @override
   Future<TodaysSpecialSettings> updateTodaysSpecialSettings(
     TodaysSpecialSettings settings,
   ) async {
-    try {
-      final response = await _client
-          .from('app_settings')
-          .upsert({'id': _settingsId, ...settings.toJson()})
-          .select(_todaysSpecialSelect)
-          .single();
-
-      return TodaysSpecialSettings.fromJson(response);
-    } on PostgrestException catch (error) {
-      if (_isMissingTodaysSpecialColumns(error)) {
-        throw StateError(
-          'Apply the latest supabase/schema.sql before updating Today\'s Special.',
-        );
-      }
-      rethrow;
-    }
+    final currentSettings = await fetchAppSettings();
+    final updatedSettings = await updateAppSettings(
+      currentSettings.copyWith(todaysSpecial: settings),
+    );
+    return updatedSettings.todaysSpecial;
   }
 
-  bool _isMissingTodaysSpecialColumns(PostgrestException error) {
-    return error.code == '42703' || error.message.contains('todays_special_');
+  bool _isMissingSettingsColumns(PostgrestException error) {
+    return error.code == '42703' ||
+        error.message.contains('opening_time') ||
+        error.message.contains('closing_time') ||
+        error.message.contains('todays_special_');
   }
 }

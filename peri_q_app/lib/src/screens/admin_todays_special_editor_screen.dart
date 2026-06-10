@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
-import '../core/app_theme.dart';
 import '../models/todays_special_settings.dart';
+import '../widgets/app_image.dart';
 
 class AdminTodaysSpecialEditorScreen extends StatefulWidget {
   const AdminTodaysSpecialEditorScreen({super.key, required this.controller});
@@ -111,7 +111,11 @@ class _AdminTodaysSpecialEditorScreenState
               borderRadius: BorderRadius.circular(22),
               child: SizedBox(
                 height: 210,
-                child: _PromoPreviewImage(imagePath: imagePathController.text),
+                child: AppImage(
+                  imagePath: imagePathController.text,
+                  width: double.infinity,
+                  height: 210,
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -219,38 +223,5 @@ class _AdminTodaysSpecialEditorScreenState
       }
       return null;
     };
-  }
-}
-
-class _PromoPreviewImage extends StatelessWidget {
-  const _PromoPreviewImage({required this.imagePath});
-
-  final String imagePath;
-
-  @override
-  Widget build(BuildContext context) {
-    final isRemote =
-        imagePath.startsWith('http://') || imagePath.startsWith('https://');
-
-    return Image(
-      image: isRemote
-          ? NetworkImage(imagePath)
-          : AssetImage(
-              imagePath.isEmpty ? 'assets/images/brand_mark.png' : imagePath,
-            ),
-      width: double.infinity,
-      fit: BoxFit.cover,
-      errorBuilder: (context, _, _) {
-        return Container(
-          color: AppTheme.mutedSurface,
-          alignment: Alignment.center,
-          child: const Icon(
-            Icons.image_not_supported_outlined,
-            color: AppTheme.ashGrey,
-            size: 42,
-          ),
-        );
-      },
-    );
   }
 }

@@ -1,7 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/app_auth_session.dart';
 import '../models/app_preferences.dart';
+import '../models/app_settings.dart';
+import '../models/menu_category.dart';
 import '../models/menu_item.dart';
 import '../models/order.dart';
 import '../models/todays_special_settings.dart';
@@ -30,6 +34,8 @@ class AppController extends ChangeNotifier {
 
   late final Future<void> bootstrapFuture;
 
+  AppSettings appSettings = const AppSettings();
+  List<MenuCategoryModel> menuCategories = [];
   List<MenuItemModel> menuItems = [];
   List<OrderModel> orders = [];
   List<CartItemModel> cart = [];
@@ -61,16 +67,34 @@ class AppController extends ChangeNotifier {
     );
   }
 
-  List<String> get categories => _categoriesFor(menuItems);
+  List<String> get categories => _categoriesFor(
+        includeInactiveCategories: true,
+        items: menuItems,
+      );
 
   List<MenuItemModel> get availableMenuItems =>
       menuItems.where((item) => item.isAvailable).toList();
 
-  List<String> get customerCategories => _categoriesFor(availableMenuItems);
+  List<String> get customerCategories => _categoriesFor(
+        includeInactiveCategories: false,
+        items: availableMenuItems,
+      );
 
-  List<String> _categoriesFor(List<MenuItemModel> items) {
+  List<String> _categoriesFor({
+    required bool includeInactiveCategories,
+    required List<MenuItemModel> items,
+  }) {
     final categorySet = <String>{};
     final values = <String>['All'];
+
+    for (final category in menuCategories) {
+      if (!includeInactiveCategories && !category.isActive) {
+        continue;
+      }
+      if (categorySet.add(category.name)) {
+        values.add(category.name);
+      }
+    }
 
     for (final item in items) {
       if (categorySet.add(item.category)) {
@@ -130,6 +154,18 @@ class AppController extends ChangeNotifier {
 
   double totalFor(OrderType type) => subtotal + deliveryFeeFor(type);
 
+  bool get isStoreOpenNow => appSettings.isOpenAt(DateTime.now());
+
+  String get storeStatusLabel {
+    if (!appSettings.storeOpen) {
+      return 'Closed';
+    }
+    if (!isStoreOpenNow) {
+      return 'Closed - Opens ${appSettings.openingTime}';
+    }
+    return 'Open Now - Closes ${appSettings.closingTime}';
+  }
+
   Future<void> _bootstrap() async {
     try {
       isBootstrapping = true;
@@ -137,10 +173,9 @@ class AppController extends ChangeNotifier {
 
       final preferences = await _preferencesRepository.loadPreferences();
       final authSession = await _authRepository.restoreSession();
+      final fetchedAppSettings = await _storeRepository.fetchAppSettings();
+      final fetchedMenuCategories = await _menuRepository.fetchMenuCategories();
       final fetchedMenuItems = await _menuRepository.fetchMenuItems();
-      final fetchedStoreOpen = await _storeRepository.fetchStoreOpenStatus();
-      final fetchedTodaysSpecialSettings = await _storeRepository
-          .fetchTodaysSpecialSettings();
 
       _applySessionState(authSession, fallbackPreferences: preferences);
 
@@ -150,9 +185,9 @@ class AppController extends ChangeNotifier {
       );
 
       selectedMenuCategory = preferences.selectedMenuCategory;
+      _applyAppSettings(fetchedAppSettings);
+      menuCategories = fetchedMenuCategories;
       menuItems = fetchedMenuItems;
-      storeOpen = fetchedStoreOpen;
-      todaysSpecialSettings = fetchedTodaysSpecialSettings;
       orders = fetchedOrders;
 
       if (!categories.contains(selectedMenuCategory)) {
@@ -164,7 +199,8 @@ class AppController extends ChangeNotifier {
       userId = null;
       userEmail = null;
       isAdmin = false;
-      todaysSpecialSettings = const TodaysSpecialSettings();
+      _applyAppSettings(const AppSettings());
+      menuCategories = [];
       menuItems = [];
       orders = [];
       cart = [];
@@ -266,15 +302,20 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> toggleStoreOpen(bool value) async {
-    final previousValue = storeOpen;
-    storeOpen = value;
+    await updateAppSettings(appSettings.copyWith(storeOpen: value));
+    await _savePreferences();
+  }
+
+  Future<void> updateAppSettings(AppSettings settings) async {
+    final previousSettings = appSettings;
+    _applyAppSettings(settings);
     notifyListeners();
 
     try {
-      storeOpen = await _storeRepository.updateStoreOpenStatus(value);
-      await _savePreferences();
+      final savedSettings = await _storeRepository.updateAppSettings(settings);
+      _applyAppSettings(savedSettings);
     } catch (_) {
-      storeOpen = previousValue;
+      _applyAppSettings(previousSettings);
       notifyListeners();
       rethrow;
     }
@@ -285,20 +326,7 @@ class AppController extends ChangeNotifier {
   Future<void> updateTodaysSpecialSettings(
     TodaysSpecialSettings settings,
   ) async {
-    final previousSettings = todaysSpecialSettings;
-    todaysSpecialSettings = settings;
-    notifyListeners();
-
-    try {
-      todaysSpecialSettings = await _storeRepository
-          .updateTodaysSpecialSettings(settings);
-    } catch (_) {
-      todaysSpecialSettings = previousSettings;
-      notifyListeners();
-      rethrow;
-    }
-
-    notifyListeners();
+    await updateAppSettings(appSettings.copyWith(todaysSpecial: settings));
   }
 
   void setSelectedMenuCategory(String category) {
@@ -433,6 +461,67 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> addMenuCategory(MenuCategoryModel category) async {
+    await _menuRepository.addMenuCategory(category);
+    await _reloadMenuCategories();
+    notifyListeners();
+  }
+
+  Future<void> updateMenuCategory(MenuCategoryModel updatedCategory) async {
+    MenuCategoryModel? previousCategory;
+    for (final category in menuCategories) {
+      if (category.id == updatedCategory.id) {
+        previousCategory = category;
+        break;
+      }
+    }
+
+    final savedCategory = await _menuRepository.updateMenuCategory(
+      updatedCategory,
+    );
+
+    if (previousCategory != null &&
+        previousCategory.name != savedCategory.name) {
+      final affectedItems = menuItems.where(
+        (item) => item.category == previousCategory.name,
+      );
+      for (final item in affectedItems) {
+        await _menuRepository.updateMenuItem(
+          item.copyWith(category: savedCategory.name),
+        );
+      }
+    }
+
+    await _reloadMenuCategories();
+    await _reloadMenuItems();
+    notifyListeners();
+  }
+
+  Future<void> deleteMenuCategory(MenuCategoryModel category) async {
+    final hasMenuItems = menuItems.any((item) => item.category == category.name);
+    if (hasMenuItems) {
+      throw StateError(
+        'Move or edit menu items in this category before deleting it.',
+      );
+    }
+
+    await _menuRepository.deleteMenuCategory(category.id);
+    await _reloadMenuCategories();
+    notifyListeners();
+  }
+
+  Future<String> uploadMenuItemImage({
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+  }) {
+    return _menuRepository.uploadMenuItemImage(
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
+  }
+
   Future<void> _activateSession(
     AppAuthSession session, {
     required bool guest,
@@ -480,6 +569,16 @@ class AppController extends ChangeNotifier {
         if (order.id == updatedOrder.id) updatedOrder else order,
     ];
     notifyListeners();
+  }
+
+  void _applyAppSettings(AppSettings settings) {
+    appSettings = settings;
+    storeOpen = settings.storeOpen;
+    todaysSpecialSettings = settings.todaysSpecial;
+  }
+
+  Future<void> _reloadMenuCategories() async {
+    menuCategories = await _menuRepository.fetchMenuCategories();
   }
 
   Future<void> _reloadMenuItems() async {

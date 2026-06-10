@@ -1,7 +1,12 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
+import '../core/app_theme.dart';
 import '../models/menu_item.dart';
+import '../widgets/app_image.dart';
 
 class AdminMenuItemEditorScreen extends StatefulWidget {
   const AdminMenuItemEditorScreen({
@@ -23,12 +28,14 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
   late final TextEditingController nameController;
   late final TextEditingController descriptionController;
   late final TextEditingController priceController;
+  late final TextEditingController imagePathController;
   late String selectedCategory;
-  late String selectedImagePath;
   late bool isAvailable;
 
   late final List<String> categoryOptions;
   late final List<String> imageOptions;
+  bool isSaving = false;
+  bool isUploadingImage = false;
 
   bool get isEditing => widget.item != null;
 
@@ -40,9 +47,16 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
         .where((category) => category != 'All')
         .toList();
     categoryOptions = categories.isEmpty ? ['General'] : categories;
+    if (item != null && !categoryOptions.contains(item.category)) {
+      categoryOptions = [...categoryOptions, item.category];
+    }
     imageOptions = {
       ...widget.controller.menuItems.map((menuItem) => menuItem.imagePath),
       'assets/images/brand_mark.png',
+      'assets/images/chicken_kota.png',
+      'assets/images/kota_alt.png',
+      'assets/images/mixed_grill.png',
+      'assets/images/wings.png',
     }.toList();
 
     nameController = TextEditingController(text: item?.name ?? '');
@@ -52,8 +66,10 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
     priceController = TextEditingController(
       text: item?.price.toStringAsFixed(0) ?? '',
     );
+    imagePathController = TextEditingController(
+      text: item?.imagePath ?? imageOptions.first,
+    );
     selectedCategory = item?.category ?? categoryOptions.first;
-    selectedImagePath = item?.imagePath ?? imageOptions.first;
     isAvailable = item?.isAvailable ?? true;
   }
 
@@ -62,7 +78,60 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
     nameController.dispose();
     descriptionController.dispose();
     priceController.dispose();
+    imagePathController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickAndUploadImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+      withData: true,
+    );
+
+    if (result == null || result.files.isEmpty) {
+      return;
+    }
+
+    final pickedFile = result.files.single;
+    final bytes = pickedFile.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not read the selected image.')),
+      );
+      return;
+    }
+
+    setState(() => isUploadingImage = true);
+    try {
+      final imageUrl = await widget.controller.uploadMenuItemImage(
+        bytes: Uint8List.fromList(bytes),
+        fileName: pickedFile.name,
+        contentType: _contentTypeFor(pickedFile.extension ?? pickedFile.name),
+      );
+
+      if (!mounted) {
+        return;
+      }
+      setState(() => imagePathController.text = imageUrl);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Image uploaded.')),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isUploadingImage = false);
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -72,40 +141,57 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
 
     final price = double.parse(priceController.text.trim());
 
-    if (isEditing) {
-      await widget.controller.updateMenuItem(
-        widget.item!.copyWith(
-          name: nameController.text.trim(),
-          description: descriptionController.text.trim(),
-          price: price,
-          category: selectedCategory,
-          imagePath: selectedImagePath,
-          isAvailable: isAvailable,
+    setState(() => isSaving = true);
+    try {
+      if (isEditing) {
+        await widget.controller.updateMenuItem(
+          widget.item!.copyWith(
+            name: nameController.text.trim(),
+            description: descriptionController.text.trim(),
+            price: price,
+            category: selectedCategory,
+            imagePath: imagePathController.text.trim(),
+            isAvailable: isAvailable,
+          ),
+        );
+      } else {
+        await widget.controller.addMenuItem(
+          MenuItemModel(
+            id: 'menu-${DateTime.now().millisecondsSinceEpoch}',
+            name: nameController.text.trim(),
+            description: descriptionController.text.trim(),
+            price: price,
+            category: selectedCategory,
+            imagePath: imagePathController.text.trim(),
+            isAvailable: isAvailable,
+          ),
+        );
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString().replaceFirst('Bad state: ', '')),
         ),
       );
-    } else {
-      await widget.controller.addMenuItem(
-        MenuItemModel(
-          id: 'menu-${DateTime.now().millisecondsSinceEpoch}',
-          name: nameController.text.trim(),
-          description: descriptionController.text.trim(),
-          price: price,
-          category: selectedCategory,
-          imagePath: selectedImagePath,
-          isAvailable: isAvailable,
-        ),
-      );
+      setState(() => isSaving = false);
     }
-
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
+    final selectedPreset = imageOptions.contains(imagePathController.text)
+        ? imagePathController.text
+        : null;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isEditing ? 'Edit Menu Item' : 'Add Menu Item'),
@@ -115,13 +201,11 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
           children: [
-            ClipRRect(
+            AppImage(
+              imagePath: imagePathController.text,
+              width: double.infinity,
+              height: 210,
               borderRadius: BorderRadius.circular(22),
-              child: Image.asset(
-                selectedImagePath,
-                height: 210,
-                fit: BoxFit.cover,
-              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -185,7 +269,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              initialValue: selectedImagePath,
+              initialValue: selectedPreset,
               decoration: const InputDecoration(labelText: 'Image Preset'),
               items: imageOptions.map((imagePath) {
                 final fileName = imagePath.split('/').last;
@@ -198,8 +282,44 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
                 if (value == null) {
                   return;
                 }
-                setState(() => selectedImagePath = value);
+                setState(() => imagePathController.text = value);
               },
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: imagePathController,
+              decoration: const InputDecoration(
+                labelText: 'Image Path or Public URL',
+                hintText: 'assets/images/brand_mark.png',
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Upload an image or enter an image path.';
+                }
+                return null;
+              },
+              onChanged: (_) => setState(() {}),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: isUploadingImage ? null : _pickAndUploadImage,
+              icon: isUploadingImage
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.upload_file_rounded),
+              label: Text(
+                isUploadingImage ? 'Uploading image...' : 'Upload Image',
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Images upload to the Supabase menu-images bucket and this item stores the public URL.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppTheme.ashGrey,
+                  ),
             ),
             const SizedBox(height: 12),
             SwitchListTile.adaptive(
@@ -218,11 +338,32 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: SafeArea(
           child: ElevatedButton(
-            onPressed: () => _save(),
-            child: Text(isEditing ? 'Save Changes' : 'Add Menu Item'),
+            onPressed: isSaving || isUploadingImage ? null : _save,
+            child: Text(
+              isSaving
+                  ? 'Saving...'
+                  : isEditing
+                  ? 'Save Changes'
+                  : 'Add Menu Item',
+            ),
           ),
         ),
       ),
     );
+  }
+
+  String _contentTypeFor(String fileNameOrExtension) {
+    final extension = fileNameOrExtension
+        .split('.')
+        .last
+        .trim()
+        .toLowerCase();
+    return switch (extension) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'gif' => 'image/gif',
+      _ => 'application/octet-stream',
+    };
   }
 }

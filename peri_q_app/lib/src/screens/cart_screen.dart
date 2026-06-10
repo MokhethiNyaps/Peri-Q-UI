@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/order.dart';
+import '../widgets/app_image.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -92,14 +93,11 @@ class _CartScreenState extends State<CartScreen> {
                               Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  ClipRRect(
+                                  AppImage(
+                                    imagePath: cartItem.item.imagePath,
+                                    width: 72,
+                                    height: 72,
                                     borderRadius: BorderRadius.circular(12),
-                                    child: Image.asset(
-                                      cartItem.item.imagePath,
-                                      width: 72,
-                                      height: 72,
-                                      fit: BoxFit.cover,
-                                    ),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(

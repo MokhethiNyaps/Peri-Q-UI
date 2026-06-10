@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/menu_item.dart';
+import '../widgets/app_image.dart';
 import 'cart_screen.dart';
 
 Future<void> showItemCustomizationFlow(
@@ -81,14 +82,11 @@ class _CustomizerSheetState extends State<_CustomizerSheet> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ClipRRect(
+              AppImage(
+                imagePath: widget.item.imagePath,
+                width: double.infinity,
+                height: 220,
                 borderRadius: BorderRadius.circular(24),
-                child: Image.asset(
-                  widget.item.imagePath,
-                  width: double.infinity,
-                  height: 220,
-                  fit: BoxFit.cover,
-                ),
               ),
               const SizedBox(height: 18),
               Text(widget.item.name, style: Theme.of(context).textTheme.displayLarge),

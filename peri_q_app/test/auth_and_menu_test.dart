@@ -1,8 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peri_q_app/src/core/app_controller.dart';
 import 'package:peri_q_app/src/models/app_auth_session.dart';
 import 'package:peri_q_app/src/models/app_preferences.dart';
+import 'package:peri_q_app/src/models/app_settings.dart';
+import 'package:peri_q_app/src/models/menu_category.dart';
 import 'package:peri_q_app/src/models/menu_item.dart';
 import 'package:peri_q_app/src/models/order.dart';
 import 'package:peri_q_app/src/models/todays_special_settings.dart';
@@ -108,6 +112,35 @@ void main() {
     );
   });
 
+  group('AppController app settings management', () {
+    test('loads and updates store hours and availability', () async {
+      final harness = _ControllerHarness(
+        appSettings: const AppSettings(
+          openingTime: '00:00',
+          closingTime: '23:59',
+        ),
+      );
+      await harness.controller.bootstrapFuture;
+
+      expect(harness.controller.appSettings.openingTime, '00:00');
+      expect(harness.controller.appSettings.closingTime, '23:59');
+      expect(harness.controller.isStoreOpenNow, isTrue);
+
+      await harness.controller.updateAppSettings(
+        const AppSettings(
+          storeOpen: false,
+          openingTime: '08:00',
+          closingTime: '17:00',
+        ),
+      );
+
+      expect(harness.store.appSettings.storeOpen, isFalse);
+      expect(harness.controller.storeOpen, isFalse);
+      expect(harness.controller.appSettings.openingTime, '08:00');
+      expect(harness.controller.storeStatusLabel, 'Closed');
+    });
+  });
+
   group("AppController Today's Special management", () {
     test(
       'loads and updates promotional settings through the store repository',
@@ -192,17 +225,98 @@ void main() {
       expect(find.text('Use at least 6 characters.'), findsOneWidget);
     });
   });
+
+  group('AppController category management', () {
+    test('creates categories and reflects them in customer filters', () async {
+      final harness = _ControllerHarness(
+        menuCategories: const [
+          MenuCategoryModel(id: 'cat-meals', name: 'Meals', sortOrder: 10),
+        ],
+        menuItems: [_menuItem(id: 'kota', name: 'Kota', category: 'Meals')],
+      );
+      await harness.controller.bootstrapFuture;
+
+      await harness.controller.addMenuCategory(
+        const MenuCategoryModel(id: 'cat-drinks', name: 'Drinks', sortOrder: 20),
+      );
+
+      expect(harness.controller.categories, ['All', 'Meals', 'Drinks']);
+      expect(harness.controller.customerCategories, [
+        'All',
+        'Meals',
+        'Drinks',
+      ]);
+    });
+
+    test('renames categories and updates menu items using that category', () async {
+      final harness = _ControllerHarness(
+        menuCategories: const [
+          MenuCategoryModel(id: 'cat-meals', name: 'Meals', sortOrder: 10),
+        ],
+        menuItems: [_menuItem(id: 'kota', name: 'Kota', category: 'Meals')],
+      );
+      await harness.controller.bootstrapFuture;
+
+      await harness.controller.updateMenuCategory(
+        const MenuCategoryModel(id: 'cat-meals', name: 'Lunch', sortOrder: 10),
+      );
+
+      expect(harness.controller.menuCategories.single.name, 'Lunch');
+      expect(harness.controller.menuItems.single.category, 'Lunch');
+      expect(harness.controller.customerCategories, ['All', 'Lunch']);
+    });
+
+    test('prevents deleting categories still used by menu items', () async {
+      final harness = _ControllerHarness(
+        menuCategories: const [
+          MenuCategoryModel(id: 'cat-meals', name: 'Meals', sortOrder: 10),
+        ],
+        menuItems: [_menuItem(id: 'kota', name: 'Kota', category: 'Meals')],
+      );
+      await harness.controller.bootstrapFuture;
+
+      await expectLater(
+        harness.controller.deleteMenuCategory(harness.controller.menuCategories.single),
+        throwsStateError,
+      );
+    });
+
+    test('uploads menu item images through the menu repository', () async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+
+      final url = await harness.controller.uploadMenuItemImage(
+        bytes: Uint8List.fromList([1, 2, 3]),
+        fileName: 'Kota Photo.png',
+        contentType: 'image/png',
+      );
+
+      expect(url, 'https://example.test/menu-images/Kota Photo.png');
+      expect(harness.menu.lastUploadContentType, 'image/png');
+    });
+  });
 }
 
 class _ControllerHarness {
   _ControllerHarness({
     List<MenuItemModel>? menuItems,
+    List<MenuCategoryModel>? menuCategories,
     TodaysSpecialSettings? todaysSpecialSettings,
+    AppSettings? appSettings,
   }) : auth = _FakeAuthRepository(),
-       menu = _FakeMenuRepository(menuItems ?? const []),
+       menu = _FakeMenuRepository(
+         menuItems ?? const [],
+         menuCategories ?? const [],
+       ),
        orders = _FakeOrderRepository(),
        preferences = _FakePreferencesRepository(),
-       store = _FakeStoreRepository(todaysSpecialSettings) {
+       store = _FakeStoreRepository(
+         appSettings ??
+             AppSettings(
+               todaysSpecial:
+                   todaysSpecialSettings ?? const TodaysSpecialSettings(),
+             ),
+       ) {
     controller = AppController(
       authRepository: auth,
       menuRepository: menu,
@@ -294,11 +408,16 @@ class _FakeAuthRepository implements AuthRepository {
 }
 
 class _FakeMenuRepository implements MenuRepository {
-  _FakeMenuRepository(List<MenuItemModel> seedItems)
-    : items = List<MenuItemModel>.from(seedItems);
+  _FakeMenuRepository(
+    List<MenuItemModel> seedItems,
+    List<MenuCategoryModel> seedCategories,
+  ) : items = List<MenuItemModel>.from(seedItems),
+      categories = List<MenuCategoryModel>.from(seedCategories);
 
   final List<MenuItemModel> items;
+  final List<MenuCategoryModel> categories;
   int fetchCount = 0;
+  String? lastUploadContentType;
 
   @override
   Future<List<MenuItemModel>> fetchMenuItems() async {
@@ -325,6 +444,44 @@ class _FakeMenuRepository implements MenuRepository {
   @override
   Future<void> deleteMenuItem(String menuItemId) async {
     items.removeWhere((entry) => entry.id == menuItemId);
+  }
+
+  @override
+  Future<List<MenuCategoryModel>> fetchMenuCategories() async {
+    return List<MenuCategoryModel>.from(categories);
+  }
+
+  @override
+  Future<MenuCategoryModel> addMenuCategory(MenuCategoryModel category) async {
+    categories.add(category);
+    return category;
+  }
+
+  @override
+  Future<MenuCategoryModel> updateMenuCategory(
+    MenuCategoryModel category,
+  ) async {
+    final index = categories.indexWhere((entry) => entry.id == category.id);
+    if (index == -1) {
+      throw StateError('Category not found.');
+    }
+    categories[index] = category;
+    return category;
+  }
+
+  @override
+  Future<void> deleteMenuCategory(String categoryId) async {
+    categories.removeWhere((entry) => entry.id == categoryId);
+  }
+
+  @override
+  Future<String> uploadMenuItemImage({
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    lastUploadContentType = contentType;
+    return 'https://example.test/menu-images/$fileName';
   }
 }
 
@@ -369,12 +526,23 @@ class _FakePreferencesRepository implements PreferencesRepository {
 }
 
 class _FakeStoreRepository implements StoreRepository {
-  _FakeStoreRepository(TodaysSpecialSettings? todaysSpecialSettings)
-    : todaysSpecialSettings =
-          todaysSpecialSettings ?? const TodaysSpecialSettings();
+  _FakeStoreRepository(this.appSettings);
 
-  bool storeOpen = true;
-  TodaysSpecialSettings todaysSpecialSettings;
+  AppSettings appSettings;
+
+  bool get storeOpen => appSettings.storeOpen;
+  TodaysSpecialSettings get todaysSpecialSettings => appSettings.todaysSpecial;
+
+  @override
+  Future<AppSettings> fetchAppSettings() async {
+    return appSettings;
+  }
+
+  @override
+  Future<AppSettings> updateAppSettings(AppSettings settings) async {
+    appSettings = settings;
+    return appSettings;
+  }
 
   @override
   Future<bool> fetchStoreOpenStatus() async {
@@ -383,7 +551,7 @@ class _FakeStoreRepository implements StoreRepository {
 
   @override
   Future<bool> updateStoreOpenStatus(bool isOpen) async {
-    storeOpen = isOpen;
+    appSettings = appSettings.copyWith(storeOpen: isOpen);
     return storeOpen;
   }
 
@@ -396,7 +564,7 @@ class _FakeStoreRepository implements StoreRepository {
   Future<TodaysSpecialSettings> updateTodaysSpecialSettings(
     TodaysSpecialSettings settings,
   ) async {
-    todaysSpecialSettings = settings;
+    appSettings = appSettings.copyWith(todaysSpecial: settings);
     return todaysSpecialSettings;
   }
 }

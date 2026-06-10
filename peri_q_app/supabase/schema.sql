@@ -72,6 +72,8 @@ $$;
 create table if not exists public.app_settings (
   id text primary key,
   store_open boolean not null default true,
+  opening_time text not null default '10:00',
+  closing_time text not null default '21:00',
   todays_special_enabled boolean not null default true,
   todays_special_label text not null default 'TODAY''S SPECIAL',
   todays_special_title text not null default 'Flame-Grilled Chicken Kota',
@@ -83,6 +85,8 @@ create table if not exists public.app_settings (
 );
 
 alter table public.app_settings
+  add column if not exists opening_time text not null default '10:00',
+  add column if not exists closing_time text not null default '21:00',
   add column if not exists todays_special_enabled boolean not null default true,
   add column if not exists todays_special_label text not null default 'TODAY''S SPECIAL',
   add column if not exists todays_special_title text not null default 'Flame-Grilled Chicken Kota',
@@ -97,6 +101,29 @@ for each row execute procedure public.touch_updated_at();
 
 insert into public.app_settings (id, store_open)
 values ('default', true)
+on conflict (id) do nothing;
+
+create table if not exists public.menu_categories (
+  id text primary key,
+  name text not null unique,
+  sort_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+drop trigger if exists menu_categories_touch_updated_at on public.menu_categories;
+create trigger menu_categories_touch_updated_at
+before update on public.menu_categories
+for each row execute procedure public.touch_updated_at();
+
+insert into public.menu_categories (id, name, sort_order)
+values
+  ('cat-kotas', 'Kotas', 10),
+  ('cat-chicken', 'Chicken', 20),
+  ('cat-grills', 'Grills', 30),
+  ('cat-sides', 'Sides', 40),
+  ('cat-drinks', 'Drinks', 50)
 on conflict (id) do nothing;
 
 create table if not exists public.menu_items (
@@ -168,6 +195,7 @@ on public.order_items (order_id);
 
 alter table public.profiles enable row level security;
 alter table public.app_settings enable row level security;
+alter table public.menu_categories enable row level security;
 alter table public.menu_items enable row level security;
 alter table public.orders enable row level security;
 alter table public.order_items enable row level security;
@@ -215,6 +243,35 @@ on public.app_settings
 for insert
 to authenticated
 with check (public.is_admin());
+
+drop policy if exists "menu_categories_read_all" on public.menu_categories;
+create policy "menu_categories_read_all"
+on public.menu_categories
+for select
+to anon, authenticated
+using (true);
+
+drop policy if exists "menu_categories_admin_insert" on public.menu_categories;
+create policy "menu_categories_admin_insert"
+on public.menu_categories
+for insert
+to authenticated
+with check (public.is_admin());
+
+drop policy if exists "menu_categories_admin_update" on public.menu_categories;
+create policy "menu_categories_admin_update"
+on public.menu_categories
+for update
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+drop policy if exists "menu_categories_admin_delete" on public.menu_categories;
+create policy "menu_categories_admin_delete"
+on public.menu_categories
+for delete
+to authenticated
+using (public.is_admin());
 
 drop policy if exists "menu_items_read_all" on public.menu_items;
 create policy "menu_items_read_all"
@@ -303,6 +360,16 @@ begin
     from pg_publication_tables
     where pubname = 'supabase_realtime'
       and schemaname = 'public'
+      and tablename = 'menu_categories'
+  ) then
+    alter publication supabase_realtime add table public.menu_categories;
+  end if;
+
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
       and tablename = 'menu_items'
   ) then
     alter publication supabase_realtime add table public.menu_items;
@@ -339,3 +406,37 @@ begin
   end if;
 end;
 $$;
+
+insert into storage.buckets (id, name, public)
+values ('menu-images', 'menu-images', true)
+on conflict (id) do update
+  set public = excluded.public;
+
+drop policy if exists "menu_images_public_read" on storage.objects;
+create policy "menu_images_public_read"
+on storage.objects
+for select
+to anon, authenticated
+using (bucket_id = 'menu-images');
+
+drop policy if exists "menu_images_admin_insert" on storage.objects;
+create policy "menu_images_admin_insert"
+on storage.objects
+for insert
+to authenticated
+with check (bucket_id = 'menu-images' and public.is_admin());
+
+drop policy if exists "menu_images_admin_update" on storage.objects;
+create policy "menu_images_admin_update"
+on storage.objects
+for update
+to authenticated
+using (bucket_id = 'menu-images' and public.is_admin())
+with check (bucket_id = 'menu-images' and public.is_admin());
+
+drop policy if exists "menu_images_admin_delete" on storage.objects;
+create policy "menu_images_admin_delete"
+on storage.objects
+for delete
+to authenticated
+using (bucket_id = 'menu-images' and public.is_admin());
