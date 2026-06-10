@@ -116,7 +116,7 @@ class AppController extends ChangeNotifier {
     }).toList();
 
     final ordered = <MenuItemModel>[
-      ?configuredItem,
+      if (configuredItem != null) configuredItem,
       ...specials.where((item) => item.id != configuredItem?.id),
     ];
 
