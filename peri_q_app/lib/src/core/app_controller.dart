@@ -482,8 +482,9 @@ class AppController extends ChangeNotifier {
 
     if (previousCategory != null &&
         previousCategory.name != savedCategory.name) {
+      final previousName = previousCategory.name;
       final affectedItems = menuItems.where(
-        (item) => item.category == previousCategory.name,
+        (item) => item.category == previousName,
       );
       for (final item in affectedItems) {
         await _menuRepository.updateMenuItem(

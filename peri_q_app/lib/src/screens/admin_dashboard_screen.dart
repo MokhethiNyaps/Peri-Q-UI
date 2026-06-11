@@ -599,68 +599,98 @@ class _MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageSize = MediaQuery.sizeOf(context).width < 400 ? 60.0 : 72.0;
-    final horizontalGap = MediaQuery.sizeOf(context).width < 400 ? 8.0 : 12.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = constraints.maxWidth;
+        final isCompact = cardWidth < 520;
+        final imageSize = cardWidth < 400 ? 60.0 : 72.0;
+        final horizontalGap = cardWidth < 400 ? 8.0 : 12.0;
+        final priceLabel = 'R${item.price.toStringAsFixed(0)}';
+        final priceStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            );
 
-    return Card(
-      elevation: 0,
-      margin: EdgeInsets.zero,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            AppImage(
-              imagePath: item.imagePath,
-              width: imageSize,
-              height: imageSize,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            SizedBox(width: horizontalGap),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+        return Card(
+          elevation: 0,
+          margin: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AppImage(
+                  imagePath: item.imagePath,
+                  width: imageSize,
+                  height: imageSize,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                SizedBox(width: horizontalGap),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (isCompact)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _CategoryChip(label: item.category),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              priceLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.right,
+                              style: priceStyle,
+                            ),
+                            const SizedBox(width: 8),
+                            _AvailabilityPill(isAvailable: item.isAvailable),
+                          ],
+                        )
+                      else
+                        _CategoryChip(label: item.category),
+                    ],
+                  ),
+                ),
+                if (!isCompact) ...[
+                  SizedBox(width: horizontalGap),
                   Text(
-                    item.name,
+                    priceLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                    textAlign: TextAlign.right,
+                    style: priceStyle,
                   ),
-                  const SizedBox(height: 4),
-                  _CategoryChip(label: item.category),
+                  SizedBox(width: horizontalGap),
+                  _AvailabilityPill(isAvailable: item.isAvailable),
                 ],
-              ),
+                _MenuItemActions(
+                  isAvailable: item.isAvailable,
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                  onToggleAvailability: onToggleAvailability,
+                  useMenu: cardWidth < 360,
+                ),
+              ],
             ),
-            SizedBox(width: horizontalGap),
-            Text(
-              'R${item.price.toStringAsFixed(0)}',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            SizedBox(width: horizontalGap),
-            _AvailabilityPill(isAvailable: item.isAvailable),
-            _MenuItemActions(
-              isAvailable: item.isAvailable,
-              onEdit: onEdit,
-              onDelete: onDelete,
-              onToggleAvailability: onToggleAvailability,
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -672,23 +702,20 @@ class _CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        decoration: BoxDecoration(
-          color: AppTheme.mutedSurface,
-          borderRadius: BorderRadius.circular(999),
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppTheme.ashGrey,
-                fontWeight: FontWeight.w600,
-              ),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppTheme.mutedSurface,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: AppTheme.ashGrey,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
@@ -700,15 +727,73 @@ class _MenuItemActions extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onToggleAvailability,
+    this.useMenu = false,
   });
 
   final bool isAvailable;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggleAvailability;
+  final bool useMenu;
 
   @override
   Widget build(BuildContext context) {
+    if (useMenu) {
+      return PopupMenuButton<_MenuItemAction>(
+        tooltip: 'Menu item actions',
+        icon: const Icon(Icons.more_vert_rounded, color: AppTheme.ashGrey),
+        onSelected: (action) {
+          switch (action) {
+            case _MenuItemAction.toggleAvailability:
+              onToggleAvailability();
+            case _MenuItemAction.edit:
+              onEdit();
+            case _MenuItemAction.delete:
+              onDelete();
+          }
+        },
+        itemBuilder: (context) => [
+          PopupMenuItem(
+            value: _MenuItemAction.toggleAvailability,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                isAvailable
+                    ? Icons.toggle_on_rounded
+                    : Icons.toggle_off_rounded,
+                color: isAvailable ? AppTheme.success : AppTheme.ashGrey,
+              ),
+              title: Text(
+                isAvailable ? 'Mark unavailable' : 'Mark available',
+              ),
+              dense: true,
+            ),
+          ),
+          const PopupMenuItem(
+            value: _MenuItemAction.edit,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.edit_outlined),
+              title: Text('Edit'),
+              dense: true,
+            ),
+          ),
+          const PopupMenuItem(
+            value: _MenuItemAction.delete,
+            child: ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                Icons.delete_outline_rounded,
+                color: AppTheme.periRed,
+              ),
+              title: Text('Delete'),
+              dense: true,
+            ),
+          ),
+        ],
+      );
+    }
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -747,6 +832,8 @@ class _MenuItemActions extends StatelessWidget {
     );
   }
 }
+
+enum _MenuItemAction { toggleAvailability, edit, delete }
 
 class _AvailabilityPill extends StatelessWidget {
   const _AvailabilityPill({required this.isAvailable});
