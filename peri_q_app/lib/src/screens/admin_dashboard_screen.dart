@@ -599,98 +599,93 @@ class _MenuItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardWidth = constraints.maxWidth;
-        final isCompact = cardWidth < 520;
-        final imageSize = cardWidth < 400 ? 60.0 : 72.0;
-        final horizontalGap = cardWidth < 400 ? 8.0 : 12.0;
-        final priceLabel = 'R${item.price.toStringAsFixed(0)}';
-        final priceStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-            );
+    final priceLabel = 'R${item.price.toStringAsFixed(0)}';
 
-        return Card(
-          elevation: 0,
-          margin: EdgeInsets.zero,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                AppImage(
-                  imagePath: item.imagePath,
-                  width: imageSize,
-                  height: imageSize,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                SizedBox(width: horizontalGap),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        item.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const SizedBox(height: 4),
-                      if (isCompact)
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _CategoryChip(label: item.category),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              priceLabel,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.right,
-                              style: priceStyle,
-                            ),
-                            const SizedBox(width: 8),
-                            _AvailabilityPill(isAvailable: item.isAvailable),
-                          ],
-                        )
-                      else
-                        _CategoryChip(label: item.category),
-                    ],
-                  ),
-                ),
-                if (!isCompact) ...[
-                  SizedBox(width: horizontalGap),
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Item image – fixed size, square with rounded corners
+            AppImage(
+              imagePath: item.imagePath,
+              width: 64,
+              height: 64,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            const SizedBox(width: 12),
+
+            // Name + category – takes remaining space
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
                   Text(
-                    priceLabel,
+                    item.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.right,
-                    style: priceStyle,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
-                  SizedBox(width: horizontalGap),
-                  _AvailabilityPill(isAvailable: item.isAvailable),
+                  const SizedBox(height: 4),
+                  _CategoryChip(label: item.category),
                 ],
-                _MenuItemActions(
-                  isAvailable: item.isAvailable,
-                  onEdit: onEdit,
-                  onDelete: onDelete,
-                  onToggleAvailability: onToggleAvailability,
-                  useMenu: cardWidth < 360,
-                ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+            const SizedBox(width: 8),
+
+            // Price
+            Text(
+              priceLabel,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(width: 8),
+
+            // Availability pill
+            GestureDetector(
+              onTap: onToggleAvailability,
+              child: _AvailabilityPill(isAvailable: item.isAvailable),
+            ),
+            const SizedBox(width: 4),
+
+            // Edit action
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, size: 20),
+              tooltip: 'Edit',
+              color: Colors.grey[700],
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              padding: EdgeInsets.zero,
+            ),
+
+            // Delete action
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline_rounded, size: 20),
+              tooltip: 'Delete',
+              color: AppTheme.periRed,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+              padding: EdgeInsets.zero,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -721,119 +716,6 @@ class _CategoryChip extends StatelessWidget {
   }
 }
 
-class _MenuItemActions extends StatelessWidget {
-  const _MenuItemActions({
-    required this.isAvailable,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onToggleAvailability,
-    this.useMenu = false,
-  });
-
-  final bool isAvailable;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  final VoidCallback onToggleAvailability;
-  final bool useMenu;
-
-  @override
-  Widget build(BuildContext context) {
-    if (useMenu) {
-      return PopupMenuButton<_MenuItemAction>(
-        tooltip: 'Menu item actions',
-        icon: const Icon(Icons.more_vert_rounded, color: AppTheme.ashGrey),
-        onSelected: (action) {
-          switch (action) {
-            case _MenuItemAction.toggleAvailability:
-              onToggleAvailability();
-            case _MenuItemAction.edit:
-              onEdit();
-            case _MenuItemAction.delete:
-              onDelete();
-          }
-        },
-        itemBuilder: (context) => [
-          PopupMenuItem(
-            value: _MenuItemAction.toggleAvailability,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                isAvailable
-                    ? Icons.toggle_on_rounded
-                    : Icons.toggle_off_rounded,
-                color: isAvailable ? AppTheme.success : AppTheme.ashGrey,
-              ),
-              title: Text(
-                isAvailable ? 'Mark unavailable' : 'Mark available',
-              ),
-              dense: true,
-            ),
-          ),
-          const PopupMenuItem(
-            value: _MenuItemAction.edit,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.edit_outlined),
-              title: Text('Edit'),
-              dense: true,
-            ),
-          ),
-          const PopupMenuItem(
-            value: _MenuItemAction.delete,
-            child: ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                Icons.delete_outline_rounded,
-                color: AppTheme.periRed,
-              ),
-              title: Text('Delete'),
-              dense: true,
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        IconButton(
-          onPressed: onToggleAvailability,
-          icon: Icon(
-            isAvailable
-                ? Icons.toggle_on_rounded
-                : Icons.toggle_off_rounded,
-          ),
-          tooltip: isAvailable ? 'Mark unavailable' : 'Mark available',
-          color: isAvailable ? AppTheme.success : AppTheme.ashGrey,
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          padding: EdgeInsets.zero,
-        ),
-        IconButton(
-          onPressed: onEdit,
-          icon: const Icon(Icons.edit_outlined),
-          tooltip: 'Edit',
-          color: Colors.grey[700],
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          padding: EdgeInsets.zero,
-        ),
-        IconButton(
-          onPressed: onDelete,
-          icon: const Icon(Icons.delete_outline_rounded),
-          tooltip: 'Delete',
-          color: AppTheme.periRed,
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-          padding: EdgeInsets.zero,
-        ),
-      ],
-    );
-  }
-}
-
-enum _MenuItemAction { toggleAvailability, edit, delete }
 
 class _AvailabilityPill extends StatelessWidget {
   const _AvailabilityPill({required this.isAvailable});
