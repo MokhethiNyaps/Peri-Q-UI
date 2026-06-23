@@ -59,7 +59,8 @@ class _CustomerShellState extends State<CustomerShell> {
       builder: (context, _) {
         return Scaffold(
           body: IndexedStack(index: currentIndex, children: pages),
-          floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+          floatingActionButtonLocation:
+              FloatingActionButtonLocation.centerDocked,
           floatingActionButton: CartFab(
             count: widget.controller.cartCount,
             onTap: () {

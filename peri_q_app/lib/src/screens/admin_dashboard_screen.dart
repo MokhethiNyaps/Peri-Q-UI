@@ -634,8 +634,8 @@ class _MenuItemCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 4),
                   _CategoryChip(label: item.category),
@@ -649,9 +649,9 @@ class _MenuItemCard extends StatelessWidget {
               priceLabel,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(width: 8),
 
@@ -708,14 +708,13 @@ class _CategoryChip extends StatelessWidget {
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppTheme.ashGrey,
-              fontWeight: FontWeight.w600,
-            ),
+          color: AppTheme.ashGrey,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
-
 
 class _AvailabilityPill extends StatelessWidget {
   const _AvailabilityPill({required this.isAvailable});
@@ -734,9 +733,9 @@ class _AvailabilityPill extends StatelessWidget {
       child: Text(
         isAvailable ? 'Available' : 'Unavailable',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
-            ),
+          color: color,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }

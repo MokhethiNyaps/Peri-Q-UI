@@ -13,10 +13,7 @@ import 'screens/splash_screen.dart';
 import 'screens/supabase_config_missing_screen.dart';
 
 class PeriQApp extends StatefulWidget {
-  const PeriQApp({
-    super.key,
-    required this.supabaseConfig,
-  });
+  const PeriQApp({super.key, required this.supabaseConfig});
 
   final SupabaseConfig supabaseConfig;
 

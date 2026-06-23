@@ -214,9 +214,9 @@ class _StoreStatusBadge extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w800,
-                ),
+              color: color,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ],
       ),
@@ -281,9 +281,9 @@ class _HeroBanner extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppTheme.chesaOrange,
-                          letterSpacing: 2.2,
-                        ),
+                      color: AppTheme.chesaOrange,
+                      letterSpacing: 2.2,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -291,20 +291,19 @@ class _HeroBanner extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                          color: Colors.white,
-                          fontSize: 30,
-                          height: 1.0,
-                        ),
+                      color: Colors.white,
+                      fontSize: 30,
+                      height: 1.0,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     settings.subtitle,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.white70),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: Colors.white70),
                   ),
                   const SizedBox(height: 14),
                   ElevatedButton(

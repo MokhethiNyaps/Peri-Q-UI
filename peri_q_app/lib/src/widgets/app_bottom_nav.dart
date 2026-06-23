@@ -59,11 +59,7 @@ class AppBottomNav extends StatelessWidget {
 }
 
 class CartFab extends StatelessWidget {
-  const CartFab({
-    super.key,
-    required this.count,
-    required this.onTap,
-  });
+  const CartFab({super.key, required this.count, required this.onTap});
 
   final int count;
   final VoidCallback onTap;
@@ -95,9 +91,9 @@ class CartFab extends StatelessWidget {
               child: Text(
                 '$count',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white,
-                      fontSize: 10,
-                    ),
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
               ),
             ),
           ),
@@ -134,9 +130,9 @@ class _NavItem extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: color,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-                  ),
+                color: color,
+                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+              ),
             ),
           ],
         ),

@@ -10,13 +10,13 @@ class AppAuthSession {
   });
 
   const AppAuthSession.signedOut()
-      : hasSession = false,
-        userId = null,
-        email = null,
-        isAnonymous = false,
-        isAdmin = false,
-        customerName = null,
-        customerPhone = null;
+    : hasSession = false,
+      userId = null,
+      email = null,
+      isAnonymous = false,
+      isAdmin = false,
+      customerName = null,
+      customerPhone = null;
 
   final bool hasSession;
   final String? userId;

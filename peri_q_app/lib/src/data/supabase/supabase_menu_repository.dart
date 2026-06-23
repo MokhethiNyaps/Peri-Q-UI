@@ -77,8 +77,7 @@ class SupabaseMenuRepository implements MenuRepository {
           .map((row) => _categoryFromRow(row as Map<String, dynamic>))
           .toList();
     } on PostgrestException catch (error) {
-      if (error.code == '42P01' ||
-          error.message.contains('menu_categories')) {
+      if (error.code == '42P01' || error.message.contains('menu_categories')) {
         final items = await fetchMenuItems();
         final names = <String>{};
         return [
@@ -96,9 +95,7 @@ class SupabaseMenuRepository implements MenuRepository {
   }
 
   @override
-  Future<MenuCategoryModel> addMenuCategory(
-    MenuCategoryModel category,
-  ) async {
+  Future<MenuCategoryModel> addMenuCategory(MenuCategoryModel category) async {
     final response = await _client
         .from('menu_categories')
         .insert(_categoryToRow(category))
@@ -151,7 +148,9 @@ class SupabaseMenuRepository implements MenuRepository {
     final storagePath =
         'menu/${DateTime.now().millisecondsSinceEpoch}-$cleanName';
 
-    await _client.storage.from(_imageBucket).uploadBinary(
+    await _client.storage
+        .from(_imageBucket)
+        .uploadBinary(
           storagePath,
           bytes,
           fileOptions: FileOptions(contentType: contentType, upsert: true),

@@ -21,6 +21,10 @@ Open the SQL editor in your Supabase project and run:
 -- paste the contents of supabase/schema.sql
 ```
 
+The schema also seeds the Rasta's PeriQ Chesanyama categories and menu items,
+creates the `menu-images` Storage bucket, and enables the RLS policies needed
+for owner/admin edits from the app.
+
 ## 3. Enable authentication providers
 
 In the Supabase dashboard:
@@ -69,10 +73,15 @@ flutter build apk --debug --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supaba
 
 - `profiles`: stores app profile data and admin role.
 - `app_settings`: stores shared store state like `store_open` plus Today's
-  Special text, image path/URL, visibility, and linked menu item.
-- `menu_items`: public menu catalog.
+  Special text, image path/URL, visibility, linked menu item, and operating
+  hours.
+- `menu_categories`: public category list managed from the owner dashboard.
+- `menu_items`: public menu catalog seeded with the Rasta's PeriQ Chesanyama
+  menu.
 - `orders`: order headers tied to the signed-in user.
 - `order_items`: snapshot of the items inside each order.
+- `storage.objects` / `menu-images`: public Supabase Storage bucket for admin
+  menu image uploads.
 
 ## Production services
 
@@ -81,6 +90,8 @@ Mandatory for the current production APK:
 - Supabase project with `supabase/schema.sql` applied.
 - Supabase Auth email/password enabled.
 - Anonymous sign-ins enabled for guest and phone-first checkout.
+- Supabase Storage bucket `menu-images` from `schema.sql` if admins will upload
+  menu item photos from the app.
 - Custom SMTP provider for reliable auth emails and password resets.
 - A production signing key before publishing to an app store.
 
@@ -92,9 +103,8 @@ Optional or future-facing:
   social login is offered; not required for Android-only release.
 - Push notifications: use Firebase Cloud Messaging if order status alerts are
   needed outside the open app.
-- File/image storage: use Supabase Storage or another CDN if admins need to
-  upload new promotional/menu images. The current admin form accepts bundled
-  asset paths or public HTTPS image URLs.
+- File/image storage outside Supabase: optional. The app now uses Supabase
+  Storage for menu item uploads and can still display public HTTPS image URLs.
 - Domain/hosting: needed for branded email sender domains, privacy/support
   pages, OAuth redirect URLs, and password reset/deep-link callbacks.
 

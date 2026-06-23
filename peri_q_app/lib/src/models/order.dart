@@ -41,7 +41,8 @@ extension OrderStatusX on OrderStatus {
 extension OrderTypeX on OrderType {
   String get code => this == OrderType.pickup ? 'pickup' : 'delivery';
 
-  String get label => this == OrderType.pickup ? 'Pickup in Store' : 'Home Delivery';
+  String get label =>
+      this == OrderType.pickup ? 'Pickup in Store' : 'Home Delivery';
 }
 
 extension PaymentMethodX on PaymentMethod {
@@ -168,16 +169,22 @@ class OrderModel {
       orderNumber: json['orderNumber'] as int? ?? 0,
       customerName: json['customerName'] as String? ?? '',
       customerPhone: json['customerPhone'] as String? ?? '',
-      items: (json['items'] as List<dynamic>?)
-              ?.map((item) => CartItemModel.fromJson(item as Map<String, dynamic>))
+      items:
+          (json['items'] as List<dynamic>?)
+              ?.map(
+                (item) => CartItemModel.fromJson(item as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
       orderType: orderTypeFromCode(json['orderType'] as String? ?? 'pickup'),
-      paymentMethod:
-          paymentMethodFromCode(json['paymentMethod'] as String? ?? 'cash_collection'),
+      paymentMethod: paymentMethodFromCode(
+        json['paymentMethod'] as String? ?? 'cash_collection',
+      ),
       totalPrice: (json['totalPrice'] as num?)?.toDouble() ?? 0,
       status: orderStatusFromCode(json['status'] as String? ?? 'pending'),
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.now(),
       estimatedMinutes: json['estimatedMinutes'] as int? ?? 0,
       deliveryAddress: json['deliveryAddress'] as String?,
     );

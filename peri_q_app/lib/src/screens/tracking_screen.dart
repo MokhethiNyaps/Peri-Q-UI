@@ -4,20 +4,19 @@ import '../core/app_theme.dart';
 import '../models/order.dart';
 
 class TrackingScreen extends StatelessWidget {
-  const TrackingScreen({
-    super.key,
-    required this.order,
-  });
+  const TrackingScreen({super.key, required this.order});
 
   final OrderModel order;
 
   @override
   Widget build(BuildContext context) {
-    final isPreparingOrFurther = order.status == OrderStatus.preparing ||
+    final isPreparingOrFurther =
+        order.status == OrderStatus.preparing ||
         order.status == OrderStatus.ready ||
         order.status == OrderStatus.completed;
     final isReadyOrCompleted =
-        order.status == OrderStatus.ready || order.status == OrderStatus.completed;
+        order.status == OrderStatus.ready ||
+        order.status == OrderStatus.completed;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Live Tracking')),
@@ -37,30 +36,33 @@ class TrackingScreen extends StatelessWidget {
               children: [
                 Text(
                   '${order.status.label.toUpperCase()} YOUR ORDER',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        letterSpacing: 1.6,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(letterSpacing: 1.6),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   'Est. ${order.estimatedMinutes} mins remaining',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
-                        fontSize: 28,
-                      ),
+                    color: Colors.white,
+                    fontSize: 28,
+                  ),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   order.orderType.label,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.9),
-                      ),
+                    color: Colors.white.withValues(alpha: 0.9),
+                  ),
                 ),
               ],
             ),
           ),
           const SizedBox(height: 24),
-          Text('Progress Timeline', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Progress Timeline',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 16),
           _TrackingStep(
             title: 'Order Received',
@@ -93,7 +95,10 @@ class TrackingScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Store Details', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Store Details',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 8),
                 Text(
                   'Soweto Branch\n8127 Vilakazi Street, Orlando West',
@@ -136,17 +141,19 @@ class _TrackingStep extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 12,
-              backgroundColor: active ? AppTheme.periRed : AppTheme.mutedSurface,
+              backgroundColor: active
+                  ? AppTheme.periRed
+                  : AppTheme.mutedSurface,
               child: active
-                  ? const Icon(Icons.check_rounded, size: 16, color: Colors.white)
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 16,
+                      color: Colors.white,
+                    )
                   : const SizedBox.shrink(),
             ),
             if (!isLast)
-              Container(
-                width: 2,
-                height: 42,
-                color: AppTheme.mutedSurface,
-              ),
+              Container(width: 2, height: 42, color: AppTheme.mutedSurface),
           ],
         ),
         const SizedBox(width: 12),

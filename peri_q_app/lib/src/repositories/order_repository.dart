@@ -6,10 +6,7 @@ abstract class OrderRepository {
     bool includeAll = false,
   });
 
-  Future<OrderModel> createOrder(
-    OrderDraft order, {
-    String? userId,
-  });
+  Future<OrderModel> createOrder(OrderDraft order, {String? userId});
 
   Future<OrderModel> updateOrderStatus({
     required String orderId,

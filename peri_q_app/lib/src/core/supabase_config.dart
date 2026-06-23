@@ -6,9 +6,9 @@ class SupabaseConfig {
   });
 
   const SupabaseConfig.disabled()
-      : url = '',
-        publishableKey = '',
-        isConfigured = false;
+    : url = '',
+      publishableKey = '',
+      isConfigured = false;
 
   final String url;
   final String publishableKey;
@@ -16,14 +16,12 @@ class SupabaseConfig {
 
   static SupabaseConfig fromSources([Map<String, String>? environment]) {
     const dartDefineUrl = String.fromEnvironment('SUPABASE_URL');
-    const dartDefinePublishableKey =
-        String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+    const dartDefinePublishableKey = String.fromEnvironment(
+      'SUPABASE_PUBLISHABLE_KEY',
+    );
     const dartDefineAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
-    final url = _firstNonEmpty([
-      environment?['SUPABASE_URL'],
-      dartDefineUrl,
-    ]);
+    final url = _firstNonEmpty([environment?['SUPABASE_URL'], dartDefineUrl]);
     final publishableKey = _firstNonEmpty([
       environment?['SUPABASE_PUBLISHABLE_KEY'],
       environment?['SUPABASE_ANON_KEY'],

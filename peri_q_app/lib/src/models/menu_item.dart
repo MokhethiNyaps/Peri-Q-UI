@@ -1,8 +1,5 @@
 class AddOnOption {
-  const AddOnOption({
-    required this.name,
-    required this.price,
-  });
+  const AddOnOption({required this.name, required this.price});
 
   final String name;
   final double price;
@@ -15,10 +12,7 @@ class AddOnOption {
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'price': price,
-    };
+    return {'name': name, 'price': price};
   }
 }
 
@@ -83,12 +77,16 @@ class MenuItemModel {
       imagePath: json['imagePath'] as String? ?? '',
       isAvailable: json['isAvailable'] as bool? ?? true,
       prepMinutes: json['prepMinutes'] as int? ?? 25,
-      spiceLevels: (json['spiceLevels'] as List<dynamic>?)
+      spiceLevels:
+          (json['spiceLevels'] as List<dynamic>?)
               ?.map((level) => level as String)
               .toList() ??
           const ['Mild', 'Medium', 'Hot', 'Extra Hot'],
-      addOns: (json['addOns'] as List<dynamic>?)
-              ?.map((addOn) => AddOnOption.fromJson(addOn as Map<String, dynamic>))
+      addOns:
+          (json['addOns'] as List<dynamic>?)
+              ?.map(
+                (addOn) => AddOnOption.fromJson(addOn as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
     );
@@ -149,7 +147,8 @@ class CartItemModel {
       quantity: quantity ?? this.quantity,
       spiceLevel: spiceLevel ?? this.spiceLevel,
       notes: notes ?? this.notes,
-      selectedAddOns: selectedAddOns ?? List<AddOnOption>.from(this.selectedAddOns),
+      selectedAddOns:
+          selectedAddOns ?? List<AddOnOption>.from(this.selectedAddOns),
     );
   }
 
@@ -160,8 +159,11 @@ class CartItemModel {
       quantity: json['quantity'] as int? ?? 1,
       spiceLevel: json['spiceLevel'] as String?,
       notes: json['notes'] as String? ?? '',
-      selectedAddOns: (json['selectedAddOns'] as List<dynamic>?)
-              ?.map((addOn) => AddOnOption.fromJson(addOn as Map<String, dynamic>))
+      selectedAddOns:
+          (json['selectedAddOns'] as List<dynamic>?)
+              ?.map(
+                (addOn) => AddOnOption.fromJson(addOn as Map<String, dynamic>),
+              )
               .toList() ??
           const [],
     );

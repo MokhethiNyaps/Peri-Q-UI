@@ -8,10 +8,7 @@ import 'cart_screen.dart';
 import 'tracking_screen.dart';
 
 class OrdersScreen extends StatelessWidget {
-  const OrdersScreen({
-    super.key,
-    required this.controller,
-  });
+  const OrdersScreen({super.key, required this.controller});
 
   final AppController controller;
 
@@ -24,7 +21,10 @@ class OrdersScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
             children: [
-              Text('My Orders', style: Theme.of(context).textTheme.displayLarge),
+              Text(
+                'My Orders',
+                style: Theme.of(context).textTheme.displayLarge,
+              ),
               const SizedBox(height: 20),
               const SectionHeader(title: 'Active Orders'),
               const SizedBox(height: 12),
@@ -110,14 +110,19 @@ class _OrderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('#${order.orderNumber}', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                '#${order.orderNumber}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const Spacer(),
               OrderStatusChip(status: order.status),
             ],
           ),
           const SizedBox(height: 10),
           Text(
-            order.items.map((item) => '${item.quantity} x ${item.item.name}').join(', '),
+            order.items
+                .map((item) => '${item.quantity} x ${item.item.name}')
+                .join(', '),
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
@@ -142,10 +147,7 @@ class _OrderCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               const Spacer(),
-              TextButton(
-                onPressed: onAction,
-                child: Text(actionLabel),
-              ),
+              TextButton(onPressed: onAction, child: Text(actionLabel)),
             ],
           ),
         ],

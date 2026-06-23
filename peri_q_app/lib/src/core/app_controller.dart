@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart';
 
 import '../models/app_auth_session.dart';
@@ -67,18 +65,16 @@ class AppController extends ChangeNotifier {
     );
   }
 
-  List<String> get categories => _categoriesFor(
-        includeInactiveCategories: true,
-        items: menuItems,
-      );
+  List<String> get categories =>
+      _categoriesFor(includeInactiveCategories: true, items: menuItems);
 
   List<MenuItemModel> get availableMenuItems =>
       menuItems.where((item) => item.isAvailable).toList();
 
   List<String> get customerCategories => _categoriesFor(
-        includeInactiveCategories: false,
-        items: availableMenuItems,
-      );
+    includeInactiveCategories: false,
+    items: availableMenuItems,
+  );
 
   List<String> _categoriesFor({
     required bool includeInactiveCategories,
@@ -110,13 +106,13 @@ class AppController extends ChangeNotifier {
   List<MenuItemModel> get todaysSpecials {
     final configuredItem = todaysSpecialItem;
     final specials = availableMenuItems.where((item) {
-      return item.id == 'wings-1' ||
-          item.id == 'kota-1' ||
-          item.id == 'burger-1';
+      return item.id == 'combo-chicken-pork-wors' ||
+          item.id == 'combo-choice-meat-liver-wors' ||
+          item.id == 'family-meal-for-5';
     }).toList();
 
     final ordered = <MenuItemModel>[
-      if (configuredItem != null) configuredItem,
+      ?configuredItem,
       ...specials.where((item) => item.id != configuredItem?.id),
     ];
 
@@ -499,7 +495,9 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> deleteMenuCategory(MenuCategoryModel category) async {
-    final hasMenuItems = menuItems.any((item) => item.category == category.name);
+    final hasMenuItems = menuItems.any(
+      (item) => item.category == category.name,
+    );
     if (hasMenuItems) {
       throw StateError(
         'Move or edit menu items in this category before deleting it.',

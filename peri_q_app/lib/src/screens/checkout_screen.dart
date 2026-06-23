@@ -6,10 +6,7 @@ import '../models/order.dart';
 import 'confirmation_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({
-    super.key,
-    required this.controller,
-  });
+  const CheckoutScreen({super.key, required this.controller});
 
   final AppController controller;
 
@@ -28,8 +25,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   void initState() {
     super.initState();
-    nameController = TextEditingController(text: widget.controller.customerName);
-    phoneController = TextEditingController(text: widget.controller.customerPhone);
+    nameController = TextEditingController(
+      text: widget.controller.customerName,
+    );
+    phoneController = TextEditingController(
+      text: widget.controller.customerPhone,
+    );
   }
 
   @override
@@ -63,8 +64,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     final order = await widget.controller.placeOrder(
       orderType: orderType,
       paymentMethod: paymentMethod,
-      deliveryAddress:
-          orderType == OrderType.delivery ? addressController.text.trim() : null,
+      deliveryAddress: orderType == OrderType.delivery
+          ? addressController.text.trim()
+          : null,
     );
 
     if (!mounted) {
@@ -73,10 +75,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(
-        builder: (_) => ConfirmationScreen(
-          controller: widget.controller,
-          order: order,
-        ),
+        builder: (_) =>
+            ConfirmationScreen(controller: widget.controller, order: order),
       ),
       (route) => route.isFirst,
     );
@@ -104,7 +104,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ],
               ),
               const SizedBox(height: 26),
-              Text('Your Details', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Your Details',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(16),
@@ -129,7 +132,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     TextFormField(
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                      decoration: const InputDecoration(
+                        labelText: 'Phone Number',
+                      ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'Enter your phone number.';
@@ -177,7 +182,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 ),
               ],
               const SizedBox(height: 24),
-              Text('Payment Method', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Payment Method',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 12),
               _PaymentTile(
                 title: 'Cash on Collection',
@@ -193,9 +201,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 emoji: '💸',
                 selected: paymentMethod == PaymentMethod.cashDelivery,
                 enabled: orderType == OrderType.delivery,
-                onTap: () => setState(
-                  () => paymentMethod = PaymentMethod.cashDelivery,
-                ),
+                onTap: () =>
+                    setState(() => paymentMethod = PaymentMethod.cashDelivery),
               ),
               _PaymentTile(
                 title: 'EFT / Bank Transfer',
@@ -225,7 +232,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Order Summary', style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          'Order Summary',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         const SizedBox(height: 4),
                         Text(
                           '${widget.controller.cartCount} items • R${total.toStringAsFixed(0)} total',
@@ -285,9 +295,9 @@ class _StepBadge extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: active ? AppTheme.periRed : AppTheme.ashGrey,
-                fontWeight: FontWeight.w700,
-              ),
+            color: active ? AppTheme.periRed : AppTheme.ashGrey,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ],
     );
@@ -331,7 +341,10 @@ class _ChoiceCard extends StatelessWidget {
               backgroundColor: selected
                   ? AppTheme.periRed.withValues(alpha: 0.1)
                   : AppTheme.mutedSurface,
-              child: Icon(icon, color: selected ? AppTheme.periRed : AppTheme.ashGrey),
+              child: Icon(
+                icon,
+                color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -384,9 +397,7 @@ class _PaymentTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
             color: Colors.white,
-            border: Border(
-              bottom: BorderSide(color: Colors.grey.shade100),
-            ),
+            border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
           ),
           child: Row(
             children: [
@@ -398,7 +409,10 @@ class _PaymentTile extends StatelessWidget {
                   children: [
                     Text(title, style: Theme.of(context).textTheme.titleLarge),
                     if (subtitle != null)
-                      Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+                      Text(
+                        subtitle!,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
                   ],
                 ),
               ),
@@ -406,7 +420,10 @@ class _PaymentTile extends StatelessWidget {
                 child: RadioGroup<bool>(
                   groupValue: selected,
                   onChanged: (_) {},
-                  child: Radio<bool>(value: true, activeColor: AppTheme.periRed),
+                  child: Radio<bool>(
+                    value: true,
+                    activeColor: AppTheme.periRed,
+                  ),
                 ),
               ),
             ],

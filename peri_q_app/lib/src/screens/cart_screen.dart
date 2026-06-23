@@ -7,11 +7,7 @@ import '../widgets/app_image.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
-  const CartScreen({
-    super.key,
-    required this.controller,
-    this.bannerMessage,
-  });
+  const CartScreen({super.key, required this.controller, this.bannerMessage});
 
   final AppController controller;
   final String? bannerMessage;
@@ -32,9 +28,9 @@ class _CartScreenState extends State<CartScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(widget.bannerMessage!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(widget.bannerMessage!)));
     });
   }
 
@@ -52,7 +48,11 @@ class _CartScreenState extends State<CartScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.shopping_cart_outlined, size: 72, color: AppTheme.ashGrey),
+                        const Icon(
+                          Icons.shopping_cart_outlined,
+                          size: 72,
+                          color: AppTheme.ashGrey,
+                        ),
                         const SizedBox(height: 16),
                         Text(
                           'Your cart is empty.',
@@ -102,36 +102,47 @@ class _CartScreenState extends State<CartScreen> {
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           cartItem.item.name,
-                                          style: Theme.of(context).textTheme.titleLarge,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleLarge,
                                         ),
                                         if (cartItem.spiceLevel != null)
                                           Text(
                                             'Spice: ${cartItem.spiceLevel}',
-                                            style: Theme.of(context).textTheme.bodySmall,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
                                           ),
                                         if (cartItem.selectedAddOns.isNotEmpty)
                                           Text(
                                             cartItem.selectedAddOns
                                                 .map((addOn) => addOn.name)
                                                 .join(', '),
-                                            style: Theme.of(context).textTheme.bodySmall,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
                                           ),
                                         if (cartItem.notes.isNotEmpty)
                                           Text(
                                             cartItem.notes,
-                                            style: Theme.of(context).textTheme.bodySmall,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall,
                                           ),
                                       ],
                                     ),
                                   ),
                                   IconButton(
-                                    onPressed: () =>
-                                        widget.controller.removeCartItem(cartItem),
-                                    icon: const Icon(Icons.delete_outline_rounded),
+                                    onPressed: () => widget.controller
+                                        .removeCartItem(cartItem),
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -148,11 +159,15 @@ class _CartScreenState extends State<CartScreen> {
                                         IconButton(
                                           onPressed: () => widget.controller
                                               .decrementCartItem(cartItem),
-                                          icon: const Icon(Icons.remove_rounded),
+                                          icon: const Icon(
+                                            Icons.remove_rounded,
+                                          ),
                                         ),
                                         Text(
                                           '${cartItem.quantity}',
-                                          style: Theme.of(context).textTheme.titleLarge,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleLarge,
                                         ),
                                         IconButton(
                                           onPressed: () => widget.controller
@@ -197,7 +212,9 @@ class _CartScreenState extends State<CartScreen> {
                           ),
                           _SummaryRow(
                             label: 'Delivery fee',
-                            value: widget.controller.deliveryFeeFor(OrderType.pickup),
+                            value: widget.controller.deliveryFeeFor(
+                              OrderType.pickup,
+                            ),
                           ),
                           const Divider(height: 24),
                           _SummaryRow(
@@ -219,7 +236,8 @@ class _CartScreenState extends State<CartScreen> {
                       onPressed: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => CheckoutScreen(controller: widget.controller),
+                            builder: (_) =>
+                                CheckoutScreen(controller: widget.controller),
                           ),
                         );
                       },

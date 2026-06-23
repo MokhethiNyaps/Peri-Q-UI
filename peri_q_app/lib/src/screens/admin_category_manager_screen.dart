@@ -16,7 +16,10 @@ class AdminCategoryManagerScreen extends StatelessWidget {
     final didSave = await showDialog<bool>(
       context: context,
       builder: (context) {
-        return _CategoryEditorDialog(controller: controller, category: category);
+        return _CategoryEditorDialog(
+          controller: controller,
+          category: category,
+        );
       },
     );
 
@@ -73,9 +76,9 @@ class AdminCategoryManagerScreen extends StatelessWidget {
       if (!context.mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${category.name} deleted.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('${category.name} deleted.')));
     } catch (error) {
       if (!context.mounted) {
         return;
@@ -140,9 +143,7 @@ class AdminCategoryManagerScreen extends StatelessWidget {
                             alignment: Alignment.center,
                             child: Text(
                               '${category.sortOrder}',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
+                              style: Theme.of(context).textTheme.labelMedium
                                   ?.copyWith(
                                     color: category.isActive
                                         ? AppTheme.success

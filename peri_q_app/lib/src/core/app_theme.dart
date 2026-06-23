@@ -45,18 +45,9 @@ class AppTheme {
         fontWeight: FontWeight.w500,
         color: smokeCharcoal,
       ),
-      bodyLarge: GoogleFonts.nunitoSans(
-        fontSize: 16,
-        color: smokeCharcoal,
-      ),
-      bodyMedium: GoogleFonts.nunitoSans(
-        fontSize: 14,
-        color: ashGrey,
-      ),
-      bodySmall: GoogleFonts.nunitoSans(
-        fontSize: 12,
-        color: ashGrey,
-      ),
+      bodyLarge: GoogleFonts.nunitoSans(fontSize: 16, color: smokeCharcoal),
+      bodyMedium: GoogleFonts.nunitoSans(fontSize: 14, color: ashGrey),
+      bodySmall: GoogleFonts.nunitoSans(fontSize: 12, color: ashGrey),
       labelLarge: GoogleFonts.nunitoSans(
         fontSize: 14,
         fontWeight: FontWeight.w700,
@@ -75,9 +66,7 @@ class AppTheme {
         color: lightSurface,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: lightSurface,
@@ -93,7 +82,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: mutedSurface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,

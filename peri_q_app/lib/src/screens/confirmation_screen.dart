@@ -40,7 +40,11 @@ class ConfirmationScreen extends StatelessWidget {
                   const CircleAvatar(
                     radius: 38,
                     backgroundColor: AppTheme.success,
-                    child: Icon(Icons.check_rounded, color: Colors.white, size: 40),
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 40,
+                    ),
                   ),
                 ],
               ),
@@ -68,7 +72,10 @@ class ConfirmationScreen extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text('Receipt', style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          'Receipt',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         const Spacer(),
                         OrderStatusChip(status: order.status),
                       ],
@@ -76,7 +83,8 @@ class ConfirmationScreen extends StatelessWidget {
                     const SizedBox(height: 12),
                     Text('Order Type: ${order.orderType.label}'),
                     Text('Payment: ${order.paymentMethod.label}'),
-                    if (order.deliveryAddress != null && order.deliveryAddress!.isNotEmpty)
+                    if (order.deliveryAddress != null &&
+                        order.deliveryAddress!.isNotEmpty)
                       Text('Address: ${order.deliveryAddress}'),
                     const SizedBox(height: 12),
                     ...order.items.map((item) {
@@ -91,13 +99,15 @@ class ConfirmationScreen extends StatelessWidget {
                     const Divider(height: 24),
                     Row(
                       children: [
-                        Text('Total', style: Theme.of(context).textTheme.titleLarge),
+                        Text(
+                          'Total',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
                         const Spacer(),
                         Text(
                           'R${order.totalPrice.toStringAsFixed(0)}',
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: AppTheme.periRed,
-                              ),
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(color: AppTheme.periRed),
                         ),
                       ],
                     ),
@@ -122,16 +132,19 @@ class ConfirmationScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     const _TimelineStep(
                       title: 'Order Received',
-                      subtitle: 'Your order was sent to the store successfully.',
+                      subtitle:
+                          'Your order was sent to the store successfully.',
                       active: true,
                     ),
                     const _TimelineStep(
                       title: 'Preparing',
-                      subtitle: 'The kitchen will start once the owner accepts it.',
+                      subtitle:
+                          'The kitchen will start once the owner accepts it.',
                     ),
                     const _TimelineStep(
                       title: 'Ready / Completed',
-                      subtitle: 'We will notify you when it is ready for collection.',
+                      subtitle:
+                          'We will notify you when it is ready for collection.',
                     ),
                   ],
                 ),
@@ -190,16 +203,18 @@ class _TimelineStep extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 12,
-              backgroundColor: active ? AppTheme.success : AppTheme.mutedSurface,
+              backgroundColor: active
+                  ? AppTheme.success
+                  : AppTheme.mutedSurface,
               child: active
-                  ? const Icon(Icons.check_rounded, color: Colors.white, size: 16)
+                  ? const Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: 16,
+                    )
                   : const SizedBox.shrink(),
             ),
-            Container(
-              width: 2,
-              height: 38,
-              color: AppTheme.mutedSurface,
-            ),
+            Container(width: 2, height: 38, color: AppTheme.mutedSurface),
           ],
         ),
         const SizedBox(width: 12),

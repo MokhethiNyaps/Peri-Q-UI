@@ -4,10 +4,7 @@ import '../core/app_theme.dart';
 import '../models/order.dart';
 
 class OrderStatusChip extends StatelessWidget {
-  const OrderStatusChip({
-    super.key,
-    required this.status,
-  });
+  const OrderStatusChip({super.key, required this.status});
 
   final OrderStatus status;
 
@@ -43,9 +40,9 @@ class OrderStatusChip extends StatelessWidget {
       child: Text(
         status.label.toUpperCase(),
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w800,
-            ),
+          color: foreground,
+          fontWeight: FontWeight.w800,
+        ),
       ),
     );
   }

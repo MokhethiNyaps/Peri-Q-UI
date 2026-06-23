@@ -17,14 +17,9 @@ class SectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Expanded(
-          child: Text(title, style: theme.textTheme.headlineMedium),
-        ),
+        Expanded(child: Text(title, style: theme.textTheme.headlineMedium)),
         if (actionLabel != null)
-          TextButton(
-            onPressed: onActionTap,
-            child: Text(actionLabel!),
-          ),
+          TextButton(onPressed: onActionTap, child: Text(actionLabel!)),
       ],
     );
   }

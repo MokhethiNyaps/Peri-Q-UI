@@ -48,10 +48,6 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
     imageOptions = {
       ...widget.controller.menuItems.map((item) => item.imagePath),
       'assets/images/brand_mark.png',
-      'assets/images/chicken_kota.png',
-      'assets/images/kota_alt.png',
-      'assets/images/mixed_grill.png',
-      'assets/images/wings.png',
     }.toList();
   }
 
@@ -86,8 +82,8 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
             imagePath: imagePathController.text.trim(),
             menuItemId:
                 selectedMenuItemId == null || selectedMenuItemId!.isEmpty
-                    ? null
-                    : selectedMenuItemId,
+                ? null
+                : selectedMenuItemId,
           ),
         ),
       );
@@ -110,7 +106,8 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
   }
 
   Future<void> _pickTime(TextEditingController controller) async {
-    final current = _parseTime(controller.text) ?? const TimeOfDay(hour: 10, minute: 0);
+    final current =
+        _parseTime(controller.text) ?? const TimeOfDay(hour: 10, minute: 0);
     final picked = await showTimePicker(context: context, initialTime: current);
     if (picked == null || !mounted) {
       return;
@@ -189,11 +186,9 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                           ? 'Preview: Open now'
                           : 'Preview: Closed right now',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: isOpenNow
-                                ? AppTheme.success
-                                : AppTheme.periRed,
-                            fontWeight: FontWeight.w800,
-                          ),
+                        color: isOpenNow ? AppTheme.success : AppTheme.periRed,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                 ],
@@ -240,15 +235,17 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                   TextFormField(
                     controller: subtitleController,
                     maxLines: 2,
-                    decoration:
-                        const InputDecoration(labelText: 'Promo Subtitle'),
+                    decoration: const InputDecoration(
+                      labelText: 'Promo Subtitle',
+                    ),
                     validator: _requiredText('Enter the supporting text.'),
                   ),
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
                     initialValue: selectedMenuItemId ?? '',
-                    decoration:
-                        const InputDecoration(labelText: 'Linked Menu Item'),
+                    decoration: const InputDecoration(
+                      labelText: 'Linked Menu Item',
+                    ),
                     items: [
                       const DropdownMenuItem<String>(
                         value: '',
@@ -268,7 +265,9 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
                     initialValue: selectedPreset,
-                    decoration: const InputDecoration(labelText: 'Image Preset'),
+                    decoration: const InputDecoration(
+                      labelText: 'Image Preset',
+                    ),
                     items: imageOptions.map((imagePath) {
                       return DropdownMenuItem<String>(
                         value: imagePath,
@@ -287,10 +286,11 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                     controller: imagePathController,
                     decoration: const InputDecoration(
                       labelText: 'Image Path or Public URL',
-                      hintText: 'assets/images/chicken_kota.png',
+                      hintText: 'assets/images/brand_mark.png',
                     ),
-                    validator:
-                        _requiredText('Enter an image asset path or URL.'),
+                    validator: _requiredText(
+                      'Enter an image asset path or URL.',
+                    ),
                     onChanged: (_) => setState(() {}),
                   ),
                 ],
@@ -340,10 +340,7 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
       return null;
     }
     final parts = value.trim().split(':');
-    return TimeOfDay(
-      hour: int.parse(parts[0]),
-      minute: int.parse(parts[1]),
-    );
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 
   static String _formatTime(TimeOfDay time) {

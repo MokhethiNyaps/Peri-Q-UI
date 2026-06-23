@@ -40,10 +40,6 @@ class _AdminTodaysSpecialEditorScreenState
     imageOptions = {
       ...widget.controller.menuItems.map((item) => item.imagePath),
       'assets/images/brand_mark.png',
-      'assets/images/chicken_kota.png',
-      'assets/images/kota_alt.png',
-      'assets/images/mixed_grill.png',
-      'assets/images/wings.png',
     }.toList();
   }
 
@@ -191,7 +187,7 @@ class _AdminTodaysSpecialEditorScreenState
               controller: imagePathController,
               decoration: const InputDecoration(
                 labelText: 'Image Path or URL',
-                hintText: 'assets/images/chicken_kota.png',
+                hintText: 'assets/images/brand_mark.png',
               ),
               validator: _requiredText('Enter an image asset path or URL.'),
               onChanged: (_) => setState(() {}),

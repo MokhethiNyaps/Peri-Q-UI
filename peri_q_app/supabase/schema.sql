@@ -76,10 +76,10 @@ create table if not exists public.app_settings (
   closing_time text not null default '21:00',
   todays_special_enabled boolean not null default true,
   todays_special_label text not null default 'TODAY''S SPECIAL',
-  todays_special_title text not null default 'Flame-Grilled Chicken Kota',
-  todays_special_subtitle text not null default 'R65 - Chips, Russian and Sauce included',
-  todays_special_image_path text not null default 'assets/images/chicken_kota.png',
-  todays_special_menu_item_id text default 'kota-1',
+  todays_special_title text not null default 'Chicken, Pork & Wors Plate',
+  todays_special_subtitle text not null default 'R70 - Flame-grilled meats served with pap',
+  todays_special_image_path text not null default 'assets/images/brand_mark.png',
+  todays_special_menu_item_id text default 'combo-chicken-pork-wors',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -89,10 +89,10 @@ alter table public.app_settings
   add column if not exists closing_time text not null default '21:00',
   add column if not exists todays_special_enabled boolean not null default true,
   add column if not exists todays_special_label text not null default 'TODAY''S SPECIAL',
-  add column if not exists todays_special_title text not null default 'Flame-Grilled Chicken Kota',
-  add column if not exists todays_special_subtitle text not null default 'R65 - Chips, Russian and Sauce included',
-  add column if not exists todays_special_image_path text not null default 'assets/images/chicken_kota.png',
-  add column if not exists todays_special_menu_item_id text default 'kota-1';
+  add column if not exists todays_special_title text not null default 'Chicken, Pork & Wors Plate',
+  add column if not exists todays_special_subtitle text not null default 'R70 - Flame-grilled meats served with pap',
+  add column if not exists todays_special_image_path text not null default 'assets/images/brand_mark.png',
+  add column if not exists todays_special_menu_item_id text default 'combo-chicken-pork-wors';
 
 drop trigger if exists app_settings_touch_updated_at on public.app_settings;
 create trigger app_settings_touch_updated_at
@@ -102,6 +102,19 @@ for each row execute procedure public.touch_updated_at();
 insert into public.app_settings (id, store_open)
 values ('default', true)
 on conflict (id) do nothing;
+
+update public.app_settings
+set
+  todays_special_title = 'Chicken, Pork & Wors Plate',
+  todays_special_subtitle = 'R70 - Flame-grilled meats served with pap',
+  todays_special_image_path = 'assets/images/brand_mark.png',
+  todays_special_menu_item_id = 'combo-chicken-pork-wors'
+where id = 'default'
+  and (
+    todays_special_menu_item_id is null
+    or todays_special_menu_item_id = 'kota-1'
+    or todays_special_image_path = 'assets/images/chicken_kota.png'
+  );
 
 create table if not exists public.menu_categories (
   id text primary key,
@@ -119,12 +132,25 @@ for each row execute procedure public.touch_updated_at();
 
 insert into public.menu_categories (id, name, sort_order)
 values
-  ('cat-kotas', 'Kotas', 10),
-  ('cat-chicken', 'Chicken', 20),
-  ('cat-grills', 'Grills', 30),
-  ('cat-sides', 'Sides', 40),
-  ('cat-drinks', 'Drinks', 50)
-on conflict (id) do nothing;
+  ('cat-combo-plates', 'Combo Plates', 10),
+  ('cat-pork-meals', 'Pork Meals', 20),
+  ('cat-chicken-meals', 'Chicken Meals', 30),
+  ('cat-liver-meals', 'Liver Meals', 40),
+  ('cat-wors-meals', 'Wors Meals', 50),
+  ('cat-family-meals', 'Family Meals', 60),
+  ('cat-build-your-own-meal', 'Build Your Own Meal', 70),
+  ('cat-sides', 'Sides', 80),
+  ('cat-sauces', 'Sauces', 90),
+  ('cat-cold-drinks', 'Cold Drinks', 100)
+on conflict (id) do update
+  set
+    name = excluded.name,
+    sort_order = excluded.sort_order,
+    is_active = true;
+
+update public.menu_categories
+set is_active = false
+where id in ('cat-kotas', 'cat-chicken', 'cat-grills', 'cat-drinks');
 
 create table if not exists public.menu_items (
   id text primary key,
@@ -145,6 +171,370 @@ drop trigger if exists menu_items_touch_updated_at on public.menu_items;
 create trigger menu_items_touch_updated_at
 before update on public.menu_items
 for each row execute procedure public.touch_updated_at();
+
+insert into public.menu_items (
+  id,
+  name,
+  description,
+  price,
+  category,
+  image_path,
+  is_available,
+  prep_minutes,
+  spice_levels
+)
+values
+  (
+    'combo-chicken-pork-wors',
+    'Chicken, Pork & Wors Plate',
+    'Flame-grilled chicken, juicy pork and traditional wors served with pap.',
+    70,
+    'Combo Plates',
+    'assets/images/brand_mark.png',
+    true,
+    25,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'combo-chicken-wors-liver',
+    'Chicken, Wors & Liver Plate',
+    'Grilled chicken, wors and tender liver served with pap.',
+    70,
+    'Combo Plates',
+    'assets/images/brand_mark.png',
+    true,
+    25,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'combo-beef-wors',
+    'Beef & Wors Plate',
+    'Tender beef and traditional wors served with pap.',
+    60,
+    'Combo Plates',
+    'assets/images/brand_mark.png',
+    true,
+    25,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'combo-pork-beef-wors',
+    'Pork, Beef & Wors Plate',
+    'A hearty combination of pork, beef and wors served with pap.',
+    60,
+    'Combo Plates',
+    'assets/images/brand_mark.png',
+    true,
+    25,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'combo-choice-meat-liver-wors',
+    'Pork, Beef or Chicken, Liver & Wors Plate',
+    'Choice of pork, beef or chicken served with liver and wors, accompanied by pap.',
+    80,
+    'Combo Plates',
+    'assets/images/brand_mark.png',
+    true,
+    25,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'pork-plate',
+    'Pork Plate',
+    'Grilled pork served with pap.',
+    40,
+    'Pork Meals',
+    'assets/images/brand_mark.png',
+    true,
+    20,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'pork-wors-plate',
+    'Pork & Wors Plate',
+    'Tender pork and traditional wors served with pap.',
+    50,
+    'Pork Meals',
+    'assets/images/brand_mark.png',
+    true,
+    20,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'chicken-wors-pap-salad',
+    'Chicken, Wors, Pap & Salad',
+    'Grilled chicken and wors served with pap and fresh salad.',
+    50,
+    'Chicken Meals',
+    'assets/images/brand_mark.png',
+    true,
+    20,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'liver-pap-salad',
+    'Liver with Pap & Salad',
+    'Tender liver served with pap and fresh salad.',
+    50,
+    'Liver Meals',
+    'assets/images/brand_mark.png',
+    true,
+    20,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'liver-plate',
+    'Liver Plate',
+    'Traditional liver meal served with pap.',
+    40,
+    'Liver Meals',
+    'assets/images/brand_mark.png',
+    true,
+    20,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'wors-plate',
+    'Wors Plate',
+    'Traditional South African wors served with pap.',
+    50,
+    'Wors Meals',
+    'assets/images/brand_mark.png',
+    true,
+    20,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'family-meal-for-5',
+    'Meal for 5',
+    'Assorted grilled meats served with generous portions of pap. Perfect for sharing with family and friends.',
+    350,
+    'Family Meals',
+    'assets/images/brand_mark.png',
+    true,
+    35,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'build-any-meat-choice',
+    'Any Meat of Your Choice',
+    'From R60. Choose your preferred meat served with pap.',
+    60,
+    'Build Your Own Meal',
+    'assets/images/brand_mark.png',
+    true,
+    25,
+    array['Mild', 'Medium', 'Hot', 'Extra Hot']
+  ),
+  (
+    'side-extra-pap',
+    'Extra Pap',
+    'Additional serving of freshly prepared pap.',
+    10,
+    'Sides',
+    'assets/images/brand_mark.png',
+    true,
+    10,
+    array['Regular']
+  ),
+  (
+    'side-extra-salad',
+    'Extra Salad',
+    'Fresh mixed salad.',
+    10,
+    'Sides',
+    'assets/images/brand_mark.png',
+    true,
+    10,
+    array['Regular']
+  ),
+  (
+    'sauce-bbq',
+    'BBQ Sauce',
+    'Sweet and smoky barbecue sauce.',
+    0,
+    'Sauces',
+    'assets/images/brand_mark.png',
+    true,
+    2,
+    array['Regular']
+  ),
+  (
+    'sauce-mix',
+    'Mix Sauce',
+    'Signature mixed sauce packed with flavour.',
+    0,
+    'Sauces',
+    'assets/images/brand_mark.png',
+    true,
+    2,
+    array['Regular']
+  ),
+  (
+    'sauce-lemon-herb',
+    'Lemon & Herb Sauce',
+    'Light and zesty lemon herb sauce.',
+    0,
+    'Sauces',
+    'assets/images/brand_mark.png',
+    true,
+    2,
+    array['Regular']
+  ),
+  (
+    'sauce-peri-peri',
+    'Peri-Peri Sauce',
+    'Hot and spicy peri-peri sauce.',
+    0,
+    'Sauces',
+    'assets/images/brand_mark.png',
+    true,
+    2,
+    array['Regular']
+  ),
+  (
+    'drink-coca-cola-330ml',
+    'Coca-Cola 330ml',
+    'Chilled 330ml can of Coca-Cola.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-coca-cola-no-sugar-330ml',
+    'Coca-Cola No Sugar 330ml',
+    'Chilled 330ml can of Coca-Cola No Sugar.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-fanta-orange-330ml',
+    'Fanta Orange 330ml',
+    'Chilled 330ml can of Fanta Orange.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-sprite-330ml',
+    'Sprite 330ml',
+    'Chilled 330ml can of Sprite.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-stoney-ginger-beer-330ml',
+    'Stoney Ginger Beer 330ml',
+    'Chilled 330ml can of Stoney Ginger Beer.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-creme-soda-330ml',
+    'Creme Soda 330ml',
+    'Chilled 330ml can of Creme Soda.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-sparletta-pine-nut-330ml',
+    'Sparletta Pine Nut 330ml',
+    'Chilled 330ml can of Sparletta Pine Nut.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-sparletta-cream-soda-330ml',
+    'Sparletta Cream Soda 330ml',
+    'Chilled 330ml can of Sparletta Cream Soda.',
+    15,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-bonaqua-still-water-500ml',
+    'Bonaqua Still Water 500ml',
+    'Chilled 500ml bottle of Bonaqua still water.',
+    12,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-bonaqua-sparkling-water-500ml',
+    'Bonaqua Sparkling Water 500ml',
+    'Chilled 500ml bottle of Bonaqua sparkling water.',
+    12,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-appletiser-330ml',
+    'Appletiser 330ml',
+    'Chilled 330ml can of Appletiser.',
+    20,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  ),
+  (
+    'drink-grapetiser-red-330ml',
+    'Grapetiser Red 330ml',
+    'Chilled 330ml can of Grapetiser Red.',
+    20,
+    'Cold Drinks',
+    'assets/images/brand_mark.png',
+    true,
+    5,
+    array['Regular']
+  )
+on conflict (id) do update
+  set
+    name = excluded.name,
+    description = excluded.description,
+    price = excluded.price,
+    category = excluded.category,
+    image_path = excluded.image_path,
+    is_available = excluded.is_available,
+    prep_minutes = excluded.prep_minutes,
+    spice_levels = excluded.spice_levels;
 
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),

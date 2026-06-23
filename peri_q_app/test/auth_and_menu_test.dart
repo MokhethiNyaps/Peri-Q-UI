@@ -237,34 +237,41 @@ void main() {
       await harness.controller.bootstrapFuture;
 
       await harness.controller.addMenuCategory(
-        const MenuCategoryModel(id: 'cat-drinks', name: 'Drinks', sortOrder: 20),
+        const MenuCategoryModel(
+          id: 'cat-drinks',
+          name: 'Drinks',
+          sortOrder: 20,
+        ),
       );
 
       expect(harness.controller.categories, ['All', 'Meals', 'Drinks']);
-      expect(harness.controller.customerCategories, [
-        'All',
-        'Meals',
-        'Drinks',
-      ]);
+      expect(harness.controller.customerCategories, ['All', 'Meals', 'Drinks']);
     });
 
-    test('renames categories and updates menu items using that category', () async {
-      final harness = _ControllerHarness(
-        menuCategories: const [
-          MenuCategoryModel(id: 'cat-meals', name: 'Meals', sortOrder: 10),
-        ],
-        menuItems: [_menuItem(id: 'kota', name: 'Kota', category: 'Meals')],
-      );
-      await harness.controller.bootstrapFuture;
+    test(
+      'renames categories and updates menu items using that category',
+      () async {
+        final harness = _ControllerHarness(
+          menuCategories: const [
+            MenuCategoryModel(id: 'cat-meals', name: 'Meals', sortOrder: 10),
+          ],
+          menuItems: [_menuItem(id: 'kota', name: 'Kota', category: 'Meals')],
+        );
+        await harness.controller.bootstrapFuture;
 
-      await harness.controller.updateMenuCategory(
-        const MenuCategoryModel(id: 'cat-meals', name: 'Lunch', sortOrder: 10),
-      );
+        await harness.controller.updateMenuCategory(
+          const MenuCategoryModel(
+            id: 'cat-meals',
+            name: 'Lunch',
+            sortOrder: 10,
+          ),
+        );
 
-      expect(harness.controller.menuCategories.single.name, 'Lunch');
-      expect(harness.controller.menuItems.single.category, 'Lunch');
-      expect(harness.controller.customerCategories, ['All', 'Lunch']);
-    });
+        expect(harness.controller.menuCategories.single.name, 'Lunch');
+        expect(harness.controller.menuItems.single.category, 'Lunch');
+        expect(harness.controller.customerCategories, ['All', 'Lunch']);
+      },
+    );
 
     test('prevents deleting categories still used by menu items', () async {
       final harness = _ControllerHarness(
@@ -276,7 +283,9 @@ void main() {
       await harness.controller.bootstrapFuture;
 
       await expectLater(
-        harness.controller.deleteMenuCategory(harness.controller.menuCategories.single),
+        harness.controller.deleteMenuCategory(
+          harness.controller.menuCategories.single,
+        ),
         throwsStateError,
       );
     });

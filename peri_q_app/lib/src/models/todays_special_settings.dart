@@ -2,10 +2,10 @@ class TodaysSpecialSettings {
   const TodaysSpecialSettings({
     this.enabled = true,
     this.label = "TODAY'S SPECIAL",
-    this.title = 'Flame-Grilled\nChicken Kota',
-    this.subtitle = 'R65 - Chips, Russian and Sauce included',
-    this.imagePath = 'assets/images/chicken_kota.png',
-    this.menuItemId = 'kota-1',
+    this.title = 'Chicken, Pork & Wors Plate',
+    this.subtitle = 'R70 - Flame-grilled meats served with pap',
+    this.imagePath = 'assets/images/brand_mark.png',
+    this.menuItemId = 'combo-chicken-pork-wors',
   });
 
   final bool enabled;
@@ -43,15 +43,15 @@ class TodaysSpecialSettings {
       label: _stringOrDefault(json['todays_special_label'], "TODAY'S SPECIAL"),
       title: _stringOrDefault(
         json['todays_special_title'],
-        'Flame-Grilled\nChicken Kota',
+        'Chicken, Pork & Wors Plate',
       ),
       subtitle: _stringOrDefault(
         json['todays_special_subtitle'],
-        'R65 - Chips, Russian and Sauce included',
+        'R70 - Flame-grilled meats served with pap',
       ),
       imagePath: _stringOrDefault(
         json['todays_special_image_path'],
-        'assets/images/chicken_kota.png',
+        'assets/images/brand_mark.png',
       ),
       menuItemId: _nullableString(json['todays_special_menu_item_id']),
     );

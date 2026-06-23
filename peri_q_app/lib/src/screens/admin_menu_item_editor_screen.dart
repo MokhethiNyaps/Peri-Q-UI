@@ -53,10 +53,6 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
     imageOptions = {
       ...widget.controller.menuItems.map((menuItem) => menuItem.imagePath),
       'assets/images/brand_mark.png',
-      'assets/images/chicken_kota.png',
-      'assets/images/kota_alt.png',
-      'assets/images/mixed_grill.png',
-      'assets/images/wings.png',
     }.toList();
 
     nameController = TextEditingController(text: item?.name ?? '');
@@ -117,16 +113,16 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
         return;
       }
       setState(() => imagePathController.text = imageUrl);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image uploaded.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Image uploaded.')));
     } catch (error) {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     } finally {
       if (mounted) {
         setState(() => isUploadingImage = false);
@@ -244,7 +240,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
               decoration: const InputDecoration(labelText: 'Price (R)'),
               validator: (value) {
                 final price = double.tryParse(value?.trim() ?? '');
-                if (price == null || price <= 0) {
+                if (price == null || price < 0) {
                   return 'Enter a valid price.';
                 }
                 return null;
@@ -317,9 +313,9 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
             const SizedBox(height: 6),
             Text(
               'Images upload to the Supabase menu-images bucket and this item stores the public URL.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppTheme.ashGrey,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: AppTheme.ashGrey),
             ),
             const SizedBox(height: 12),
             SwitchListTile.adaptive(
@@ -353,11 +349,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
   }
 
   String _contentTypeFor(String fileNameOrExtension) {
-    final extension = fileNameOrExtension
-        .split('.')
-        .last
-        .trim()
-        .toLowerCase();
+    final extension = fileNameOrExtension.split('.').last.trim().toLowerCase();
     return switch (extension) {
       'jpg' || 'jpeg' => 'image/jpeg',
       'png' => 'image/png',

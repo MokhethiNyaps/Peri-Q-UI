@@ -63,7 +63,7 @@ class _MenuScreenState extends State<MenuScreen> {
                           controller: searchController,
                           decoration: const InputDecoration(
                             prefixIcon: Icon(Icons.search_rounded),
-                            hintText: 'Search meals, kota, drinks...',
+                            hintText: 'Search meals, wors, drinks...',
                           ),
                           onChanged: (_) => setState(() {}),
                         ),

@@ -25,18 +25,13 @@ Future<void> showItemCustomizationFlow(
     return;
   }
 
-  await Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => CartScreen(controller: controller),
-    ),
-  );
+  await Navigator.of(
+    context,
+  ).push(MaterialPageRoute(builder: (_) => CartScreen(controller: controller)));
 }
 
 class _CustomizerSheet extends StatefulWidget {
-  const _CustomizerSheet({
-    required this.controller,
-    required this.item,
-  });
+  const _CustomizerSheet({required this.controller, required this.item});
 
   final AppController controller;
   final MenuItemModel item;
@@ -65,7 +60,10 @@ class _CustomizerSheetState extends State<_CustomizerSheet> {
   }
 
   double get total {
-    final addOnTotal = selectedAddOns.fold<double>(0, (sum, item) => sum + item.price);
+    final addOnTotal = selectedAddOns.fold<double>(
+      0,
+      (sum, item) => sum + item.price,
+    );
     return (widget.item.price + addOnTotal) * quantity;
   }
 
@@ -89,18 +87,27 @@ class _CustomizerSheetState extends State<_CustomizerSheet> {
                 borderRadius: BorderRadius.circular(24),
               ),
               const SizedBox(height: 18),
-              Text(widget.item.name, style: Theme.of(context).textTheme.displayLarge),
+              Text(
+                widget.item.name,
+                style: Theme.of(context).textTheme.displayLarge,
+              ),
               const SizedBox(height: 8),
-              Text(widget.item.description, style: Theme.of(context).textTheme.bodyLarge),
+              Text(
+                widget.item.description,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
               const SizedBox(height: 8),
               Text(
                 'R${widget.item.price.toStringAsFixed(0)}',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.periRed,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.headlineMedium?.copyWith(color: AppTheme.periRed),
               ),
               const SizedBox(height: 20),
-              Text('Spice Level', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Spice Level',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 10),
               Wrap(
                 spacing: 8,
@@ -146,7 +153,10 @@ class _CustomizerSheetState extends State<_CustomizerSheet> {
                 }),
               ],
               const SizedBox(height: 12),
-              Text('Store Notes', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Store Notes',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 10),
               TextField(
                 controller: notesController,
