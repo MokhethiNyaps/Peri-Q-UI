@@ -1,3 +1,54 @@
+import 'order.dart';
+
+class SavedAddress {
+  const SavedAddress({
+    required this.id,
+    required this.label,
+    required this.address,
+    this.notes = '',
+  });
+
+  final String id;
+  final String label;
+  final String address;
+  final String notes;
+
+  String get displayAddress {
+    final cleanNotes = notes.trim();
+    if (cleanNotes.isEmpty) {
+      return address.trim();
+    }
+    return '${address.trim()}\n$cleanNotes';
+  }
+
+  SavedAddress copyWith({
+    String? id,
+    String? label,
+    String? address,
+    String? notes,
+  }) {
+    return SavedAddress(
+      id: id ?? this.id,
+      label: label ?? this.label,
+      address: address ?? this.address,
+      notes: notes ?? this.notes,
+    );
+  }
+
+  factory SavedAddress.fromJson(Map<String, dynamic> json) {
+    return SavedAddress(
+      id: json['id'] as String? ?? '',
+      label: json['label'] as String? ?? 'Address',
+      address: json['address'] as String? ?? '',
+      notes: json['notes'] as String? ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'id': id, 'label': label, 'address': address, 'notes': notes};
+  }
+}
+
 class AppPreferences {
   const AppPreferences({
     this.hasReturningSession = false,
@@ -6,6 +57,9 @@ class AppPreferences {
     this.customerPhone = '',
     this.storeOpen = true,
     this.selectedMenuCategory = 'All',
+    this.savedAddresses = const [],
+    this.defaultAddressId,
+    this.preferredPaymentMethod = PaymentMethod.cashCollection,
   });
 
   final bool hasReturningSession;
@@ -14,6 +68,9 @@ class AppPreferences {
   final String customerPhone;
   final bool storeOpen;
   final String selectedMenuCategory;
+  final List<SavedAddress> savedAddresses;
+  final String? defaultAddressId;
+  final PaymentMethod preferredPaymentMethod;
 
   AppPreferences copyWith({
     bool? hasReturningSession,
@@ -22,6 +79,10 @@ class AppPreferences {
     String? customerPhone,
     bool? storeOpen,
     String? selectedMenuCategory,
+    List<SavedAddress>? savedAddresses,
+    String? defaultAddressId,
+    bool clearDefaultAddressId = false,
+    PaymentMethod? preferredPaymentMethod,
   }) {
     return AppPreferences(
       hasReturningSession: hasReturningSession ?? this.hasReturningSession,
@@ -30,10 +91,17 @@ class AppPreferences {
       customerPhone: customerPhone ?? this.customerPhone,
       storeOpen: storeOpen ?? this.storeOpen,
       selectedMenuCategory: selectedMenuCategory ?? this.selectedMenuCategory,
+      savedAddresses: savedAddresses ?? this.savedAddresses,
+      defaultAddressId: clearDefaultAddressId
+          ? null
+          : (defaultAddressId ?? this.defaultAddressId),
+      preferredPaymentMethod:
+          preferredPaymentMethod ?? this.preferredPaymentMethod,
     );
   }
 
   factory AppPreferences.fromJson(Map<String, dynamic> json) {
+    final savedAddressValues = json['savedAddresses'] as List<dynamic>? ?? [];
     return AppPreferences(
       hasReturningSession: json['hasReturningSession'] as bool? ?? false,
       isGuest: json['isGuest'] as bool? ?? true,
@@ -41,6 +109,15 @@ class AppPreferences {
       customerPhone: json['customerPhone'] as String? ?? '',
       storeOpen: json['storeOpen'] as bool? ?? true,
       selectedMenuCategory: json['selectedMenuCategory'] as String? ?? 'All',
+      savedAddresses: savedAddressValues
+          .whereType<Map<String, dynamic>>()
+          .map(SavedAddress.fromJson)
+          .where((address) => address.id.isNotEmpty)
+          .toList(),
+      defaultAddressId: json['defaultAddressId'] as String?,
+      preferredPaymentMethod: paymentMethodFromCode(
+        json['preferredPaymentMethod'] as String? ?? 'cash_collection',
+      ),
     );
   }
 
@@ -52,6 +129,11 @@ class AppPreferences {
       'customerPhone': customerPhone,
       'storeOpen': storeOpen,
       'selectedMenuCategory': selectedMenuCategory,
+      'savedAddresses': savedAddresses
+          .map((address) => address.toJson())
+          .toList(),
+      'defaultAddressId': defaultAddressId,
+      'preferredPaymentMethod': preferredPaymentMethod.code,
     };
   }
 }

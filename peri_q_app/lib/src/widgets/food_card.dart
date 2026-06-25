@@ -20,7 +20,7 @@ class FoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(18);
+    final radius = BorderRadius.circular(16);
     final theme = Theme.of(context);
 
     if (compact) {
@@ -46,7 +46,7 @@ class FoodCard extends StatelessWidget {
                 imagePath: item.imagePath,
                 width: 84,
                 height: 84,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -103,7 +103,7 @@ class FoodCard extends StatelessWidget {
                     style: FilledButton.styleFrom(
                       backgroundColor: AppTheme.periRed.withValues(alpha: 0.1),
                       foregroundColor: AppTheme.periRed,
-                      minimumSize: const Size(0, 38),
+                      minimumSize: const Size(64, 40),
                     ),
                   ),
                 ],
@@ -139,7 +139,7 @@ class FoodCard extends StatelessWidget {
                   imagePath: item.imagePath,
                   width: double.infinity,
                   fit: BoxFit.cover,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               const SizedBox(height: 10),

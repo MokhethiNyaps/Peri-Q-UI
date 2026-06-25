@@ -69,7 +69,7 @@ class _MenuScreenState extends State<MenuScreen> {
                         ),
                         const SizedBox(height: 14),
                         SizedBox(
-                          height: 42,
+                          height: 46,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemCount:
@@ -93,7 +93,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                                 label: Text(
-                                  category,
+                                  category.toUpperCase(),
                                   style: TextStyle(
                                     color: selected
                                         ? Colors.white

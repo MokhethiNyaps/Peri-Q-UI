@@ -248,6 +248,50 @@ void main() {
       expect(harness.controller.customerCategories, ['All', 'Meals', 'Drinks']);
     });
 
+    test('prioritizes main meal categories for customer filters', () async {
+      final harness = _ControllerHarness(
+        menuCategories: const [
+          MenuCategoryModel(
+            id: 'cat-drinks',
+            name: 'Cold Drinks',
+            sortOrder: 10,
+          ),
+          MenuCategoryModel(
+            id: 'cat-chicken',
+            name: 'Chicken Meals',
+            sortOrder: 80,
+          ),
+          MenuCategoryModel(
+            id: 'cat-combo',
+            name: 'Combo Plates',
+            sortOrder: 90,
+          ),
+          MenuCategoryModel(id: 'cat-wors', name: 'Wors Meals', sortOrder: 100),
+        ],
+        menuItems: [
+          _menuItem(id: 'drink', name: 'Drink', category: 'Cold Drinks'),
+          _menuItem(id: 'combo', name: 'Combo', category: 'Combo Plates'),
+          _menuItem(id: 'wors', name: 'Wors', category: 'Wors Meals'),
+          _menuItem(id: 'chicken', name: 'Chicken', category: 'Chicken Meals'),
+        ],
+      );
+      await harness.controller.bootstrapFuture;
+
+      expect(harness.controller.customerCategories, [
+        'All',
+        'Combo Plates',
+        'Wors Meals',
+        'Chicken Meals',
+        'Cold Drinks',
+      ]);
+      expect(harness.controller.featuredItems.map((item) => item.category), [
+        'Combo Plates',
+        'Wors Meals',
+        'Chicken Meals',
+        'Cold Drinks',
+      ]);
+    });
+
     test(
       'renames categories and updates menu items using that category',
       () async {
@@ -304,6 +348,50 @@ void main() {
       expect(harness.menu.lastUploadContentType, 'image/png');
     });
   });
+
+  group('AppController customer preferences', () {
+    test(
+      'loads and persists saved addresses and payment preferences',
+      () async {
+        final harness = _ControllerHarness(
+          seedPreferences: const AppPreferences(
+            savedAddresses: [
+              SavedAddress(id: 'home', label: 'Home', address: '1 Main Street'),
+            ],
+            defaultAddressId: 'home',
+            preferredPaymentMethod: PaymentMethod.eft,
+          ),
+        );
+        await harness.controller.bootstrapFuture;
+
+        expect(harness.controller.defaultAddress?.label, 'Home');
+        expect(harness.controller.preferredPaymentMethod, PaymentMethod.eft);
+
+        await harness.controller.addSavedAddress(
+          label: 'Work',
+          address: '2 Office Park',
+          notes: 'Reception',
+        );
+        final workAddress = harness.controller.savedAddresses.last;
+        await harness.controller.setDefaultAddress(workAddress.id);
+        await harness.controller.setPreferredPaymentMethod(
+          PaymentMethod.cashDelivery,
+        );
+
+        expect(
+          harness.preferences.preferences.defaultAddressId,
+          workAddress.id,
+        );
+        expect(
+          harness.preferences.preferences.preferredPaymentMethod,
+          PaymentMethod.cashDelivery,
+        );
+
+        await harness.controller.deleteSavedAddress(workAddress.id);
+        expect(harness.controller.defaultAddress?.id, 'home');
+      },
+    );
+  });
 }
 
 class _ControllerHarness {
@@ -312,13 +400,16 @@ class _ControllerHarness {
     List<MenuCategoryModel>? menuCategories,
     TodaysSpecialSettings? todaysSpecialSettings,
     AppSettings? appSettings,
+    AppPreferences? seedPreferences,
   }) : auth = _FakeAuthRepository(),
        menu = _FakeMenuRepository(
          menuItems ?? const [],
          menuCategories ?? const [],
        ),
        orders = _FakeOrderRepository(),
-       preferences = _FakePreferencesRepository(),
+       preferences = _FakePreferencesRepository(
+         seedPreferences ?? const AppPreferences(),
+       ),
        store = _FakeStoreRepository(
          appSettings ??
              AppSettings(
@@ -521,7 +612,9 @@ class _FakeOrderRepository implements OrderRepository {
 }
 
 class _FakePreferencesRepository implements PreferencesRepository {
-  AppPreferences preferences = const AppPreferences();
+  _FakePreferencesRepository(this.preferences);
+
+  AppPreferences preferences;
 
   @override
   Future<AppPreferences> loadPreferences() async {

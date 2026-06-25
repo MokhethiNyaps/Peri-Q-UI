@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_theme.dart';
 import '../models/order.dart';
@@ -7,6 +8,39 @@ class TrackingScreen extends StatelessWidget {
   const TrackingScreen({super.key, required this.order});
 
   final OrderModel order;
+  static const String storeAddress =
+      '28 King Edward Rd, Bloemfontein, FS 9301, South Africa';
+  static const String branchPhoneDisplay = '+27 73 642 3549';
+  static const String branchPhoneDial = '+27736423549';
+  static const String branchWhatsAppPhone = '27736423549';
+
+  Future<void> _contactBranch() async {
+    final message = Uri.encodeComponent(
+      'Hello, I would like assistance with my order.',
+    );
+    final whatsappUri = Uri.parse(
+      'whatsapp://send?phone=$branchWhatsAppPhone&text=$message',
+    );
+    final phoneUri = Uri.parse('tel:$branchPhoneDial');
+
+    try {
+      final openedWhatsApp = await launchUrl(
+        whatsappUri,
+        mode: LaunchMode.externalApplication,
+      );
+      if (openedWhatsApp) {
+        return;
+      }
+    } catch (_) {
+      // Fall through to the dialer when WhatsApp is unavailable.
+    }
+
+    try {
+      await launchUrl(phoneUri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      // Keep the customer flow quiet if the OS cannot route either action.
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,12 +135,12 @@ class TrackingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Soweto Branch\n8127 Vilakazi Street, Orlando West',
+                  'Peri Q Branch\n$storeAddress\n$branchPhoneDisplay',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 12),
                 FilledButton.tonalIcon(
-                  onPressed: () {},
+                  onPressed: _contactBranch,
                   icon: const Icon(Icons.call_rounded),
                   label: const Text('Call branch directly'),
                 ),

@@ -82,7 +82,7 @@ class HomeScreen extends StatelessWidget {
                       const SectionHeader(title: 'Categories'),
                       const SizedBox(height: 12),
                       SizedBox(
-                        height: 42,
+                        height: 46,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemBuilder: (context, index) {
@@ -100,7 +100,7 @@ class HomeScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(999),
                               ),
                               label: Text(
-                                category,
+                                category.toUpperCase(),
                                 style: TextStyle(
                                   color: selected
                                       ? Colors.white
@@ -114,7 +114,7 @@ class HomeScreen extends StatelessWidget {
                           itemCount: controller.customerCategories.length,
                         ),
                       ),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 26),
                       SectionHeader(
                         title: 'Featured Meals',
                         actionLabel: 'View All',
@@ -155,7 +155,7 @@ class HomeScreen extends StatelessWidget {
               ),
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 10),
                   child: const SectionHeader(title: "Today's Specials"),
                 ),
               ),
@@ -233,9 +233,9 @@ class _HeroBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 190,
+      height: 196,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(18),
         gradient: const LinearGradient(
           colors: [Color(0xFF161616), Color(0xFF2A1912)],
         ),
@@ -263,13 +263,13 @@ class _HeroBanner extends StatelessWidget {
               width: 170,
               fit: BoxFit.cover,
               borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(26),
-                bottomRight: Radius.circular(26),
+                topRight: Radius.circular(18),
+                bottomRight: Radius.circular(18),
               ),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(22),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 190),
               child: Column(

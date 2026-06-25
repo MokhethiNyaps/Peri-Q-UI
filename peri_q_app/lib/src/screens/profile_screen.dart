@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
+import '../models/order.dart';
 import 'admin_dashboard_screen.dart';
 import 'auth_screen.dart';
+import 'payment_preferences_screen.dart';
+import 'saved_addresses_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key, required this.controller});
@@ -77,15 +80,38 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              ...[
-                ('Saved Addresses', Icons.location_on_outlined),
-                ('Payment Preferences', Icons.account_balance_wallet_outlined),
-                ('Language', Icons.language_rounded),
-                ('Push Notifications', Icons.notifications_outlined),
-              ].map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _ProfileTile(title: entry.$1, icon: entry.$2),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ProfileTile(
+                  title: 'Saved Addresses',
+                  subtitle: controller.defaultAddress == null
+                      ? 'Add a delivery address'
+                      : '${controller.savedAddresses.length} saved • ${controller.defaultAddress!.label} default',
+                  icon: Icons.location_on_outlined,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            SavedAddressesScreen(controller: controller),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ProfileTile(
+                  title: 'Payment Preferences',
+                  subtitle: controller.preferredPaymentMethod.label,
+                  icon: Icons.account_balance_wallet_outlined,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            PaymentPreferencesScreen(controller: controller),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 8),
@@ -183,32 +209,57 @@ class ProfileScreen extends StatelessWidget {
 }
 
 class _ProfileTile extends StatelessWidget {
-  const _ProfileTile({required this.title, required this.icon});
+  const _ProfileTile({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+    this.subtitle,
+  });
 
   final String title;
+  final String? subtitle;
   final IconData icon;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 20,
-            backgroundColor: AppTheme.mutedSurface,
-            child: Icon(icon, color: AppTheme.ashGrey),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-          ),
-          const Icon(Icons.chevron_right_rounded),
-        ],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Ink(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: AppTheme.mutedSurface,
+              child: Icon(icon, color: AppTheme.ashGrey),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: Theme.of(context).textTheme.titleLarge),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right_rounded),
+          ],
+        ),
       ),
     );
   }

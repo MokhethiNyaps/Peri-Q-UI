@@ -133,10 +133,10 @@ for each row execute procedure public.touch_updated_at();
 insert into public.menu_categories (id, name, sort_order)
 values
   ('cat-combo-plates', 'Combo Plates', 10),
-  ('cat-pork-meals', 'Pork Meals', 20),
-  ('cat-chicken-meals', 'Chicken Meals', 30),
-  ('cat-liver-meals', 'Liver Meals', 40),
-  ('cat-wors-meals', 'Wors Meals', 50),
+  ('cat-wors-meals', 'Wors Meals', 20),
+  ('cat-pork-meals', 'Pork Meals', 30),
+  ('cat-chicken-meals', 'Chicken Meals', 40),
+  ('cat-liver-meals', 'Liver Meals', 50),
   ('cat-family-meals', 'Family Meals', 60),
   ('cat-build-your-own-meal', 'Build Your Own Meal', 70),
   ('cat-sides', 'Sides', 80),

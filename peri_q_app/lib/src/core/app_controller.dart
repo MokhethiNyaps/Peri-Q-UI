@@ -37,9 +37,12 @@ class AppController extends ChangeNotifier {
   List<MenuItemModel> menuItems = [];
   List<OrderModel> orders = [];
   List<CartItemModel> cart = [];
+  List<SavedAddress> savedAddresses = [];
 
   String customerName = '';
   String customerPhone = '';
+  String? defaultAddressId;
+  PaymentMethod preferredPaymentMethod = PaymentMethod.cashCollection;
   String? userId;
   String? userEmail;
   bool isGuest = true;
@@ -54,6 +57,15 @@ class AppController extends ChangeNotifier {
 
   bool get canAccessAdmin => isAdmin;
 
+  static const List<String> priorityCategories = [
+    'Combo Plates',
+    'Wors Meals',
+    'Pork Meals',
+    'Chicken Meals',
+    'Liver Meals',
+    'Family Meals',
+  ];
+
   AppPreferences get _currentPreferences {
     return AppPreferences(
       hasReturningSession: hasReturningSession,
@@ -62,6 +74,9 @@ class AppController extends ChangeNotifier {
       customerPhone: customerPhone,
       storeOpen: storeOpen,
       selectedMenuCategory: selectedMenuCategory,
+      savedAddresses: List<SavedAddress>.from(savedAddresses),
+      defaultAddressId: defaultAddressId,
+      preferredPaymentMethod: preferredPaymentMethod,
     );
   }
 
@@ -83,7 +98,7 @@ class AppController extends ChangeNotifier {
     final categorySet = <String>{};
     final values = <String>['All'];
 
-    for (final category in menuCategories) {
+    for (final category in _orderedCategories(menuCategories)) {
       if (!includeInactiveCategories && !category.isActive) {
         continue;
       }
@@ -92,7 +107,7 @@ class AppController extends ChangeNotifier {
       }
     }
 
-    for (final item in items) {
+    for (final item in _orderedMenuItems(items)) {
       if (categorySet.add(item.category)) {
         values.add(item.category);
       }
@@ -101,22 +116,23 @@ class AppController extends ChangeNotifier {
     return values;
   }
 
-  List<MenuItemModel> get featuredItems => availableMenuItems.take(4).toList();
+  List<MenuItemModel> get featuredItems =>
+      _orderedMenuItems(availableMenuItems).take(4).toList();
 
   List<MenuItemModel> get todaysSpecials {
     final configuredItem = todaysSpecialItem;
-    final specials = availableMenuItems.where((item) {
-      return item.id == 'combo-chicken-pork-wors' ||
-          item.id == 'combo-choice-meat-liver-wors' ||
-          item.id == 'family-meal-for-5';
-    }).toList();
+    final specials = _orderedMenuItems(
+      availableMenuItems,
+    ).where(_isPriorityMenuItem).take(3).toList();
 
     final ordered = <MenuItemModel>[
       ?configuredItem,
       ...specials.where((item) => item.id != configuredItem?.id),
     ];
 
-    return ordered.isNotEmpty ? ordered : availableMenuItems.take(3).toList();
+    return ordered.isNotEmpty
+        ? ordered
+        : _orderedMenuItems(availableMenuItems).take(3).toList();
   }
 
   MenuItemModel? get todaysSpecialItem {
@@ -133,7 +149,23 @@ class AppController extends ChangeNotifier {
       }
     }
 
+    final priorityItems = _orderedMenuItems(
+      availableMenuItems,
+    ).where(_isPriorityMenuItem).toList();
+    if (priorityItems.isNotEmpty) {
+      return priorityItems.first;
+    }
+
     return availableMenuItems.isEmpty ? null : availableMenuItems.first;
+  }
+
+  SavedAddress? get defaultAddress {
+    for (final address in savedAddresses) {
+      if (address.id == defaultAddressId) {
+        return address;
+      }
+    }
+    return savedAddresses.isEmpty ? null : savedAddresses.first;
   }
 
   List<OrderModel> get activeOrders =>
@@ -181,9 +213,12 @@ class AppController extends ChangeNotifier {
       );
 
       selectedMenuCategory = preferences.selectedMenuCategory;
+      savedAddresses = List<SavedAddress>.from(preferences.savedAddresses);
+      defaultAddressId = _validDefaultAddressId(preferences.defaultAddressId);
+      preferredPaymentMethod = preferences.preferredPaymentMethod;
       _applyAppSettings(fetchedAppSettings);
-      menuCategories = fetchedMenuCategories;
-      menuItems = fetchedMenuItems;
+      menuCategories = _orderedCategories(fetchedMenuCategories);
+      menuItems = _orderedMenuItems(fetchedMenuItems);
       orders = fetchedOrders;
 
       if (!categories.contains(selectedMenuCategory)) {
@@ -200,6 +235,9 @@ class AppController extends ChangeNotifier {
       menuItems = [];
       orders = [];
       cart = [];
+      savedAddresses = [];
+      defaultAddressId = null;
+      preferredPaymentMethod = PaymentMethod.cashCollection;
     } finally {
       isBootstrapping = false;
       notifyListeners();
@@ -328,6 +366,60 @@ class AppController extends ChangeNotifier {
   void setSelectedMenuCategory(String category) {
     selectedMenuCategory = category;
     _savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> addSavedAddress({
+    required String label,
+    required String address,
+    String notes = '',
+  }) async {
+    final savedAddress = SavedAddress(
+      id: 'address-${DateTime.now().microsecondsSinceEpoch}',
+      label: label.trim(),
+      address: address.trim(),
+      notes: notes.trim(),
+    );
+    savedAddresses = [...savedAddresses, savedAddress];
+    defaultAddressId ??= savedAddress.id;
+    await _savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> updateSavedAddress(SavedAddress updatedAddress) async {
+    savedAddresses = [
+      for (final address in savedAddresses)
+        if (address.id == updatedAddress.id) updatedAddress else address,
+    ];
+    defaultAddressId = _validDefaultAddressId(defaultAddressId);
+    await _savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> deleteSavedAddress(String addressId) async {
+    savedAddresses = [
+      for (final address in savedAddresses)
+        if (address.id != addressId) address,
+    ];
+    defaultAddressId = defaultAddressId == addressId
+        ? (savedAddresses.isEmpty ? null : savedAddresses.first.id)
+        : _validDefaultAddressId(defaultAddressId);
+    await _savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> setDefaultAddress(String addressId) async {
+    if (!savedAddresses.any((address) => address.id == addressId)) {
+      return;
+    }
+    defaultAddressId = addressId;
+    await _savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> setPreferredPaymentMethod(PaymentMethod method) async {
+    preferredPaymentMethod = method;
+    await _savePreferences();
     notifyListeners();
   }
 
@@ -577,11 +669,13 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _reloadMenuCategories() async {
-    menuCategories = await _menuRepository.fetchMenuCategories();
+    menuCategories = _orderedCategories(
+      await _menuRepository.fetchMenuCategories(),
+    );
   }
 
   Future<void> _reloadMenuItems() async {
-    menuItems = await _menuRepository.fetchMenuItems();
+    menuItems = _orderedMenuItems(await _menuRepository.fetchMenuItems());
     if (!categories.contains(selectedMenuCategory)) {
       selectedMenuCategory = 'All';
     }
@@ -617,5 +711,61 @@ class AppController extends ChangeNotifier {
     }
 
     return '+27 ${trimmed.replaceFirst(RegExp(r'^0+'), '')}';
+  }
+
+  String? _validDefaultAddressId(String? addressId) {
+    if (addressId == null) {
+      return savedAddresses.isEmpty ? null : savedAddresses.first.id;
+    }
+    return savedAddresses.any((address) => address.id == addressId)
+        ? addressId
+        : (savedAddresses.isEmpty ? null : savedAddresses.first.id);
+  }
+
+  List<MenuCategoryModel> _orderedCategories(
+    List<MenuCategoryModel> categories,
+  ) {
+    final ordered = List<MenuCategoryModel>.from(categories);
+    ordered.sort((a, b) {
+      final priorityCompare = _categoryPriority(
+        a.name,
+      ).compareTo(_categoryPriority(b.name));
+      if (priorityCompare != 0) {
+        return priorityCompare;
+      }
+
+      final sortCompare = a.sortOrder.compareTo(b.sortOrder);
+      if (sortCompare != 0) {
+        return sortCompare;
+      }
+
+      return a.name.compareTo(b.name);
+    });
+    return ordered;
+  }
+
+  List<MenuItemModel> _orderedMenuItems(List<MenuItemModel> items) {
+    final ordered = List<MenuItemModel>.from(items);
+    ordered.sort((a, b) {
+      final priorityCompare = _categoryPriority(
+        a.category,
+      ).compareTo(_categoryPriority(b.category));
+      if (priorityCompare != 0) {
+        return priorityCompare;
+      }
+      return a.name.compareTo(b.name);
+    });
+    return ordered;
+  }
+
+  int _categoryPriority(String category) {
+    final index = priorityCategories.indexWhere(
+      (value) => value.toLowerCase() == category.toLowerCase(),
+    );
+    return index == -1 ? 1000 : index;
+  }
+
+  bool _isPriorityMenuItem(MenuItemModel item) {
+    return _categoryPriority(item.category) < 1000;
   }
 }

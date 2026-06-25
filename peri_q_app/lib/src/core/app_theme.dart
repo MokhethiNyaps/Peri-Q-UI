@@ -26,28 +26,40 @@ class AppTheme {
 
     final textTheme = TextTheme(
       displayLarge: GoogleFonts.oswald(
-        fontSize: 32,
+        fontSize: 31,
         fontWeight: FontWeight.w700,
         color: smokeCharcoal,
       ),
       headlineLarge: GoogleFonts.oswald(
-        fontSize: 28,
+        fontSize: 27,
         fontWeight: FontWeight.w600,
         color: smokeCharcoal,
       ),
       headlineMedium: GoogleFonts.oswald(
-        fontSize: 22,
+        fontSize: 21,
         fontWeight: FontWeight.w600,
         color: smokeCharcoal,
       ),
       titleLarge: GoogleFonts.oswald(
         fontSize: 18,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
         color: smokeCharcoal,
       ),
-      bodyLarge: GoogleFonts.nunitoSans(fontSize: 16, color: smokeCharcoal),
-      bodyMedium: GoogleFonts.nunitoSans(fontSize: 14, color: ashGrey),
-      bodySmall: GoogleFonts.nunitoSans(fontSize: 12, color: ashGrey),
+      bodyLarge: GoogleFonts.nunitoSans(
+        fontSize: 16,
+        height: 1.35,
+        color: smokeCharcoal,
+      ),
+      bodyMedium: GoogleFonts.nunitoSans(
+        fontSize: 14,
+        height: 1.35,
+        color: ashGrey,
+      ),
+      bodySmall: GoogleFonts.nunitoSans(
+        fontSize: 12,
+        height: 1.3,
+        color: ashGrey,
+      ),
       labelLarge: GoogleFonts.nunitoSans(
         fontSize: 14,
         fontWeight: FontWeight.w700,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
+import '../models/app_preferences.dart';
 import '../models/order.dart';
 import 'confirmation_screen.dart';
 
@@ -21,6 +22,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final addressController = TextEditingController();
   OrderType orderType = OrderType.pickup;
   PaymentMethod paymentMethod = PaymentMethod.cashCollection;
+  String? selectedAddressId;
 
   @override
   void initState() {
@@ -30,6 +32,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
     phoneController = TextEditingController(
       text: widget.controller.customerPhone,
+    );
+    selectedAddressId = widget.controller.defaultAddress?.id;
+    addressController.text =
+        widget.controller.defaultAddress?.displayAddress ?? '';
+    paymentMethod = _availablePaymentFor(
+      widget.controller.preferredPaymentMethod,
+      orderType,
     );
   }
 
@@ -48,6 +57,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           paymentMethod == PaymentMethod.cashDelivery) {
         paymentMethod = PaymentMethod.cashCollection;
       }
+    });
+  }
+
+  PaymentMethod _availablePaymentFor(PaymentMethod method, OrderType type) {
+    if (method == PaymentMethod.card) {
+      return PaymentMethod.cashCollection;
+    }
+    if (type == OrderType.pickup && method == PaymentMethod.cashDelivery) {
+      return PaymentMethod.cashCollection;
+    }
+    return method;
+  }
+
+  Future<void> _selectPayment(PaymentMethod method) async {
+    setState(() => paymentMethod = method);
+    await widget.controller.setPreferredPaymentMethod(method);
+  }
+
+  void _selectSavedAddress(String addressId) {
+    SavedAddress? address;
+    for (final entry in widget.controller.savedAddresses) {
+      if (entry.id == addressId) {
+        address = entry;
+        break;
+      }
+    }
+    if (address == null) {
+      return;
+    }
+    final selectedAddress = address;
+    setState(() {
+      selectedAddressId = selectedAddress.id;
+      addressController.text = selectedAddress.displayAddress;
     });
   }
 
@@ -165,6 +207,52 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               if (orderType == OrderType.delivery) ...[
                 const SizedBox(height: 12),
+                if (widget.controller.savedAddresses.isNotEmpty) ...[
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Saved Address',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: widget.controller.savedAddresses.map((
+                            address,
+                          ) {
+                            final selected = address.id == selectedAddressId;
+                            return ChoiceChip(
+                              selected: selected,
+                              selectedColor: AppTheme.periRed,
+                              backgroundColor: AppTheme.mutedSurface,
+                              label: Text(
+                                address.label,
+                                style: TextStyle(
+                                  color: selected
+                                      ? Colors.white
+                                      : AppTheme.smokeCharcoal,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              onSelected: (_) =>
+                                  _selectSavedAddress(address.id),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 TextFormField(
                   controller: addressController,
                   maxLines: 3,
@@ -186,35 +274,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 'Payment Method',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
+              const SizedBox(height: 4),
+              Text(
+                'Selected: ${paymentMethod.label}',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
               const SizedBox(height: 12),
               _PaymentTile(
                 title: 'Cash on Collection',
-                emoji: '💵',
+                icon: Icons.storefront_rounded,
                 selected: paymentMethod == PaymentMethod.cashCollection,
                 enabled: true,
-                onTap: () => setState(
-                  () => paymentMethod = PaymentMethod.cashCollection,
-                ),
+                onTap: () => _selectPayment(PaymentMethod.cashCollection),
               ),
               _PaymentTile(
                 title: 'Cash on Delivery',
-                emoji: '💸',
+                icon: Icons.two_wheeler_rounded,
                 selected: paymentMethod == PaymentMethod.cashDelivery,
                 enabled: orderType == OrderType.delivery,
-                onTap: () =>
-                    setState(() => paymentMethod = PaymentMethod.cashDelivery),
+                onTap: () => _selectPayment(PaymentMethod.cashDelivery),
               ),
               _PaymentTile(
                 title: 'EFT / Bank Transfer',
-                emoji: '🏦',
+                icon: Icons.account_balance_rounded,
                 subtitle: 'Upload proof after ordering',
                 selected: paymentMethod == PaymentMethod.eft,
                 enabled: true,
-                onTap: () => setState(() => paymentMethod = PaymentMethod.eft),
+                onTap: () => _selectPayment(PaymentMethod.eft),
               ),
               _PaymentTile(
                 title: 'Card Payment',
-                emoji: '💳',
+                icon: Icons.credit_card_rounded,
                 subtitle: 'Coming soon',
                 selected: paymentMethod == PaymentMethod.card,
                 enabled: false,
@@ -373,7 +463,7 @@ class _ChoiceCard extends StatelessWidget {
 class _PaymentTile extends StatelessWidget {
   const _PaymentTile({
     required this.title,
-    required this.emoji,
+    required this.icon,
     required this.selected,
     required this.enabled,
     required this.onTap,
@@ -381,7 +471,7 @@ class _PaymentTile extends StatelessWidget {
   });
 
   final String title;
-  final String emoji;
+  final IconData icon;
   final String? subtitle;
   final bool selected;
   final bool enabled;
@@ -401,7 +491,20 @@ class _PaymentTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Text(emoji, style: const TextStyle(fontSize: 24)),
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppTheme.periRed.withValues(alpha: 0.1)
+                      : AppTheme.mutedSurface,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+                ),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
