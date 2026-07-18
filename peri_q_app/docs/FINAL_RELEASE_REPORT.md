@@ -43,7 +43,7 @@ The bundle is **unsigned by design** because no owner upload key was available. 
 - Android Gradle Plugin 9.0.1
 - Gradle 9.1.0
 - Kotlin plugin declaration 2.3.20; compatibility mode retained
-- Source base commit: `b28057595951d0e32c37c71418312b5db3426d58` plus the uncommitted audited working-tree changes
+- Application source tree represented by commit: `6f328e3129b3c1acd183e7c1cbb11b300f46c4fb`
 - Build command:
 
 ```powershell
