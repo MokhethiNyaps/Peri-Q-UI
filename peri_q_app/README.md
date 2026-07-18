@@ -1,37 +1,27 @@
-# Peri Q Flutter App
+# Rasta's Peri Q Chesanyama
 
-Flutter front-end implementation of the Peri Q mobile ordering app based on the provided UI designs.
+Production-oriented Flutter/Supabase ordering app for a single local store.
 
 ## Run locally
 
-1. Make sure Flutter 3.44+ and the Android SDK are installed.
-2. From this folder run:
+1. Install Flutter 3.44+, Java 21 and Android SDK/API 36.
+2. Supply Supabase values as compile-time defines (do not bundle `.env`):
 
 ```bash
 flutter pub get
-flutter run
+flutter run --dart-define=SUPABASE_URL=https://PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=KEY
 ```
 
-## Build debug APK
+## Quality gates
 
 ```bash
-flutter build apk --debug
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
 ```
 
-The generated APK will be written to:
+## Release
 
-`build/app/outputs/flutter-apk/app-debug.apk`
+Read `docs/ANDROID_SIGNING_GUIDE.md`, `docs/FINAL_RELEASE_REPORT.md` and `docs/GOOGLE_PLAY_RELEASE_CHECKLIST.md`. Apply `supabase/schema.sql` to staging/production before testing order placement. Never use a service-role key in the app.
 
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+The checked-in release configuration targets API 36, shrinks resources/code, and uses a permanent candidate application ID. Without ignored `android/key.properties`, release output is intentionally unsigned.

@@ -4,14 +4,14 @@ This app now expects Supabase configuration and no longer uses demo/mock data.
 
 ## 1. Add local configuration
 
-Create a `.env` file in `peri_q_app/` with:
+For local convenience you may keep an ignored `.env`, but the app does not load or bundle it. Pass values with `--dart-define`:
 
 ```env
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
-You can also pass the same values with `--dart-define` when building or running the app.
+Only use the project URL and publishable key. Never use a service-role key.
 
 ## 2. Create the database schema
 
@@ -21,9 +21,10 @@ Open the SQL editor in your Supabase project and run:
 -- paste the contents of supabase/schema.sql
 ```
 
-The schema also seeds the Rasta's PeriQ Chesanyama categories and menu items,
-creates the `menu-images` Storage bucket, and enables the RLS policies needed
-for owner/admin edits from the app.
+The schema seeds the catalogue, creates public `menu-images` and private
+`payment-proofs`, enables RLS, prevents role escalation, restricts order
+status transitions, and installs the trusted `place_order`,
+`attach_payment_proof`, and `delete_own_account` RPCs.
 
 ## 3. Enable authentication providers
 
@@ -78,10 +79,10 @@ flutter build apk --debug --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supaba
 - `menu_categories`: public category list managed from the owner dashboard.
 - `menu_items`: public menu catalog seeded with the Rasta's PeriQ Chesanyama
   menu.
-- `orders`: order headers tied to the signed-in user.
+- `orders`: order headers tied to the signed-in user and idempotent request.
 - `order_items`: snapshot of the items inside each order.
-- `storage.objects` / `menu-images`: public Supabase Storage bucket for admin
-  menu image uploads.
+- `storage.objects` / `menu-images`: public catalogue photos, admin writes.
+- `storage.objects` / `payment-proofs`: private, owner/admin-scoped EFT files.
 
 ## Production services
 
