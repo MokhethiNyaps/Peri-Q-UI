@@ -103,6 +103,7 @@ class OrderDraft {
     required this.paymentMethod,
     required this.totalPrice,
     required this.estimatedMinutes,
+    required this.clientRequestId,
     this.deliveryAddress,
   });
 
@@ -113,6 +114,7 @@ class OrderDraft {
   final PaymentMethod paymentMethod;
   final double totalPrice;
   final int estimatedMinutes;
+  final String clientRequestId;
   final String? deliveryAddress;
 
   Map<String, dynamic> toJson() {
@@ -124,6 +126,7 @@ class OrderDraft {
       'paymentMethod': paymentMethod.code,
       'totalPrice': totalPrice,
       'estimatedMinutes': estimatedMinutes,
+      'clientRequestId': clientRequestId,
       'deliveryAddress': deliveryAddress,
     };
   }
@@ -142,6 +145,7 @@ class OrderModel {
     required this.status,
     required this.createdAt,
     required this.estimatedMinutes,
+    this.paymentProofPath,
     this.deliveryAddress,
   });
 
@@ -156,6 +160,7 @@ class OrderModel {
   OrderStatus status;
   final DateTime createdAt;
   final int estimatedMinutes;
+  final String? paymentProofPath;
   final String? deliveryAddress;
 
   bool get isActive =>
@@ -186,6 +191,7 @@ class OrderModel {
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.now(),
       estimatedMinutes: json['estimatedMinutes'] as int? ?? 0,
+      paymentProofPath: json['paymentProofPath'] as String?,
       deliveryAddress: json['deliveryAddress'] as String?,
     );
   }
@@ -203,6 +209,7 @@ class OrderModel {
       'status': status.code,
       'createdAt': createdAt.toIso8601String(),
       'estimatedMinutes': estimatedMinutes,
+      'paymentProofPath': paymentProofPath,
       'deliveryAddress': deliveryAddress,
     };
   }

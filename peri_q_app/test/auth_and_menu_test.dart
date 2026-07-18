@@ -51,6 +51,26 @@ void main() {
 
       expect(harness.auth.resetEmail, 'reset@example.com');
     });
+
+    test('deletes the account and clears local personal data', () async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+      await harness.controller.signInWithEmail(
+        email: 'customer@example.com',
+        password: 'secret1',
+      );
+      await harness.controller.addSavedAddress(
+        label: 'Home',
+        address: '1 Main Street',
+      );
+
+      await harness.controller.deleteAccount();
+
+      expect(harness.controller.hasReturningSession, isFalse);
+      expect(harness.controller.savedAddresses, isEmpty);
+      expect(harness.controller.userId, isNull);
+      expect(harness.auth.signedOut, isTrue);
+    });
   });
 
   group('AppController menu management', () {
@@ -392,6 +412,110 @@ void main() {
       },
     );
   });
+
+  group('Production order rules', () {
+    test('calculates quantities, add-ons, removal and delivery fee', () async {
+      final harness = _ControllerHarness(
+        appSettings: const AppSettings(
+          openingTime: '00:00',
+          closingTime: '00:00',
+          deliveryFee: 35,
+        ),
+      );
+      await harness.controller.bootstrapFuture;
+      final item = MenuItemModel(
+        id: 'plate',
+        name: 'Grill Plate',
+        description: 'A plate',
+        price: 60,
+        category: 'Meals',
+        imagePath: 'assets/images/brand_mark.png',
+        addOns: const [AddOnOption(name: 'Extra sauce', price: 5)],
+      );
+
+      harness.controller.addToCart(
+        item,
+        quantity: 2,
+        selectedAddOns: item.addOns,
+      );
+      expect(harness.controller.cartCount, 2);
+      expect(harness.controller.subtotal, 130);
+      expect(harness.controller.totalFor(OrderType.delivery), 165);
+
+      final cartItem = harness.controller.cart.single;
+      harness.controller.incrementCartItem(cartItem);
+      expect(harness.controller.subtotal, 195);
+      harness.controller.decrementCartItem(cartItem);
+      expect(harness.controller.cartCount, 2);
+      harness.controller.removeCartItem(cartItem);
+      expect(harness.controller.cart, isEmpty);
+    });
+
+    test('blocks unavailable items and unavailable fulfilment types', () async {
+      final harness = _ControllerHarness(
+        appSettings: const AppSettings(
+          openingTime: '00:00',
+          closingTime: '00:00',
+          deliveryAvailable: false,
+        ),
+      );
+      await harness.controller.bootstrapFuture;
+
+      expect(
+        () => harness.controller.addToCart(
+          _menuItem(id: 'off', name: 'Unavailable', isAvailable: false),
+        ),
+        throwsStateError,
+      );
+      expect(harness.controller.canUseOrderType(OrderType.pickup), isTrue);
+      expect(harness.controller.canUseOrderType(OrderType.delivery), isFalse);
+    });
+
+    test(
+      'reuses the idempotency key after a recoverable submission failure',
+      () async {
+        final harness = _ControllerHarness(
+          appSettings: const AppSettings(
+            openingTime: '00:00',
+            closingTime: '00:00',
+          ),
+        );
+        await harness.controller.bootstrapFuture;
+        await harness.controller.startGuestSession();
+        await harness.controller.updateCustomer(
+          name: 'Guest Customer',
+          phone: '0712345678',
+        );
+        harness.controller.addToCart(_menuItem(id: 'plate', name: 'Plate'));
+        harness.orders.failNextCreate = true;
+
+        await expectLater(
+          harness.controller.placeOrder(
+            orderType: OrderType.pickup,
+            paymentMethod: PaymentMethod.cashCollection,
+          ),
+          throwsA(isA<OrderSubmissionException>()),
+        );
+        await harness.controller.placeOrder(
+          orderType: OrderType.pickup,
+          paymentMethod: PaymentMethod.cashCollection,
+        );
+
+        expect(harness.orders.requestIds, hasLength(2));
+        expect(harness.orders.requestIds.first, harness.orders.requestIds.last);
+        expect(harness.controller.cart, isEmpty);
+      },
+    );
+
+    test('advances only through the supported order status flow', () async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+      final order = _FakeOrderRepository.order(status: OrderStatus.pending);
+
+      await harness.controller.advanceOrderStatus(order);
+      expect(harness.orders.updatedStatuses, [OrderStatus.preparing]);
+    });
+  });
 }
 
 class _ControllerHarness {
@@ -498,6 +622,11 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    signedOut = true;
+  }
+
+  @override
   Future<void> upsertProfile({
     required String name,
     required String phone,
@@ -518,6 +647,9 @@ class _FakeMenuRepository implements MenuRepository {
   final List<MenuCategoryModel> categories;
   int fetchCount = 0;
   String? lastUploadContentType;
+
+  @override
+  bool get lastFetchUsedCache => false;
 
   @override
   Future<List<MenuItemModel>> fetchMenuItems() async {
@@ -587,6 +719,25 @@ class _FakeMenuRepository implements MenuRepository {
 
 class _FakeOrderRepository implements OrderRepository {
   String? lastUserId;
+  bool failNextCreate = false;
+  final List<String> requestIds = [];
+  final List<OrderStatus> updatedStatuses = [];
+
+  static OrderModel order({OrderStatus status = OrderStatus.pending}) {
+    return OrderModel(
+      id: 'order-1',
+      orderNumber: 101,
+      customerName: 'Customer',
+      customerPhone: '+27710000000',
+      items: [],
+      orderType: OrderType.pickup,
+      paymentMethod: PaymentMethod.cashCollection,
+      totalPrice: 50,
+      status: status,
+      createdAt: DateTime(2026),
+      estimatedMinutes: 25,
+    );
+  }
 
   @override
   Future<List<OrderModel>> fetchOrders({
@@ -598,16 +749,50 @@ class _FakeOrderRepository implements OrderRepository {
   }
 
   @override
-  Future<OrderModel> createOrder(OrderDraft order, {String? userId}) {
-    throw UnimplementedError();
+  Future<OrderModel> createOrder(OrderDraft draft, {String? userId}) async {
+    requestIds.add(draft.clientRequestId);
+    if (failNextCreate) {
+      failNextCreate = false;
+      throw const OrderSubmissionException('Temporary failure');
+    }
+    return OrderModel(
+      id: 'order-${requestIds.length}',
+      orderNumber: 100 + requestIds.length,
+      customerName: draft.customerName,
+      customerPhone: draft.customerPhone,
+      items: draft.items,
+      orderType: draft.orderType,
+      paymentMethod: draft.paymentMethod,
+      totalPrice: draft.totalPrice,
+      status: OrderStatus.pending,
+      createdAt: DateTime(2026),
+      estimatedMinutes: draft.estimatedMinutes,
+      deliveryAddress: draft.deliveryAddress,
+    );
   }
 
   @override
   Future<OrderModel> updateOrderStatus({
     required String orderId,
     required OrderStatus status,
-  }) {
-    throw UnimplementedError();
+  }) async {
+    updatedStatuses.add(status);
+    return order(status: status);
+  }
+
+  @override
+  Stream<void> watchOrders({String? userId, bool includeAll = false}) {
+    return const Stream<void>.empty();
+  }
+
+  @override
+  Future<String> uploadPaymentProof({
+    required String orderId,
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    return 'proof/$orderId/$fileName';
   }
 }
 

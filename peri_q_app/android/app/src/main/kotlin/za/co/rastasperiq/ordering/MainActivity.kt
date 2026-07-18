@@ -1,4 +1,4 @@
-package com.example.simple_phone_test
+package za.co.rastasperiq.ordering
 
 import io.flutter.embedding.android.FlutterActivity
 

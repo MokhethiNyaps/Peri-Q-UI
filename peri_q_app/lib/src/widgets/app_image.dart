@@ -10,6 +10,7 @@ class AppImage extends StatelessWidget {
     this.height,
     this.fit = BoxFit.cover,
     this.borderRadius,
+    this.semanticLabel = 'Food image',
   });
 
   final String imagePath;
@@ -17,10 +18,11 @@ class AppImage extends StatelessWidget {
   final double? height;
   final BoxFit fit;
   final BorderRadius? borderRadius;
+  final String semanticLabel;
 
   @override
   Widget build(BuildContext context) {
-    final image = _buildImage();
+    final image = _buildImage(context);
     if (borderRadius == null) {
       return image;
     }
@@ -28,7 +30,7 @@ class AppImage extends StatelessWidget {
     return ClipRRect(borderRadius: borderRadius!, child: image);
   }
 
-  Widget _buildImage() {
+  Widget _buildImage(BuildContext context) {
     final path = imagePath.trim();
     final isRemote = path.startsWith('http://') || path.startsWith('https://');
     final fallback = Container(
@@ -41,6 +43,10 @@ class AppImage extends StatelessWidget {
         color: AppTheme.ashGrey,
       ),
     );
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
+    final targetWidth = width != null && width!.isFinite
+        ? (width! * pixelRatio).round().clamp(1, 1200)
+        : null;
 
     if (path.isEmpty) {
       return fallback;
@@ -52,6 +58,8 @@ class AppImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
+        cacheWidth: targetWidth,
+        semanticLabel: semanticLabel,
         errorBuilder: (_, _, _) => fallback,
         loadingBuilder: (context, child, progress) {
           if (progress == null) {
@@ -77,6 +85,8 @@ class AppImage extends StatelessWidget {
       width: width,
       height: height,
       fit: fit,
+      cacheWidth: targetWidth,
+      semanticLabel: semanticLabel,
       errorBuilder: (_, _, _) => fallback,
     );
   }

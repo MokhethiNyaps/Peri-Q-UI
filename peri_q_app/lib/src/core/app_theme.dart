@@ -1,5 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
+abstract final class AppSpacing {
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+}
+
+abstract final class AppRadii {
+  static const double input = 12;
+  static const double card = 16;
+  static const double panel = 20;
+  static const double pill = 999;
+}
 
 class AppTheme {
   static const Color periRed = Color(0xFFC8240B);
@@ -24,48 +39,59 @@ class AppTheme {
       ),
     );
 
-    final textTheme = TextTheme(
-      displayLarge: GoogleFonts.oswald(
+    const headingFamily = 'sans-serif-condensed';
+    const bodyFamily = 'sans-serif';
+    const textTheme = TextTheme(
+      displayLarge: TextStyle(
+        fontFamily: headingFamily,
         fontSize: 31,
         fontWeight: FontWeight.w700,
         color: smokeCharcoal,
       ),
-      headlineLarge: GoogleFonts.oswald(
+      headlineLarge: TextStyle(
+        fontFamily: headingFamily,
         fontSize: 27,
         fontWeight: FontWeight.w600,
         color: smokeCharcoal,
       ),
-      headlineMedium: GoogleFonts.oswald(
+      headlineMedium: TextStyle(
+        fontFamily: headingFamily,
         fontSize: 21,
         fontWeight: FontWeight.w600,
         color: smokeCharcoal,
       ),
-      titleLarge: GoogleFonts.oswald(
+      titleLarge: TextStyle(
+        fontFamily: headingFamily,
         fontSize: 18,
         fontWeight: FontWeight.w600,
         color: smokeCharcoal,
       ),
-      bodyLarge: GoogleFonts.nunitoSans(
+      bodyLarge: TextStyle(
+        fontFamily: bodyFamily,
         fontSize: 16,
         height: 1.35,
         color: smokeCharcoal,
       ),
-      bodyMedium: GoogleFonts.nunitoSans(
+      bodyMedium: TextStyle(
+        fontFamily: bodyFamily,
         fontSize: 14,
         height: 1.35,
         color: ashGrey,
       ),
-      bodySmall: GoogleFonts.nunitoSans(
+      bodySmall: TextStyle(
+        fontFamily: bodyFamily,
         fontSize: 12,
         height: 1.3,
         color: ashGrey,
       ),
-      labelLarge: GoogleFonts.nunitoSans(
+      labelLarge: TextStyle(
+        fontFamily: bodyFamily,
         fontSize: 14,
         fontWeight: FontWeight.w700,
         color: lightSurface,
       ),
-      labelMedium: GoogleFonts.nunitoSans(
+      labelMedium: TextStyle(
+        fontFamily: bodyFamily,
         fontSize: 12,
         fontWeight: FontWeight.w700,
         color: smokeCharcoal,
@@ -78,7 +104,9 @@ class AppTheme {
         color: lightSurface,
         elevation: 0,
         margin: EdgeInsets.zero,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadii.card),
+        ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: lightSurface,
@@ -99,11 +127,11 @@ class AppTheme {
           vertical: 18,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.input),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadii.input),
           borderSide: const BorderSide(color: periRed, width: 1.5),
         ),
       ),
@@ -114,9 +142,10 @@ class AppTheme {
           elevation: 0,
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.input),
           ),
-          textStyle: GoogleFonts.nunitoSans(
+          textStyle: const TextStyle(
+            fontFamily: bodyFamily,
             fontSize: 16,
             fontWeight: FontWeight.w800,
           ),
@@ -128,15 +157,26 @@ class AppTheme {
           side: const BorderSide(color: periRed),
           minimumSize: const Size.fromHeight(52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppRadii.input),
           ),
-          textStyle: GoogleFonts.nunitoSans(
+          textStyle: const TextStyle(
+            fontFamily: bodyFamily,
             fontSize: 15,
             fontWeight: FontWeight.w800,
           ),
         ),
       ),
       dividerColor: mutedSurface,
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: periRed,
+        linearTrackColor: mutedSurface,
+        circularTrackColor: mutedSurface,
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: smokeCharcoal,
+        contentTextStyle: TextStyle(color: Colors.white, fontSize: 15),
+      ),
     );
   }
 }

@@ -24,6 +24,9 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
   late final TextEditingController subtitleController;
   late final TextEditingController imagePathController;
   late bool storeOpen;
+  late bool pickupAvailable;
+  late bool deliveryAvailable;
+  late final TextEditingController deliveryFeeController;
   late bool specialEnabled;
   String? selectedMenuItemId;
   bool isSaving = false;
@@ -37,6 +40,11 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
     final special = settings.todaysSpecial;
 
     storeOpen = settings.storeOpen;
+    pickupAvailable = settings.pickupAvailable;
+    deliveryAvailable = settings.deliveryAvailable;
+    deliveryFeeController = TextEditingController(
+      text: settings.deliveryFee.toStringAsFixed(0),
+    );
     specialEnabled = special.enabled;
     selectedMenuItemId = special.menuItemId;
     openingTimeController = TextEditingController(text: settings.openingTime);
@@ -59,6 +67,7 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
     titleController.dispose();
     subtitleController.dispose();
     imagePathController.dispose();
+    deliveryFeeController.dispose();
     super.dispose();
   }
 
@@ -72,6 +81,9 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
       await widget.controller.updateAppSettings(
         AppSettings(
           storeOpen: storeOpen,
+          pickupAvailable: pickupAvailable,
+          deliveryAvailable: deliveryAvailable,
+          deliveryFee: double.parse(deliveryFeeController.text.trim()),
           openingTime: openingTimeController.text.trim(),
           closingTime: closingTimeController.text.trim(),
           todaysSpecial: TodaysSpecialSettings(
@@ -122,6 +134,9 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
         : null;
     final previewSettings = AppSettings(
       storeOpen: storeOpen,
+      pickupAvailable: pickupAvailable,
+      deliveryAvailable: deliveryAvailable,
+      deliveryFee: double.tryParse(deliveryFeeController.text.trim()) ?? 30,
       openingTime: openingTimeController.text.trim(),
       closingTime: closingTimeController.text.trim(),
     );
@@ -150,6 +165,45 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                     ),
                     onChanged: (value) => setState(() => storeOpen = value),
                   ),
+                  SwitchListTile.adaptive(
+                    value: pickupAvailable,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Pickup available'),
+                    subtitle: const Text(
+                      'Customers can select collection when the store is open.',
+                    ),
+                    onChanged: (value) =>
+                        setState(() => pickupAvailable = value),
+                  ),
+                  SwitchListTile.adaptive(
+                    value: deliveryAvailable,
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Delivery available'),
+                    subtitle: const Text(
+                      'Turn off delivery without pausing pickup orders.',
+                    ),
+                    onChanged: (value) =>
+                        setState(() => deliveryAvailable = value),
+                  ),
+                  if (deliveryAvailable) ...[
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: deliveryFeeController,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Delivery fee (R)',
+                      ),
+                      validator: (value) {
+                        final fee = double.tryParse(value?.trim() ?? '');
+                        if (fee == null || fee < 0 || fee > 1000) {
+                          return 'Enter a fee from R0 to R1000.';
+                        }
+                        return null;
+                      },
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   Row(
                     children: [

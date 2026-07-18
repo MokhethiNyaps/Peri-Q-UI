@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
@@ -60,6 +63,10 @@ class ConfirmationScreen extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
                 textAlign: TextAlign.center,
               ),
+              if (order.paymentMethod == PaymentMethod.eft) ...[
+                const SizedBox(height: 16),
+                _PaymentProofUploader(controller: controller, order: order),
+              ],
               const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(18),
@@ -178,6 +185,120 @@ class ConfirmationScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PaymentProofUploader extends StatefulWidget {
+  const _PaymentProofUploader({required this.controller, required this.order});
+
+  final AppController controller;
+  final OrderModel order;
+
+  @override
+  State<_PaymentProofUploader> createState() => _PaymentProofUploaderState();
+}
+
+class _PaymentProofUploaderState extends State<_PaymentProofUploader> {
+  bool isUploading = false;
+  bool uploaded = false;
+
+  Future<void> _pickAndUpload() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['jpg', 'jpeg', 'png', 'webp', 'pdf'],
+      allowMultiple: false,
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return;
+    final file = result.files.single;
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Choose a JPG, PNG, WebP or PDF smaller than 5 MB.'),
+        ),
+      );
+      return;
+    }
+    setState(() => isUploading = true);
+    try {
+      await widget.controller.uploadPaymentProof(
+        order: widget.order,
+        bytes: Uint8List.fromList(bytes),
+        fileName: file.name,
+        contentType: _contentType(file.extension ?? file.name),
+      );
+      if (!mounted) return;
+      setState(() => uploaded = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment proof uploaded securely.')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The proof could not be uploaded. Your order is still placed; please try again.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => isUploading = false);
+    }
+  }
+
+  String _contentType(String extension) {
+    final value = extension.toLowerCase().replaceAll('.', '');
+    return switch (value) {
+      'jpg' || 'jpeg' => 'image/jpeg',
+      'png' => 'image/png',
+      'webp' => 'image/webp',
+      'pdf' => 'application/pdf',
+      _ => 'application/octet-stream',
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: uploaded
+            ? AppTheme.success.withValues(alpha: 0.08)
+            : AppTheme.chesaOrange.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            uploaded ? 'Payment proof received' : 'EFT payment proof',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            uploaded
+                ? 'The private proof is linked to this order for staff review.'
+                : 'Upload a clear JPG, PNG, WebP or PDF (maximum 5 MB). Your order remains placed if the upload fails.',
+          ),
+          const SizedBox(height: 12),
+          if (!uploaded)
+            OutlinedButton.icon(
+              onPressed: isUploading ? null : _pickAndUpload,
+              icon: isUploading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.upload_file_rounded),
+              label: Text(isUploading ? 'Uploading...' : 'Choose proof file'),
+            ),
+        ],
       ),
     );
   }

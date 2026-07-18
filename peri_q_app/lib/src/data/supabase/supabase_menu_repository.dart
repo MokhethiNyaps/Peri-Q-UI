@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/menu_category.dart';
@@ -11,18 +13,46 @@ class SupabaseMenuRepository implements MenuRepository {
 
   final SupabaseClient _client;
   static const _imageBucket = 'menu-images';
+  static const _menuCacheKey = 'cached_menu_items_v1';
+  static const _categoryCacheKey = 'cached_menu_categories_v1';
+
+  @override
+  bool lastFetchUsedCache = false;
 
   @override
   Future<List<MenuItemModel>> fetchMenuItems() async {
-    final response = await _client
-        .from('menu_items')
-        .select()
-        .order('category')
-        .order('name');
-
-    return (response as List<dynamic>)
-        .map((row) => _fromRow(row as Map<String, dynamic>))
-        .toList();
+    try {
+      final response = await _client
+          .from('menu_items')
+          .select()
+          .order('category')
+          .order('name');
+      final items = (response as List<dynamic>)
+          .map((row) => _fromRow(row as Map<String, dynamic>))
+          .toList();
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(
+        _menuCacheKey,
+        jsonEncode(items.map((item) => item.toJson()).toList()),
+      );
+      lastFetchUsedCache = false;
+      return items;
+    } catch (_) {
+      final preferences = await SharedPreferences.getInstance();
+      final value = preferences.getString(_menuCacheKey);
+      if (value == null) rethrow;
+      try {
+        final items = (jsonDecode(value) as List<dynamic>)
+            .map(
+              (entry) => MenuItemModel.fromJson(entry as Map<String, dynamic>),
+            )
+            .toList();
+        lastFetchUsedCache = true;
+        return items;
+      } catch (_) {
+        rethrow;
+      }
+    }
   }
 
   @override
@@ -73,9 +103,26 @@ class SupabaseMenuRepository implements MenuRepository {
           .order('sort_order')
           .order('name');
 
-      return (response as List<dynamic>)
+      final categories = (response as List<dynamic>)
           .map((row) => _categoryFromRow(row as Map<String, dynamic>))
           .toList();
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(
+        _categoryCacheKey,
+        jsonEncode(
+          categories
+              .map(
+                (category) => {
+                  'id': category.id,
+                  'name': category.name,
+                  'sortOrder': category.sortOrder,
+                  'isActive': category.isActive,
+                },
+              )
+              .toList(),
+        ),
+      );
+      return categories;
     } on PostgrestException catch (error) {
       if (error.code == '42P01' || error.message.contains('menu_categories')) {
         final items = await fetchMenuItems();
@@ -90,8 +137,36 @@ class SupabaseMenuRepository implements MenuRepository {
               ),
         ];
       }
-      rethrow;
+      return _cachedCategoriesOrRethrow(error);
+    } catch (error) {
+      return _cachedCategoriesOrRethrow(error);
     }
+  }
+
+  Future<List<MenuCategoryModel>> _cachedCategoriesOrRethrow(
+    Object originalError,
+  ) async {
+    final preferences = await SharedPreferences.getInstance();
+    final value = preferences.getString(_categoryCacheKey);
+    if (value != null) {
+      try {
+        return (jsonDecode(value) as List<dynamic>)
+            .map((entry) {
+              final json = entry as Map<String, dynamic>;
+              return MenuCategoryModel(
+                id: json['id'] as String? ?? '',
+                name: json['name'] as String? ?? '',
+                sortOrder: json['sortOrder'] as int? ?? 0,
+                isActive: json['isActive'] as bool? ?? true,
+              );
+            })
+            .where((category) => category.id.isNotEmpty)
+            .toList();
+      } catch (_) {
+        // The original network/database error is more useful than bad cache.
+      }
+    }
+    throw originalError;
   }
 
   @override
@@ -141,6 +216,12 @@ class SupabaseMenuRepository implements MenuRepository {
     required String fileName,
     required String contentType,
   }) async {
+    const allowedTypes = {'image/jpeg', 'image/png', 'image/webp'};
+    if (bytes.isEmpty ||
+        bytes.length > 5 * 1024 * 1024 ||
+        !allowedTypes.contains(contentType)) {
+      throw StateError('Choose a JPG, PNG or WebP image smaller than 5 MB.');
+    }
     final cleanName = fileName
         .toLowerCase()
         .replaceAll(RegExp(r'[^a-z0-9._-]+'), '-')

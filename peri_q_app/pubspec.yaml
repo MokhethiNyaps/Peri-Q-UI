@@ -31,12 +31,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
-  google_fonts: ^6.3.2
-  flutter_dotenv: ^6.0.1
-  file_picker: ^10.3.7
+  # 11.x requires AGP 9 built-in Kotlin, while Supabase's app_links plugin
+  # still applies KGP. Stay on the latest compatible 10.x release for now.
+  file_picker: ^10.3.10
   shared_preferences: ^2.5.3
-  supabase_flutter: ^2.12.4
+  supabase_flutter: ^2.16.0
   url_launcher: ^6.3.2
 
 dev_dependencies:
@@ -57,5 +56,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - .env
     - assets/images/

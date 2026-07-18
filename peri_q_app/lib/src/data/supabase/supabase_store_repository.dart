@@ -13,6 +13,9 @@ class SupabaseStoreRepository implements StoreRepository {
 
   static const _settingsSelect = '''
 store_open,
+pickup_available,
+delivery_available,
+delivery_fee,
 opening_time,
 closing_time,
 todays_special_enabled,

@@ -31,151 +31,219 @@ class HomeScreen extends StatelessWidget {
           final heroItem = controller.todaysSpecialItem;
           final specialSettings = controller.todaysSpecialSettings;
 
-          return CustomScrollView(
-            slivers: [
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(14),
-                                child: Image.asset(
-                                  'assets/images/brand_mark.png',
-                                  width: 42,
-                                  height: 42,
-                                  fit: BoxFit.cover,
+          return RefreshIndicator(
+            onRefresh: controller.refreshData,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Row(
+                              children: [
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(14),
+                                  child: Image.asset(
+                                    'assets/images/brand_mark.png',
+                                    width: 42,
+                                    height: 42,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Text(
+                                  'Peri Q',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineLarge
+                                      ?.copyWith(color: AppTheme.periRed),
+                                ),
+                              ],
+                            ),
+                            const Spacer(),
+                            Flexible(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: _StoreStatusBadge(
+                                  controller: controller,
                                 ),
                               ),
-                              const SizedBox(width: 10),
-                              Text(
-                                'Peri Q',
-                                style: Theme.of(context).textTheme.headlineLarge
-                                    ?.copyWith(color: AppTheme.periRed),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          Flexible(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: _StoreStatusBadge(controller: controller),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        if (controller.isMenuStale) ...[
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warning.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.offline_bolt_outlined),
+                                SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Showing the last saved menu. Pull down when you are back online.',
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
+                          const SizedBox(height: 14),
                         ],
-                      ),
-                      const SizedBox(height: 20),
-                      if (specialSettings.enabled) ...[
-                        _HeroBanner(
-                          settings: specialSettings,
-                          onOrderNow: heroItem == null
-                              ? null
-                              : () => onOpenItem(heroItem),
-                        ),
-                        const SizedBox(height: 22),
-                      ],
-                      const SectionHeader(title: 'Categories'),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 46,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemBuilder: (context, index) {
-                            final category =
-                                controller.customerCategories[index];
-                            final selected =
-                                category == controller.selectedMenuCategory;
-                            return ChoiceChip(
-                              selected: selected,
-                              onSelected: (_) => onBrowseCategory(category),
-                              selectedColor: AppTheme.periRed,
-                              backgroundColor: Colors.white,
-                              side: BorderSide.none,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              label: Text(
-                                category.toUpperCase(),
-                                style: TextStyle(
-                                  color: selected
-                                      ? Colors.white
-                                      : AppTheme.ashGrey,
-                                  fontWeight: FontWeight.w700,
+                        if (specialSettings.enabled) ...[
+                          _HeroBanner(
+                            settings: specialSettings,
+                            onOrderNow: heroItem == null
+                                ? null
+                                : () => onOpenItem(heroItem),
+                          ),
+                          const SizedBox(height: 22),
+                        ],
+                        const SectionHeader(title: 'Categories'),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          height: 46,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemBuilder: (context, index) {
+                              final category =
+                                  controller.customerCategories[index];
+                              final selected =
+                                  category == controller.selectedMenuCategory;
+                              return ChoiceChip(
+                                selected: selected,
+                                onSelected: (_) => onBrowseCategory(category),
+                                selectedColor: AppTheme.periRed,
+                                backgroundColor: Colors.white,
+                                side: BorderSide.none,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
-                              ),
-                            );
-                          },
-                          separatorBuilder: (_, _) => const SizedBox(width: 10),
-                          itemCount: controller.customerCategories.length,
+                                label: Text(
+                                  category.toUpperCase(),
+                                  style: TextStyle(
+                                    color: selected
+                                        ? Colors.white
+                                        : AppTheme.ashGrey,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              );
+                            },
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(width: 10),
+                            itemCount: controller.customerCategories.length,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 26),
-                      SectionHeader(
-                        title: 'Featured Meals',
-                        actionLabel: 'View All',
-                        onActionTap: onBrowseMenu,
-                      ),
-                    ],
+                        const SizedBox(height: 26),
+                        SectionHeader(
+                          title: 'Featured Meals',
+                          actionLabel: 'View All',
+                          onActionTap: onBrowseMenu,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                sliver: SliverLayoutBuilder(
-                  builder: (context, constraints) {
-                    final width = constraints.crossAxisExtent;
-                    final crossAxisCount = width > 760
-                        ? 4
-                        : width > 560
-                        ? 3
-                        : 2;
-                    return SliverGrid(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final item = controller.featuredItems[index];
-                        return FoodCard(
-                          item: item,
-                          onTap: () => onOpenItem(item),
-                          onAdd: () => controller.addToCart(item),
-                        );
-                      }, childCount: controller.featuredItems.length),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: crossAxisCount,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.72,
+                if (controller.availableMenuItems.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(22),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Column(
+                          children: [
+                            const Icon(
+                              Icons.restaurant_menu_rounded,
+                              size: 44,
+                              color: AppTheme.ashGrey,
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              'Today’s menu is not published yet.',
+                              style: Theme.of(context).textTheme.titleLarge,
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 5),
+                            const Text(
+                              'Pull down to check again or contact the store for help.',
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
                       ),
-                    );
-                  },
+                    ),
+                  ),
+                SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  sliver: SliverLayoutBuilder(
+                    builder: (context, constraints) {
+                      final width = constraints.crossAxisExtent;
+                      final textScale = MediaQuery.textScalerOf(
+                        context,
+                      ).scale(1);
+                      final crossAxisCount = width > 760
+                          ? 4
+                          : width > 560
+                          ? 3
+                          : width < 360 || textScale > 1.3
+                          ? 1
+                          : 2;
+                      return SliverGrid(
+                        delegate: SliverChildBuilderDelegate((context, index) {
+                          final item = controller.featuredItems[index];
+                          return FoodCard(
+                            item: item,
+                            onTap: () => onOpenItem(item),
+                            onAdd: () => controller.addToCart(item),
+                          );
+                        }, childCount: controller.featuredItems.length),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          mainAxisSpacing: 16,
+                          crossAxisSpacing: 16,
+                          childAspectRatio: 0.72,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 10),
-                  child: const SectionHeader(title: "Today's Specials"),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 10),
+                    child: const SectionHeader(title: "Today's Specials"),
+                  ),
                 ),
-              ),
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
-                sliver: SliverList.separated(
-                  itemBuilder: (context, index) {
-                    final item = controller.todaysSpecials[index];
-                    return FoodCard(
-                      item: item,
-                      compact: true,
-                      onTap: () => onOpenItem(item),
-                      onAdd: () => controller.addToCart(item),
-                    );
-                  },
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemCount: controller.todaysSpecials.length,
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                  sliver: SliverList.separated(
+                    itemBuilder: (context, index) {
+                      final item = controller.todaysSpecials[index];
+                      return FoodCard(
+                        item: item,
+                        compact: true,
+                        onTap: () => onOpenItem(item),
+                        onAdd: () => controller.addToCart(item),
+                      );
+                    },
+                    separatorBuilder: (_, _) => const SizedBox(height: 14),
+                    itemCount: controller.todaysSpecials.length,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           );
         },
       ),

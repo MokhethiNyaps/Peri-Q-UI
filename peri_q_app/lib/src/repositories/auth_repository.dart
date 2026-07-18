@@ -23,5 +23,8 @@ abstract class AuthRepository {
 
   Future<void> signOut();
 
+  Future<void> deleteAccount() =>
+      throw UnsupportedError('Account deletion is not configured.');
+
   Future<void> upsertProfile({required String name, required String phone});
 }

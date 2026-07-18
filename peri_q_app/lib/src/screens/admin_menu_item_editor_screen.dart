@@ -100,6 +100,19 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
       );
       return;
     }
+    final extension = (pickedFile.extension ?? pickedFile.name.split('.').last)
+        .toLowerCase();
+    const allowedExtensions = {'jpg', 'jpeg', 'png', 'webp'};
+    if (!allowedExtensions.contains(extension) ||
+        bytes.length > 5 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Choose a JPG, PNG or WebP image smaller than 5 MB.'),
+        ),
+      );
+      return;
+    }
 
     setState(() => isUploadingImage = true);
     try {
@@ -120,9 +133,13 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The image could not be uploaded. Check the file and connection, then try again.',
+          ),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() => isUploadingImage = false);

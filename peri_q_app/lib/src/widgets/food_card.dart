@@ -44,6 +44,7 @@ class FoodCard extends StatelessWidget {
             children: [
               AppImage(
                 imagePath: item.imagePath,
+                semanticLabel: '${item.name} photo',
                 width: 84,
                 height: 84,
                 borderRadius: BorderRadius.circular(12),
@@ -137,6 +138,7 @@ class FoodCard extends StatelessWidget {
               Expanded(
                 child: AppImage(
                   imagePath: item.imagePath,
+                  semanticLabel: '${item.name} photo',
                   width: double.infinity,
                   fit: BoxFit.cover,
                   borderRadius: BorderRadius.circular(12),

@@ -72,6 +72,9 @@ $$;
 create table if not exists public.app_settings (
   id text primary key,
   store_open boolean not null default true,
+  pickup_available boolean not null default true,
+  delivery_available boolean not null default true,
+  delivery_fee numeric(10, 2) not null default 30 check (delivery_fee >= 0),
   opening_time text not null default '10:00',
   closing_time text not null default '21:00',
   todays_special_enabled boolean not null default true,
@@ -86,6 +89,9 @@ create table if not exists public.app_settings (
 
 alter table public.app_settings
   add column if not exists opening_time text not null default '10:00',
+  add column if not exists pickup_available boolean not null default true,
+  add column if not exists delivery_available boolean not null default true,
+  add column if not exists delivery_fee numeric(10, 2) not null default 30,
   add column if not exists closing_time text not null default '21:00',
   add column if not exists todays_special_enabled boolean not null default true,
   add column if not exists todays_special_label text not null default 'TODAY''S SPECIAL',
@@ -552,9 +558,24 @@ create table if not exists public.orders (
   ),
   estimated_minutes integer not null,
   delivery_address text,
+  client_request_id text not null,
+  payment_proof_path text,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.orders
+  add column if not exists client_request_id text,
+  add column if not exists payment_proof_path text;
+
+update public.orders
+set client_request_id = 'legacy-' || id::text
+where client_request_id is null;
+
+alter table public.orders alter column client_request_id set not null;
+
+create unique index if not exists orders_user_client_request_idx
+on public.orders (user_id, client_request_id);
 
 drop trigger if exists orders_touch_updated_at on public.orders;
 create trigger orders_touch_updated_at
@@ -583,6 +604,268 @@ create table if not exists public.order_items (
 create index if not exists order_items_order_id_idx
 on public.order_items (order_id);
 
+create or replace function public.place_order(
+  p_customer_name text,
+  p_customer_phone text,
+  p_order_type text,
+  p_payment_method text,
+  p_delivery_address text,
+  p_expected_total numeric,
+  p_client_request_id text,
+  p_items jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  settings public.app_settings%rowtype;
+  existing_order_id uuid;
+  created_order_id uuid;
+  item_json jsonb;
+  menu_row public.menu_items%rowtype;
+  requested_add_on jsonb;
+  trusted_add_on jsonb;
+  trusted_add_ons jsonb;
+  add_on_total numeric;
+  trusted_total numeric := 0;
+  item_quantity integer;
+  calculated_estimate integer := 0;
+  local_time time;
+  opening_value time;
+  closing_value time;
+  is_within_hours boolean;
+begin
+  if auth.uid() is null then
+    raise exception 'A signed-in session is required.' using errcode = '42501';
+  end if;
+  if length(trim(p_customer_name)) not between 2 and 100 then
+    raise exception 'Invalid customer name.' using errcode = '22023';
+  end if;
+  if length(trim(p_customer_phone)) not between 7 and 30 then
+    raise exception 'Invalid customer phone.' using errcode = '22023';
+  end if;
+  if length(coalesce(p_client_request_id, '')) not between 8 and 200 then
+    raise exception 'Invalid order request identifier.' using errcode = '22023';
+  end if;
+  if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) not between 1 and 50 then
+    raise exception 'An order must contain between 1 and 50 items.' using errcode = '22023';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext(auth.uid()::text || p_client_request_id));
+  select id into existing_order_id
+  from public.orders
+  where user_id = auth.uid() and client_request_id = p_client_request_id;
+  if existing_order_id is not null then
+    return jsonb_build_object('id', existing_order_id);
+  end if;
+
+  select * into settings from public.app_settings where id = 'default';
+  if settings.id is null or not settings.store_open then
+    raise exception 'Ordering is paused.' using errcode = 'P0001';
+  end if;
+  local_time := timezone('Africa/Johannesburg', now())::time;
+  opening_value := settings.opening_time::time;
+  closing_value := settings.closing_time::time;
+  is_within_hours := case
+    when opening_value = closing_value then true
+    when opening_value < closing_value then local_time >= opening_value and local_time < closing_value
+    else local_time >= opening_value or local_time < closing_value
+  end;
+  if not is_within_hours then
+    raise exception 'Store is closed.' using errcode = 'P0001';
+  end if;
+  if p_order_type = 'pickup' and not settings.pickup_available then
+    raise exception 'Pickup is unavailable.' using errcode = 'P0001';
+  elsif p_order_type = 'delivery' and not settings.delivery_available then
+    raise exception 'Delivery is unavailable.' using errcode = 'P0001';
+  elsif p_order_type not in ('pickup', 'delivery') then
+    raise exception 'Invalid order type.' using errcode = '22023';
+  end if;
+  if p_order_type = 'delivery' and length(trim(coalesce(p_delivery_address, ''))) < 8 then
+    raise exception 'A delivery address is required.' using errcode = '22023';
+  end if;
+  if p_payment_method not in ('cash_collection', 'cash_delivery', 'eft')
+     or (p_order_type = 'pickup' and p_payment_method = 'cash_delivery') then
+    raise exception 'Invalid payment method.' using errcode = '22023';
+  end if;
+
+  insert into public.orders (
+    user_id, customer_name, customer_phone, order_type, payment_method,
+    total_price, status, estimated_minutes, delivery_address, client_request_id
+  ) values (
+    auth.uid(), trim(p_customer_name), trim(p_customer_phone), p_order_type,
+    p_payment_method, 0, 'pending', 0,
+    case when p_order_type = 'delivery' then trim(p_delivery_address) else null end,
+    p_client_request_id
+  ) returning id into created_order_id;
+
+  for item_json in select value from jsonb_array_elements(p_items)
+  loop
+    item_quantity := (item_json ->> 'quantity')::integer;
+    if item_quantity not between 1 and 50 then
+      raise exception 'Invalid item quantity.' using errcode = '22023';
+    end if;
+    select * into menu_row
+    from public.menu_items
+    where id = item_json ->> 'menu_item_id'
+    for share;
+    if menu_row.id is null then
+      raise exception 'Menu item not found.' using errcode = 'P0001';
+    end if;
+    if not menu_row.is_available then
+      raise exception 'Menu item is unavailable.' using errcode = 'P0001';
+    end if;
+    if item_json ->> 'spice_level' is not null
+       and not ((item_json ->> 'spice_level') = any(menu_row.spice_levels)) then
+      raise exception 'Invalid spice selection.' using errcode = '22023';
+    end if;
+    if length(coalesce(item_json ->> 'notes', '')) > 500 then
+      raise exception 'Item notes are too long.' using errcode = '22023';
+    end if;
+
+    trusted_add_ons := '[]'::jsonb;
+    add_on_total := 0;
+    for requested_add_on in
+      select value from jsonb_array_elements(coalesce(item_json -> 'selected_add_ons', '[]'::jsonb))
+    loop
+      trusted_add_on := null;
+      select value into trusted_add_on
+      from jsonb_array_elements(menu_row.add_ons)
+      where value ->> 'name' = requested_add_on ->> 'name'
+      limit 1;
+      if trusted_add_on is null then
+        raise exception 'Invalid add-on selection.' using errcode = '22023';
+      end if;
+      trusted_add_ons := trusted_add_ons || jsonb_build_array(trusted_add_on);
+      add_on_total := add_on_total + coalesce((trusted_add_on ->> 'price')::numeric, 0);
+    end loop;
+
+    trusted_total := trusted_total + ((menu_row.price + add_on_total) * item_quantity);
+    calculated_estimate := greatest(calculated_estimate, menu_row.prep_minutes);
+    insert into public.order_items (
+      order_id, menu_item_id, item_name, item_description, item_image_path,
+      item_category, unit_price, quantity, spice_level, notes, selected_add_ons
+    ) values (
+      created_order_id, menu_row.id, menu_row.name, menu_row.description,
+      menu_row.image_path, menu_row.category, menu_row.price, item_quantity,
+      item_json ->> 'spice_level', left(coalesce(item_json ->> 'notes', ''), 500),
+      trusted_add_ons
+    );
+  end loop;
+
+  if p_order_type = 'delivery' then
+    trusted_total := trusted_total + settings.delivery_fee;
+    calculated_estimate := calculated_estimate + 20;
+  end if;
+  if abs(trusted_total - p_expected_total) > 0.009 then
+    raise exception 'Price changed before checkout.' using errcode = 'P0001';
+  end if;
+
+  update public.orders
+  set total_price = trusted_total,
+      estimated_minutes = greatest(calculated_estimate, 5)
+  where id = created_order_id;
+  return jsonb_build_object('id', created_order_id);
+end;
+$$;
+
+revoke all on function public.place_order(text, text, text, text, text, numeric, text, jsonb) from public, anon;
+grant execute on function public.place_order(text, text, text, text, text, numeric, text, jsonb) to authenticated;
+
+create or replace function public.attach_payment_proof(
+  p_order_id uuid,
+  p_storage_path text
+)
+returns void
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+begin
+  if auth.uid() is null
+     or not exists (
+       select 1 from public.orders
+       where id = p_order_id and user_id = auth.uid() and payment_method = 'eft'
+     ) then
+    raise exception 'Payment proof is not allowed for this order.' using errcode = '42501';
+  end if;
+  if p_storage_path not like auth.uid()::text || '/' || p_order_id::text || '/%' then
+    raise exception 'Invalid proof path.' using errcode = '22023';
+  end if;
+  update public.orders set payment_proof_path = p_storage_path where id = p_order_id;
+end;
+$$;
+
+revoke all on function public.attach_payment_proof(uuid, text) from public, anon;
+grant execute on function public.attach_payment_proof(uuid, text) to authenticated;
+
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  caller_id uuid := auth.uid();
+begin
+  if caller_id is null then
+    raise exception 'No signed-in account.' using errcode = '42501';
+  end if;
+  delete from auth.users where id = caller_id;
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public, anon;
+grant execute on function public.delete_own_account() to authenticated;
+
+create or replace function public.protect_profile_role()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  if new.role is distinct from old.role and not public.is_admin() then
+    raise exception 'Only an administrator can change account roles.' using errcode = '42501';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists profiles_protect_role on public.profiles;
+create trigger profiles_protect_role
+before update on public.profiles
+for each row execute procedure public.protect_profile_role();
+
+create or replace function public.validate_order_status_transition()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  if new.status is not distinct from old.status then
+    return new;
+  end if;
+  if not public.is_admin() then
+    raise exception 'Only an administrator can update order status.' using errcode = '42501';
+  end if;
+  if not (
+    (old.status = 'pending' and new.status in ('preparing', 'cancelled')) or
+    (old.status = 'preparing' and new.status = 'ready') or
+    (old.status = 'ready' and new.status = 'completed')
+  ) then
+    raise exception 'Invalid order status transition.' using errcode = '22023';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_validate_status on public.orders;
+create trigger orders_validate_status
+before update on public.orders
+for each row execute procedure public.validate_order_status_transition();
+
 alter table public.profiles enable row level security;
 alter table public.app_settings enable row level security;
 alter table public.menu_categories enable row level security;
@@ -602,7 +885,7 @@ create policy "profiles_insert_own"
 on public.profiles
 for insert
 to authenticated
-with check ((select auth.uid()) = id);
+with check ((select auth.uid()) = id and role = 'customer');
 
 drop policy if exists "profiles_update_own" on public.profiles;
 create policy "profiles_update_own"
@@ -700,11 +983,6 @@ to authenticated
 using (public.is_admin() or (select auth.uid()) = user_id);
 
 drop policy if exists "orders_insert_own" on public.orders;
-create policy "orders_insert_own"
-on public.orders
-for insert
-to authenticated
-with check ((select auth.uid()) = user_id);
 
 drop policy if exists "orders_admin_update" on public.orders;
 create policy "orders_admin_update"
@@ -730,18 +1008,6 @@ using (
 );
 
 drop policy if exists "order_items_insert_owner" on public.order_items;
-create policy "order_items_insert_owner"
-on public.order_items
-for insert
-to authenticated
-with check (
-  exists (
-    select 1
-    from public.orders
-    where orders.id = order_items.order_id
-      and orders.user_id = (select auth.uid())
-  )
-);
 
 do $$
 begin
@@ -830,3 +1096,52 @@ on storage.objects
 for delete
 to authenticated
 using (bucket_id = 'menu-images' and public.is_admin());
+
+insert into storage.buckets (
+  id, name, public, file_size_limit, allowed_mime_types
+)
+values (
+  'payment-proofs',
+  'payment-proofs',
+  false,
+  5242880,
+  array['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+)
+on conflict (id) do update
+set
+  public = false,
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "payment_proofs_owner_insert" on storage.objects;
+create policy "payment_proofs_owner_insert"
+on storage.objects
+for insert
+to authenticated
+with check (
+  bucket_id = 'payment-proofs'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+drop policy if exists "payment_proofs_owner_or_admin_read" on storage.objects;
+create policy "payment_proofs_owner_or_admin_read"
+on storage.objects
+for select
+to authenticated
+using (
+  bucket_id = 'payment-proofs'
+  and (
+    (storage.foldername(name))[1] = auth.uid()::text
+    or public.is_admin()
+  )
+);
+
+drop policy if exists "payment_proofs_owner_delete" on storage.objects;
+create policy "payment_proofs_owner_delete"
+on storage.objects
+for delete
+to authenticated
+using (
+  bucket_id = 'payment-proofs'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);

@@ -4,6 +4,7 @@ import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/app_preferences.dart';
 import '../models/order.dart';
+import '../repositories/order_repository.dart';
 import 'confirmation_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -23,6 +24,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   OrderType orderType = OrderType.pickup;
   PaymentMethod paymentMethod = PaymentMethod.cashCollection;
   String? selectedAddressId;
+  bool isSubmitting = false;
 
   @override
   void initState() {
@@ -40,6 +42,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       widget.controller.preferredPaymentMethod,
       orderType,
     );
+    if (!widget.controller.canUseOrderType(orderType) &&
+        widget.controller.canUseOrderType(OrderType.delivery)) {
+      orderType = OrderType.delivery;
+      paymentMethod = _availablePaymentFor(paymentMethod, orderType);
+    }
   }
 
   @override
@@ -94,34 +101,41 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   Future<void> _submitOrder() async {
+    if (isSubmitting) return;
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
-
-    await widget.controller.updateCustomer(
-      name: nameController.text.trim(),
-      phone: phoneController.text.trim(),
-    );
-
-    final order = await widget.controller.placeOrder(
-      orderType: orderType,
-      paymentMethod: paymentMethod,
-      deliveryAddress: orderType == OrderType.delivery
-          ? addressController.text.trim()
-          : null,
-    );
-
-    if (!mounted) {
-      return;
+    setState(() => isSubmitting = true);
+    try {
+      await widget.controller.updateCustomer(
+        name: nameController.text.trim(),
+        phone: phoneController.text.trim(),
+      );
+      final order = await widget.controller.placeOrder(
+        orderType: orderType,
+        paymentMethod: paymentMethod,
+        deliveryAddress: orderType == OrderType.delivery
+            ? addressController.text.trim()
+            : null,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(
+          builder: (_) =>
+              ConfirmationScreen(controller: widget.controller, order: order),
+        ),
+        (route) => route.isFirst,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      final message = error is OrderSubmissionException
+          ? error.message
+          : 'We could not place your order. Check your connection and try again.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+      setState(() => isSubmitting = false);
     }
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(
-        builder: (_) =>
-            ConfirmationScreen(controller: widget.controller, order: order),
-      ),
-      (route) => route.isFirst,
-    );
   }
 
   @override
@@ -196,14 +210,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 title: 'Pickup in Store',
                 subtitle: 'Ready in around 25 minutes • No delivery fee',
                 onTap: () => _selectOrderType(OrderType.pickup),
+                enabled: widget.controller.canUseOrderType(OrderType.pickup),
               ),
               const SizedBox(height: 12),
               _ChoiceCard(
                 selected: orderType == OrderType.delivery,
                 icon: Icons.two_wheeler_rounded,
                 title: 'Home Delivery',
-                subtitle: '+R30 delivery fee • 45 to 60 minutes',
+                subtitle:
+                    '+R${widget.controller.appSettings.deliveryFee.toStringAsFixed(0)} delivery fee • 45 to 60 minutes',
                 onTap: () => _selectOrderType(OrderType.delivery),
+                enabled: widget.controller.canUseOrderType(OrderType.delivery),
               ),
               if (orderType == OrderType.delivery) ...[
                 const SizedBox(height: 12),
@@ -346,8 +363,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: SafeArea(
           child: ElevatedButton(
-            onPressed: () => _submitOrder(),
-            child: Text('Place Order • R${total.toStringAsFixed(0)}'),
+            onPressed: isSubmitting ? null : _submitOrder,
+            child: Text(
+              isSubmitting
+                  ? 'Placing order...'
+                  : 'Place Order • R${total.toStringAsFixed(0)}',
+            ),
           ),
         ),
       ),
@@ -401,6 +422,7 @@ class _ChoiceCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.enabled = true,
   });
 
   final bool selected;
@@ -408,52 +430,62 @@ class _ChoiceCard extends StatelessWidget {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Ink(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: selected ? AppTheme.periRed : Colors.transparent,
-            width: 2,
+    return Opacity(
+      opacity: enabled ? 1 : 0.55,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(18),
+        child: Ink(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: selected ? AppTheme.periRed : Colors.transparent,
+              width: 2,
+            ),
           ),
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 22,
-              backgroundColor: selected
-                  ? AppTheme.periRed.withValues(alpha: 0.1)
-                  : AppTheme.mutedSurface,
-              child: Icon(
-                icon,
-                color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: selected
+                    ? AppTheme.periRed.withValues(alpha: 0.1)
+                    : AppTheme.mutedSurface,
+                child: Icon(
+                  icon,
+                  color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+                ),
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleLarge),
-                  Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-                ],
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            IgnorePointer(
-              child: RadioGroup<bool>(
-                groupValue: selected,
-                onChanged: (_) {},
-                child: Radio<bool>(value: true, activeColor: AppTheme.periRed),
+              IgnorePointer(
+                child: RadioGroup<bool>(
+                  groupValue: selected,
+                  onChanged: (_) {},
+                  child: Radio<bool>(
+                    value: true,
+                    activeColor: AppTheme.periRed,
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
