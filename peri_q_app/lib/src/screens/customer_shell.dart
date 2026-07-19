@@ -23,13 +23,30 @@ class CustomerShell extends StatefulWidget {
   State<CustomerShell> createState() => _CustomerShellState();
 }
 
-class _CustomerShellState extends State<CustomerShell> {
+class _CustomerShellState extends State<CustomerShell>
+    with WidgetsBindingObserver {
   late int currentIndex;
 
   @override
   void initState() {
     super.initState();
     currentIndex = widget.initialIndex;
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      widget.controller.refreshData().catchError((_) {
+        // Existing content remains available after a transient refresh failure.
+      });
+    }
   }
 
   @override

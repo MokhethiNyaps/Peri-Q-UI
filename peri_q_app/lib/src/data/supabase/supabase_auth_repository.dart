@@ -90,6 +90,28 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw StateError('No signed-in account is available.');
+    }
+    final bucket = _client.storage.from('payment-proofs');
+    final orderFolders = await bucket.list(path: user.id);
+    final proofPaths = <String>[];
+    for (final folder in orderFolders) {
+      final files = await bucket.list(path: '${user.id}/${folder.name}');
+      proofPaths.addAll(
+        files.map((file) => '${user.id}/${folder.name}/${file.name}'),
+      );
+    }
+    if (proofPaths.isNotEmpty) {
+      await bucket.remove(proofPaths);
+    }
+    await _client.rpc('delete_own_account');
+    await _client.auth.signOut(scope: SignOutScope.local);
+  }
+
+  @override
   Future<void> upsertProfile({
     required String name,
     required String phone,

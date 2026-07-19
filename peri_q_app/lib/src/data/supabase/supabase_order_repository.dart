@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/menu_item.dart';
@@ -21,6 +23,7 @@ status,
 created_at,
 estimated_minutes,
 delivery_address,
+payment_proof_path,
 order_items (
   id,
   menu_item_id,
@@ -47,10 +50,11 @@ order_items (
 
     final builder = _client.from('orders').select(_orderSelect);
     final response = includeAll
-        ? await builder.order('created_at', ascending: false)
+        ? await builder.order('created_at', ascending: false).limit(100)
         : await builder
               .eq('user_id', userId!)
-              .order('created_at', ascending: false);
+              .order('created_at', ascending: false)
+              .limit(100);
 
     return (response as List<dynamic>)
         .map((row) => _fromOrderRow(row as Map<String, dynamic>))
@@ -65,45 +69,48 @@ order_items (
       );
     }
 
-    final createdOrder = await _client
-        .from('orders')
-        .insert({
-          'user_id': userId,
-          'customer_name': order.customerName,
-          'customer_phone': order.customerPhone,
-          'order_type': order.orderType.code,
-          'payment_method': order.paymentMethod.code,
-          'total_price': order.totalPrice,
-          'status': OrderStatus.pending.code,
-          'estimated_minutes': order.estimatedMinutes,
-          'delivery_address': order.deliveryAddress,
-        })
-        .select('id, order_number, created_at')
-        .single();
-
-    final orderId = createdOrder['id'] as String;
-    await _client
-        .from('order_items')
-        .insert(
-          order.items.map((item) => _toOrderItemRow(orderId, item)).toList(),
+    try {
+      final response = await _client.rpc(
+        'place_order',
+        params: {
+          'p_customer_name': order.customerName,
+          'p_customer_phone': order.customerPhone,
+          'p_order_type': order.orderType.code,
+          'p_payment_method': order.paymentMethod.code,
+          'p_delivery_address': order.deliveryAddress,
+          'p_expected_total': order.totalPrice,
+          'p_client_request_id': order.clientRequestId,
+          'p_items': order.items
+              .map(
+                (item) => {
+                  'menu_item_id': item.item.id,
+                  'quantity': item.quantity,
+                  'spice_level': item.spiceLevel,
+                  'notes': item.notes,
+                  'selected_add_ons': item.selectedAddOns
+                      .map((addOn) => {'name': addOn.name})
+                      .toList(),
+                },
+              )
+              .toList(),
+        },
+      );
+      final result = response as Map<String, dynamic>;
+      final orderId = result['id'] as String?;
+      if (orderId == null || orderId.isEmpty) {
+        throw const OrderSubmissionException(
+          'The store did not return an order confirmation. Please try again.',
         );
-
-    return OrderModel(
-      id: orderId,
-      orderNumber: (createdOrder['order_number'] as num?)?.toInt() ?? 0,
-      customerName: order.customerName,
-      customerPhone: order.customerPhone,
-      items: order.items.map(_cloneCartItem).toList(),
-      orderType: order.orderType,
-      paymentMethod: order.paymentMethod,
-      totalPrice: order.totalPrice,
-      status: OrderStatus.pending,
-      createdAt:
-          DateTime.tryParse(createdOrder['created_at'] as String? ?? '') ??
-          DateTime.now(),
-      estimatedMinutes: order.estimatedMinutes,
-      deliveryAddress: order.deliveryAddress,
-    );
+      }
+      final row = await _client
+          .from('orders')
+          .select(_orderSelect)
+          .eq('id', orderId)
+          .single();
+      return _fromOrderRow(row);
+    } on PostgrestException catch (error) {
+      throw OrderSubmissionException(_friendlyOrderError(error));
+    }
   }
 
   @override
@@ -143,6 +150,7 @@ order_items (
           DateTime.now(),
       estimatedMinutes: (row['estimated_minutes'] as num?)?.toInt() ?? 0,
       deliveryAddress: row['delivery_address'] as String?,
+      paymentProofPath: row['payment_proof_path'] as String?,
     );
   }
 
@@ -170,32 +178,106 @@ order_items (
     );
   }
 
-  Map<String, dynamic> _toOrderItemRow(String orderId, CartItemModel item) {
-    return {
-      'order_id': orderId,
-      'menu_item_id': item.item.id,
-      'item_name': item.item.name,
-      'item_description': item.item.description,
-      'item_image_path': item.item.imagePath,
-      'item_category': item.item.category,
-      'unit_price': item.item.price,
-      'quantity': item.quantity,
-      'spice_level': item.spiceLevel,
-      'notes': item.notes,
-      'selected_add_ons': item.selectedAddOns
-          .map((addOn) => addOn.toJson())
-          .toList(),
-    };
+  @override
+  Stream<void> watchOrders({String? userId, bool includeAll = false}) {
+    if (!includeAll && (userId == null || userId.isEmpty)) {
+      return const Stream<void>.empty();
+    }
+    if (includeAll) {
+      return _client.from('orders').stream(primaryKey: ['id']).map((_) {});
+    }
+    return _client
+        .from('orders')
+        .stream(primaryKey: ['id'])
+        .eq('user_id', userId!)
+        .map((_) {});
   }
 
-  CartItemModel _cloneCartItem(CartItemModel item) {
-    return CartItemModel(
-      id: item.id,
-      item: item.item,
-      quantity: item.quantity,
-      spiceLevel: item.spiceLevel,
-      notes: item.notes,
-      selectedAddOns: List<AddOnOption>.from(item.selectedAddOns),
-    );
+  @override
+  Future<String> uploadPaymentProof({
+    required String orderId,
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw const OrderSubmissionException('Sign in again before uploading.');
+    }
+    if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+      throw const OrderSubmissionException(
+        'Choose a JPG, PNG, WebP or PDF file smaller than 5 MB.',
+      );
+    }
+    const allowedTypes = {
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'application/pdf',
+    };
+    if (!allowedTypes.contains(contentType)) {
+      throw const OrderSubmissionException(
+        'Only JPG, PNG, WebP and PDF proof files are accepted.',
+      );
+    }
+    final safeName = fileName
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9._-]+'), '-')
+        .replaceAll(RegExp(r'-+'), '-');
+    final path =
+        '${user.id}/$orderId/${DateTime.now().millisecondsSinceEpoch}-$safeName';
+    try {
+      await _client.storage
+          .from('payment-proofs')
+          .uploadBinary(
+            path,
+            Uint8List.fromList(bytes),
+            fileOptions: FileOptions(contentType: contentType, upsert: false),
+          );
+      await _client.rpc(
+        'attach_payment_proof',
+        params: {'p_order_id': orderId, 'p_storage_path': path},
+      );
+      return path;
+    } on StorageException catch (error) {
+      throw OrderSubmissionException(
+        error.statusCode == '413'
+            ? 'The selected proof file is too large.'
+            : 'The proof could not be uploaded. Check your connection and try again.',
+      );
+    } on PostgrestException {
+      try {
+        await _client.storage.from('payment-proofs').remove([path]);
+      } catch (_) {
+        // The private orphan cannot be read publicly and can be removed by staff.
+      }
+      throw const OrderSubmissionException(
+        'The proof uploaded but could not be linked to this order. Please try again.',
+      );
+    }
+  }
+
+  String _friendlyOrderError(PostgrestException error) {
+    final message = error.message.toLowerCase();
+    if (message.contains('store is closed') ||
+        message.contains('ordering is paused')) {
+      return 'Ordering is currently paused. Please try again during store hours.';
+    }
+    if (message.contains('pickup is unavailable')) {
+      return 'Pickup is not available right now. Choose delivery instead.';
+    }
+    if (message.contains('delivery is unavailable')) {
+      return 'Delivery is not available right now. Choose pickup instead.';
+    }
+    if (message.contains('price changed')) {
+      return 'A price changed while you were checking out. Review the updated cart total and submit again.';
+    }
+    if (message.contains('unavailable') || message.contains('not found')) {
+      return 'An item in your cart is no longer available. Return to the menu and update your cart.';
+    }
+    if (message.contains('invalid payment')) {
+      return 'That payment method is not available for this order type.';
+    }
+    return 'We could not place the order. Check your connection and try again; your cart is still saved.';
   }
 }

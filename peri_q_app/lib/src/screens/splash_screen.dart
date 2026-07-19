@@ -6,6 +6,7 @@ import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import 'auth_screen.dart';
 import 'customer_shell.dart';
+import 'startup_error_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key, required this.controller});
@@ -35,6 +36,8 @@ class _SplashScreenState extends State<SplashScreen>
         MaterialPageRoute(
           builder: (_) => widget.controller.hasReturningSession
               ? CustomerShell(controller: widget.controller)
+              : widget.controller.bootstrapError != null
+              ? StartupErrorScreen(controller: widget.controller)
               : AuthScreen(controller: widget.controller),
         ),
       );

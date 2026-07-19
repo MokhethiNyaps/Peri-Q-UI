@@ -4,6 +4,8 @@ import '../models/menu_category.dart';
 import '../models/menu_item.dart';
 
 abstract class MenuRepository {
+  bool get lastFetchUsedCache => false;
+
   Future<List<MenuItemModel>> fetchMenuItems();
   Future<MenuItemModel> addMenuItem(MenuItemModel item);
   Future<MenuItemModel> updateMenuItem(MenuItemModel item);

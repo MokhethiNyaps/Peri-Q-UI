@@ -6,6 +6,7 @@ import '../models/order.dart';
 import 'admin_dashboard_screen.dart';
 import 'auth_screen.dart';
 import 'payment_preferences_screen.dart';
+import 'privacy_and_support_screen.dart';
 import 'saved_addresses_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -101,6 +102,21 @@ class ProfileScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _ProfileTile(
+                  title: 'Privacy & Help',
+                  subtitle: 'Privacy summary, support and data requests',
+                  icon: Icons.privacy_tip_outlined,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => const PrivacyAndSupportScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ProfileTile(
                   title: 'Payment Preferences',
                   subtitle: controller.preferredPaymentMethod.label,
                   icon: Icons.account_balance_wallet_outlined,
@@ -185,6 +201,17 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               const SizedBox(height: 24),
+              if (!controller.isGuest) ...[
+                OutlinedButton.icon(
+                  onPressed: () => _confirmAccountDeletion(context),
+                  icon: const Icon(Icons.delete_forever_outlined),
+                  label: const Text('Delete Account'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.periRed,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
               Center(
                 child: TextButton(
                   onPressed: () async {
@@ -205,6 +232,63 @@ class ProfileScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _confirmAccountDeletion(BuildContext context) async {
+    final confirmationController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete account permanently?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This removes your Supabase account, profile and linked orders. This cannot be undone. Type DELETE to confirm.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmationController,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(labelText: 'Type DELETE'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              confirmationController.text.trim() == 'DELETE',
+            ),
+            child: const Text('Delete permanently'),
+          ),
+        ],
+      ),
+    );
+    confirmationController.dispose();
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await controller.deleteAccount();
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => AuthScreen(controller: controller)),
+        (_) => false,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The account could not be deleted. Check your connection and try again, or contact support.',
+          ),
+        ),
+      );
+    }
   }
 }
 

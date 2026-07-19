@@ -109,24 +109,53 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                   ),
                   Expanded(
-                    child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 160),
-                      itemCount: filteredItems.length,
-                      separatorBuilder: (_, _) => const SizedBox(height: 14),
-                      itemBuilder: (context, index) {
-                        final item = filteredItems[index];
-                        return FoodCard(
-                          item: item,
-                          compact: true,
-                          onTap: () => showItemCustomizationFlow(
-                            context,
-                            widget.controller,
-                            item,
+                    child: filteredItems.isEmpty
+                        ? RefreshIndicator(
+                            onRefresh: widget.controller.refreshData,
+                            child: ListView(
+                              padding: const EdgeInsets.all(32),
+                              children: [
+                                const SizedBox(height: 80),
+                                const Icon(
+                                  Icons.search_off_rounded,
+                                  size: 54,
+                                  color: AppTheme.ashGrey,
+                                ),
+                                const SizedBox(height: 14),
+                                Text(
+                                  searchController.text.isEmpty
+                                      ? 'No meals are available right now.'
+                                      : 'No meals match your search.',
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.titleLarge,
+                                ),
+                                const SizedBox(height: 6),
+                                const Text(
+                                  'Pull down to refresh the menu.',
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          )
+                        : ListView.separated(
+                            padding: const EdgeInsets.fromLTRB(20, 8, 20, 160),
+                            itemCount: filteredItems.length,
+                            separatorBuilder: (_, _) =>
+                                const SizedBox(height: 14),
+                            itemBuilder: (context, index) {
+                              final item = filteredItems[index];
+                              return FoodCard(
+                                item: item,
+                                compact: true,
+                                onTap: () => showItemCustomizationFlow(
+                                  context,
+                                  widget.controller,
+                                  item,
+                                ),
+                                onAdd: () => widget.controller.addToCart(item),
+                              );
+                            },
                           ),
-                          onAdd: () => widget.controller.addToCart(item),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/app_auth_session.dart';
@@ -54,6 +56,9 @@ class AppController extends ChangeNotifier {
 
   bool isBootstrapping = true;
   String? bootstrapError;
+  bool isMenuStale = false;
+  StreamSubscription<void>? _orderChanges;
+  String? _pendingOrderRequestId;
 
   bool get canAccessAdmin => isAdmin;
 
@@ -178,11 +183,20 @@ class AppController extends ChangeNotifier {
 
   double get subtotal => cart.fold<double>(0, (sum, item) => sum + item.total);
 
-  double deliveryFeeFor(OrderType type) => type == OrderType.delivery ? 30 : 0;
+  double deliveryFeeFor(OrderType type) =>
+      type == OrderType.delivery ? appSettings.deliveryFee : 0;
 
   double totalFor(OrderType type) => subtotal + deliveryFeeFor(type);
 
   bool get isStoreOpenNow => appSettings.isOpenAt(DateTime.now());
+
+  bool canUseOrderType(OrderType type) => type == OrderType.pickup
+      ? appSettings.pickupAvailable
+      : appSettings.deliveryAvailable;
+
+  bool get canPlaceOrders =>
+      isStoreOpenNow &&
+      (appSettings.pickupAvailable || appSettings.deliveryAvailable);
 
   String get storeStatusLabel {
     if (!appSettings.storeOpen) {
@@ -201,16 +215,26 @@ class AppController extends ChangeNotifier {
 
       final preferences = await _preferencesRepository.loadPreferences();
       final authSession = await _authRepository.restoreSession();
-      final fetchedAppSettings = await _storeRepository.fetchAppSettings();
+      AppSettings fetchedAppSettings;
+      try {
+        fetchedAppSettings = await _storeRepository.fetchAppSettings();
+      } catch (_) {
+        fetchedAppSettings = const AppSettings(storeOpen: false);
+      }
       final fetchedMenuCategories = await _menuRepository.fetchMenuCategories();
       final fetchedMenuItems = await _menuRepository.fetchMenuItems();
 
       _applySessionState(authSession, fallbackPreferences: preferences);
 
-      final fetchedOrders = await _orderRepository.fetchOrders(
-        userId: userId,
-        includeAll: isAdmin,
-      );
+      List<OrderModel> fetchedOrders;
+      try {
+        fetchedOrders = await _orderRepository.fetchOrders(
+          userId: userId,
+          includeAll: isAdmin,
+        );
+      } catch (_) {
+        fetchedOrders = const [];
+      }
 
       selectedMenuCategory = preferences.selectedMenuCategory;
       savedAddresses = List<SavedAddress>.from(preferences.savedAddresses);
@@ -219,7 +243,9 @@ class AppController extends ChangeNotifier {
       _applyAppSettings(fetchedAppSettings);
       menuCategories = _orderedCategories(fetchedMenuCategories);
       menuItems = _orderedMenuItems(fetchedMenuItems);
+      isMenuStale = _menuRepository.lastFetchUsedCache;
       orders = fetchedOrders;
+      _startWatchingOrders();
 
       if (!categories.contains(selectedMenuCategory)) {
         selectedMenuCategory = 'All';
@@ -242,6 +268,23 @@ class AppController extends ChangeNotifier {
       isBootstrapping = false;
       notifyListeners();
     }
+  }
+
+  Future<void> retryBootstrap() => _bootstrap();
+
+  Future<void> refreshData() async {
+    final results = await Future.wait<dynamic>([
+      _storeRepository.fetchAppSettings(),
+      _menuRepository.fetchMenuCategories(),
+      _menuRepository.fetchMenuItems(),
+      _orderRepository.fetchOrders(userId: userId, includeAll: isAdmin),
+    ]);
+    _applyAppSettings(results[0] as AppSettings);
+    menuCategories = _orderedCategories(results[1] as List<MenuCategoryModel>);
+    menuItems = _orderedMenuItems(results[2] as List<MenuItemModel>);
+    isMenuStale = _menuRepository.lastFetchUsedCache;
+    orders = results[3] as List<OrderModel>;
+    notifyListeners();
   }
 
   Future<void> _savePreferences() {
@@ -302,6 +345,8 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    await _orderChanges?.cancel();
+    _orderChanges = null;
     await _authRepository.signOut();
     userId = null;
     userEmail = null;
@@ -313,6 +358,25 @@ class AppController extends ChangeNotifier {
     orders = [];
     selectedMenuCategory = 'All';
     cart = [];
+    await _savePreferences();
+    notifyListeners();
+  }
+
+  Future<void> deleteAccount() async {
+    await _authRepository.deleteAccount();
+    await _orderChanges?.cancel();
+    _orderChanges = null;
+    userId = null;
+    userEmail = null;
+    isAdmin = false;
+    hasReturningSession = false;
+    isGuest = true;
+    customerName = '';
+    customerPhone = '';
+    orders = [];
+    cart = [];
+    savedAddresses = [];
+    defaultAddressId = null;
     await _savePreferences();
     notifyListeners();
   }
@@ -430,6 +494,12 @@ class AppController extends ChangeNotifier {
     String notes = '',
     List<AddOnOption> selectedAddOns = const [],
   }) {
+    if (!item.isAvailable) {
+      throw StateError('This item is currently unavailable.');
+    }
+    if (quantity < 1 || quantity > 50) {
+      throw ArgumentError.value(quantity, 'quantity', 'Use 1 to 50.');
+    }
     final newItem = CartItemModel(
       id: '${item.id}-${DateTime.now().microsecondsSinceEpoch}',
       item: item,
@@ -466,6 +536,25 @@ class AppController extends ChangeNotifier {
     required PaymentMethod paymentMethod,
     String? deliveryAddress,
   }) async {
+    if (cart.isEmpty) {
+      throw const OrderSubmissionException('Your cart is empty.');
+    }
+    if (!canPlaceOrders) {
+      throw const OrderSubmissionException(
+        'Ordering is currently paused or the store is closed.',
+      );
+    }
+    if (!canUseOrderType(orderType)) {
+      throw OrderSubmissionException(
+        '${orderType.label} is not available right now.',
+      );
+    }
+    if (orderType == OrderType.delivery &&
+        (deliveryAddress == null || deliveryAddress.trim().isEmpty)) {
+      throw const OrderSubmissionException('Enter a delivery address.');
+    }
+    _pendingOrderRequestId ??=
+        '${userId ?? 'user'}-${DateTime.now().microsecondsSinceEpoch}';
     final order = await _orderRepository.createOrder(
       OrderDraft(
         customerName: customerName,
@@ -475,15 +564,36 @@ class AppController extends ChangeNotifier {
         paymentMethod: paymentMethod,
         totalPrice: totalFor(orderType),
         estimatedMinutes: orderType == OrderType.delivery ? 45 : 25,
+        clientRequestId: _pendingOrderRequestId!,
         deliveryAddress: deliveryAddress,
       ),
       userId: userId,
     );
 
+    _pendingOrderRequestId = null;
     orders = [order, ...orders];
     cart = [];
     notifyListeners();
     return order;
+  }
+
+  Future<String> uploadPaymentProof({
+    required OrderModel order,
+    required List<int> bytes,
+    required String fileName,
+    required String contentType,
+  }) {
+    if (order.paymentMethod != PaymentMethod.eft) {
+      throw const OrderSubmissionException(
+        'Payment proof is only used for EFT orders.',
+      );
+    }
+    return _orderRepository.uploadPaymentProof(
+      orderId: order.id,
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
   }
 
   Future<void> advanceOrderStatus(OrderModel order) async {
@@ -628,8 +738,32 @@ class AppController extends ChangeNotifier {
       userId: userId,
       includeAll: isAdmin,
     );
+    _startWatchingOrders();
     await _savePreferences();
     notifyListeners();
+  }
+
+  void _startWatchingOrders() {
+    _orderChanges?.cancel();
+    _orderChanges = _orderRepository
+        .watchOrders(userId: userId, includeAll: isAdmin)
+        .listen((_) async {
+          try {
+            orders = await _orderRepository.fetchOrders(
+              userId: userId,
+              includeAll: isAdmin,
+            );
+            notifyListeners();
+          } catch (_) {
+            // The current data stays visible; resume/refresh provides recovery.
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    _orderChanges?.cancel();
+    super.dispose();
   }
 
   void _applySessionState(
@@ -676,6 +810,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> _reloadMenuItems() async {
     menuItems = _orderedMenuItems(await _menuRepository.fetchMenuItems());
+    isMenuStale = _menuRepository.lastFetchUsedCache;
     if (!categories.contains(selectedMenuCategory)) {
       selectedMenuCategory = 'All';
     }

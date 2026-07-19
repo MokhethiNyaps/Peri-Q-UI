@@ -233,16 +233,21 @@ class _CartScreenState extends State<CartScreen> {
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
                   child: SafeArea(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                CheckoutScreen(controller: widget.controller),
-                          ),
-                        );
-                      },
+                      onPressed: widget.controller.canPlaceOrders
+                          ? () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => CheckoutScreen(
+                                    controller: widget.controller,
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
                       child: Text(
-                        'Proceed to Checkout • R${widget.controller.totalFor(OrderType.pickup).toStringAsFixed(0)}',
+                        widget.controller.canPlaceOrders
+                            ? 'Proceed to Checkout • R${widget.controller.totalFor(OrderType.pickup).toStringAsFixed(0)}'
+                            : 'Ordering unavailable • ${widget.controller.storeStatusLabel}',
                       ),
                     ),
                   ),

@@ -33,9 +33,14 @@ class SharedPreferencesRepository implements PreferencesRepository {
     return AppPreferences(
       hasReturningSession: preferences.getBool(_sessionKey) ?? false,
       isGuest: preferences.getBool(_guestKey) ?? true,
-      customerName: preferences.getString(_customerNameKey) ?? 'Thabo Mokhethi',
-      customerPhone:
-          preferences.getString(_customerPhoneKey) ?? '+27 71 234 5678',
+      customerName: _withoutLegacySample(
+        preferences.getString(_customerNameKey),
+        'Thabo Mokhethi',
+      ),
+      customerPhone: _withoutLegacySample(
+        preferences.getString(_customerPhoneKey),
+        '+27 71 234 5678',
+      ),
       storeOpen: preferences.getBool(_storeOpenKey) ?? true,
       selectedMenuCategory: preferences.getString(_menuCategoryKey) ?? 'All',
       savedAddresses: savedAddresses,
@@ -47,6 +52,11 @@ class SharedPreferencesRepository implements PreferencesRepository {
         preferences.getString(_preferredPaymentKey) ?? 'cash_collection',
       ),
     );
+  }
+
+  String _withoutLegacySample(String? value, String legacySample) {
+    final text = value?.trim() ?? '';
+    return text == legacySample ? '' : text;
   }
 
   @override
