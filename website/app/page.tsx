@@ -122,8 +122,8 @@ export default function HomePage() {
 
           <div className="relative mx-auto w-full max-w-[32rem] lg:ml-auto">
             <div className="absolute left-0 top-1/2 size-24 -translate-x-1/3 rounded-full bg-orange/75 blur-3xl" />
-            <div className="hero-logo-wrap relative aspect-square overflow-hidden rounded-[3.25rem] bg-[#0f0f0f] p-7 sm:p-10">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(240,120,32,0.18),transparent_53%)]" />
+            <div className="hero-logo-wrap relative aspect-square overflow-hidden rounded-[3.25rem] bg-cream p-7 ring-1 ring-orange/20 sm:p-10">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(240,120,32,0.16),transparent_58%)]" />
               <Image
                 src="/brand-mark.png"
                 alt="Rasta's Peri Q Chesanyama — Flame. Flavour. Vibes."

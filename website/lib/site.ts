@@ -4,7 +4,7 @@ export const siteConfig = {
   description:
     "Flame-grilled food, easy ordering, and pickup or delivery from Rasta's Peri Q Chesanyama in Bloemfontein.",
   url: "https://rastasperiq.co.za",
-  email: "nyapholimokhethi85@gmail.com",
+  email: "contact@rastasperiq.co.za",
   phones: ["+27 73 642 3549", "+27 67 227 1229"],
   whatsappUrl: "https://wa.me/27736423549",
   address: "28 King Edward Rd, Bloemfontein, Free State 9301, South Africa",

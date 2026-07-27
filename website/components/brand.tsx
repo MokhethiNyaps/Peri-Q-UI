@@ -16,8 +16,8 @@ export function Brand({ compact = false, inverted = false }: BrandProps) {
       <span
         className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl border p-1 shadow-sm transition-transform group-hover:-rotate-2 ${
           inverted
-            ? "border-white/15 bg-white/5"
-            : "border-black/10 bg-[#171717]"
+            ? "border-white/15 bg-cream"
+            : "border-black/10 bg-cream"
         } ${compact ? "size-11" : "size-13"}`}
       >
         <Image
