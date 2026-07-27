@@ -1,7 +1,11 @@
+import 'dart:async';
+
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/app_controller.dart';
+import 'core/auth_deep_links.dart';
 import 'core/app_theme.dart';
 import 'core/supabase_config.dart';
 import 'data/local/shared_preferences_repository.dart';
@@ -10,6 +14,7 @@ import 'data/supabase/supabase_menu_repository.dart';
 import 'data/supabase/supabase_order_repository.dart';
 import 'data/supabase/supabase_store_repository.dart';
 import 'screens/splash_screen.dart';
+import 'screens/reset_password_screen.dart';
 import 'screens/supabase_config_missing_screen.dart';
 
 class PeriQApp extends StatefulWidget {
@@ -22,7 +27,12 @@ class PeriQApp extends StatefulWidget {
 }
 
 class _PeriQAppState extends State<PeriQApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
   AppController? controller;
+  StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<Uri>? _deepLinkSubscription;
+  bool _hasPendingPasswordRecoveryLink = false;
+  bool _isShowingPasswordRecovery = false;
 
   @override
   void initState() {
@@ -40,12 +50,111 @@ class _PeriQAppState extends State<PeriQApp> {
       preferencesRepository: SharedPreferencesRepository(),
       storeRepository: SupabaseStoreRepository(client: client),
     );
+
+    _authSubscription = client.auth.onAuthStateChange.listen(
+      _handleAuthStateChange,
+      onError: _handleAuthError,
+    );
+    _deepLinkSubscription = AppLinks().uriLinkStream.listen(
+      _handleDeepLink,
+      onError: _handleDeepLinkError,
+    );
+  }
+
+  void _handleDeepLink(Uri uri) {
+    if (AuthDeepLinks.isPasswordReset(uri)) {
+      _hasPendingPasswordRecoveryLink = true;
+    }
+  }
+
+  void _handleAuthStateChange(AuthState authState) {
+    final session =
+        authState.session ?? Supabase.instance.client.auth.currentSession;
+    final isPasswordRecovery =
+        authState.event == AuthChangeEvent.passwordRecovery ||
+        (_hasPendingPasswordRecoveryLink &&
+            authState.event == AuthChangeEvent.signedIn);
+
+    if (!isPasswordRecovery || session == null) {
+      return;
+    }
+
+    _hasPendingPasswordRecoveryLink = false;
+    _showPasswordRecoveryScreen();
+  }
+
+  void _handleAuthError(Object error, StackTrace stackTrace) {
+    if (_hasPendingPasswordRecoveryLink) {
+      _hasPendingPasswordRecoveryLink = false;
+      _showRecoveryLinkError();
+    }
+  }
+
+  void _handleDeepLinkError(Object error, StackTrace stackTrace) {
+    _showRecoveryLinkError();
+  }
+
+  void _showPasswordRecoveryScreen() {
+    if (_isShowingPasswordRecovery) {
+      return;
+    }
+
+    _isShowingPasswordRecovery = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        _isShowingPasswordRecovery = false;
+        return;
+      }
+
+      final navigator = _navigatorKey.currentState;
+      if (navigator == null || controller == null) {
+        _isShowingPasswordRecovery = false;
+        return;
+      }
+
+      unawaited(
+        navigator
+            .pushAndRemoveUntil<void>(
+              MaterialPageRoute(
+                settings: const RouteSettings(name: '/reset-password'),
+                builder: (_) => ResetPasswordScreen(controller: controller!),
+              ),
+              (_) => false,
+            )
+            .whenComplete(() => _isShowingPasswordRecovery = false),
+      );
+    });
+  }
+
+  void _showRecoveryLinkError() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = _navigatorKey.currentContext;
+      if (!mounted || context == null) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'This password reset link is invalid or expired. Request a new one.',
+          ),
+        ),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    unawaited(_authSubscription?.cancel());
+    unawaited(_deepLinkSubscription?.cancel());
+    controller?.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     if (controller == null) {
       return MaterialApp(
+        navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'Peri Q',
         theme: AppTheme.lightTheme,
@@ -57,6 +166,7 @@ class _PeriQAppState extends State<PeriQApp> {
       animation: controller!,
       builder: (context, _) {
         return MaterialApp(
+          navigatorKey: _navigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'Peri Q',
           theme: AppTheme.lightTheme,

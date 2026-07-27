@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/auth_deep_links.dart';
 import '../../models/app_auth_session.dart';
 import '../../repositories/auth_repository.dart';
 
@@ -81,7 +82,15 @@ class SupabaseAuthRepository implements AuthRepository {
 
   @override
   Future<void> resetPasswordForEmail({required String email}) {
-    return _client.auth.resetPasswordForEmail(email.trim());
+    return _client.auth.resetPasswordForEmail(
+      email.trim(),
+      redirectTo: AuthDeepLinks.resetPasswordUrl,
+    );
+  }
+
+  @override
+  Future<void> updatePassword({required String newPassword}) async {
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
   }
 
   @override

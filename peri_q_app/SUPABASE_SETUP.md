@@ -57,7 +57,25 @@ where email = 'owner@example.com';
 The app enforces this through the `profiles.role = 'admin'` value and the RLS
 policies in `supabase/schema.sql`.
 
-## 5. Run the Flutter app against Supabase
+## 5. Configure the Android password-reset deep link
+
+In **Authentication → URL Configuration** in the Supabase dashboard, add this
+exact value to **Redirect URLs**:
+
+```text
+rastasperiq://reset-password
+```
+
+Keep the URL scheme lowercase. The Android manifest registers this scheme and
+the password-reset request supplies it as `redirectTo`. Supabase Flutter uses
+PKCE, detects the returned `?code=...` callback, exchanges it for a recovery
+session, and the app opens the Update Password screen.
+
+If the redirect URL is not allowed, Supabase can fall back to the configured
+Site URL (for example, `http://localhost:3000`). The recovery email template
+must use Supabase's confirmation URL rather than hard-coding the Site URL.
+
+## 6. Run the Flutter app against Supabase
 
 ```bash
 flutter pub get
@@ -70,7 +88,7 @@ To build the debug APK against Supabase:
 flutter build apk --debug --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
-## 6. Connected tables
+## 7. Connected tables
 
 - `profiles`: stores app profile data and admin role.
 - `app_settings`: stores shared store state like `store_open` plus Today's
@@ -112,6 +130,8 @@ Optional or future-facing:
 ## Notes
 
 - Google sign-in still needs OAuth provider setup and mobile deep-link configuration before it can be enabled in-app.
-- Password reset uses Supabase email templates, so configure the sender and redirect URL in the Supabase dashboard before using it in production.
+- Password reset uses Supabase email templates. Configure the sender and allow
+  `rastasperiq://reset-password` as an Auth redirect URL before using it in
+  production.
 - The app uses the Supabase publishable key on the client, so RLS policies are what protect your data.
 - If you launch the app without Supabase values in `.env` or `--dart-define`, the app will show a configuration screen instead of falling back to mock data.

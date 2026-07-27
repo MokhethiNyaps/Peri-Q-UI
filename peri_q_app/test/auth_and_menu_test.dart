@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peri_q_app/src/core/app_controller.dart';
+import 'package:peri_q_app/src/core/auth_deep_links.dart';
 import 'package:peri_q_app/src/models/app_auth_session.dart';
 import 'package:peri_q_app/src/models/app_preferences.dart';
 import 'package:peri_q_app/src/models/app_settings.dart';
@@ -16,6 +17,7 @@ import 'package:peri_q_app/src/repositories/order_repository.dart';
 import 'package:peri_q_app/src/repositories/preferences_repository.dart';
 import 'package:peri_q_app/src/repositories/store_repository.dart';
 import 'package:peri_q_app/src/screens/auth_screen.dart';
+import 'package:peri_q_app/src/screens/reset_password_screen.dart';
 
 void main() {
   group('AppController authentication', () {
@@ -51,6 +53,18 @@ void main() {
 
       expect(harness.auth.resetEmail, 'reset@example.com');
     });
+
+    test(
+      'updates recovered user passwords through the auth repository',
+      () async {
+        final harness = _ControllerHarness();
+        await harness.controller.bootstrapFuture;
+
+        await harness.controller.updatePassword(newPassword: 'new-secret1');
+
+        expect(harness.auth.updatedPassword, 'new-secret1');
+      },
+    );
 
     test('deletes the account and clears local personal data', () async {
       final harness = _ControllerHarness();
@@ -243,6 +257,69 @@ void main() {
       expect(find.text('Enter your full name.'), findsOneWidget);
       expect(find.text('Enter a valid email address.'), findsOneWidget);
       expect(find.text('Use at least 6 characters.'), findsOneWidget);
+    });
+  });
+
+  group('Password recovery', () {
+    test('recognizes only the configured password recovery deep link', () {
+      expect(
+        AuthDeepLinks.isPasswordReset(
+          Uri.parse('rastasperiq://reset-password?code=abc'),
+        ),
+        isTrue,
+      );
+      expect(
+        AuthDeepLinks.isPasswordReset(
+          Uri.parse('rastasperiq://another-screen?code=abc'),
+        ),
+        isFalse,
+      );
+      expect(
+        AuthDeepLinks.isPasswordReset(
+          Uri.parse('https://example.com/reset-password?code=abc'),
+        ),
+        isFalse,
+      );
+    });
+
+    testWidgets('updates the password and returns the user to sign in', (
+      tester,
+    ) async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+
+      await tester.pumpWidget(
+        MaterialApp(home: ResetPasswordScreen(controller: harness.controller)),
+      );
+
+      await tester.enterText(
+        find.byKey(const ValueKey('reset-password-field')),
+        'new-secret1',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('reset-password-confirm-field')),
+        'new-secret1',
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('reset-password-submit-button')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('reset-password-submit-button')),
+      );
+      await tester.pump();
+      await tester.runAsync(() async {
+        for (var attempt = 0; attempt < 100; attempt += 1) {
+          if (harness.auth.signedOut) {
+            return;
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+      });
+      await tester.pumpAndSettle();
+
+      expect(harness.auth.updatedPassword, 'new-secret1');
+      expect(harness.auth.signedOut, isTrue);
+      expect(find.byType(AuthScreen), findsOneWidget);
     });
   });
 
@@ -562,6 +639,7 @@ class _FakeAuthRepository implements AuthRepository {
   String? upsertedName;
   String? upsertedPhone;
   String? resetEmail;
+  String? updatedPassword;
   bool signedOut = false;
 
   @override
@@ -614,6 +692,11 @@ class _FakeAuthRepository implements AuthRepository {
   @override
   Future<void> resetPasswordForEmail({required String email}) async {
     resetEmail = email;
+  }
+
+  @override
+  Future<void> updatePassword({required String newPassword}) async {
+    updatedPassword = newPassword;
   }
 
   @override

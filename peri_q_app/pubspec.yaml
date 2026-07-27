@@ -31,6 +31,7 @@ dependencies:
   flutter:
     sdk: flutter
 
+  app_links: ^7.2.1
   # 11.x requires AGP 9 built-in Kotlin, while Supabase's app_links plugin
   # still applies KGP. Stay on the latest compatible 10.x release for now.
   file_picker: ^10.3.10

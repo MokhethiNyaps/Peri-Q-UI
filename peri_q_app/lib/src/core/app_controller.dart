@@ -344,6 +344,10 @@ class AppController extends ChangeNotifier {
     return _authRepository.resetPasswordForEmail(email: email);
   }
 
+  Future<void> updatePassword({required String newPassword}) {
+    return _authRepository.updatePassword(newPassword: newPassword);
+  }
+
   Future<void> signOut() async {
     await _orderChanges?.cancel();
     _orderChanges = null;
