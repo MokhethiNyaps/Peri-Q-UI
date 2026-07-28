@@ -5,12 +5,12 @@ Checked against official Google Play guidance available on 18 July 2026. The exa
 ## Technical release
 
 - [x] Permanent candidate application ID/namespace: `za.co.rastasperiq.ordering` (owner must confirm before app creation).
-- [x] Version `1.0.0` / code `1`; increment code for every replacement upload.
+- [x] Version `1.0.1` / code `2`; increment code for every replacement upload.
 - [x] Compile/target Android 16 API 36. From 31 August 2026, Play requires API 36 for new phone/tablet apps/updates: https://support.google.com/googleplay/android-developer/answer/11926878
 - [x] 64-bit `arm64-v8a` present; App Bundle also contains armv7/x86_64 and Play will split per device.
 - [x] INTERNET is the only permission; system picker needs no broad storage/media permission.
 - [x] Release shrinking/obfuscation and symbol artifacts generated.
-- [x] Unsigned AAB validated with bundletool.
+- [ ] Build and validate the new production AAB after signing credentials and Supabase client configuration are supplied.
 - [ ] Generate upload key, enrol in Play App Signing, rebuild/verify signed AAB.
 - [ ] Apply/test production Supabase schema and Auth/Storage settings.
 - [ ] Upload to Internal testing; review supported-device catalogue and App Integrity certificate fingerprints.
@@ -38,12 +38,13 @@ Features:
 
 No marketplace, driver tracking or subscription is included.
 
-**Release notes (1.0.0 draft):** Initial release for browsing the Rasta's Peri Q menu, guest/customer checkout, pickup or available delivery, secure EFT proof upload and in-app order status.
+**Release notes (1.0.1 draft):** Refreshed sign-in and home experience, live Today's Special updates, improved image management, stronger session security, and easier access to privacy, account deletion, terms, and support.
 
-- [ ] Support email: `[SUPPORT EMAIL]`
-- [ ] Support website: `[SUPPORT WEBSITE]`
-- [ ] Privacy URL: `[PUBLIC PRIVACY POLICY URL]`
-- [ ] Account deletion URL: `[PUBLIC ACCOUNT-DELETION URL]`
+- [x] Support email: `contact@rastasperiq.co.za`
+- [x] Support website: `https://rastasperiq.co.za/`
+- [x] Privacy URL: `https://rastasperiq.co.za/privacy-policy/`
+- [x] Account deletion URL: `https://rastasperiq.co.za/delete-account/`
+- [ ] Confirm the new Terms URL resolves after Vercel deployment: `https://rastasperiq.co.za/terms-and-conditions/`
 
 ## Visual assets
 
@@ -57,8 +58,8 @@ No marketplace, driver tracking or subscription is included.
 ## App content and policy declarations
 
 - [ ] Data Safety based on `PLAY_DATA_SAFETY_DRAFT.md`; owner verifies Supabase/provider practices. Required for closed/open/production tracks: https://support.google.com/googleplay/android-developer/answer/10787469
-- [ ] Public privacy policy and in-app link/summary.
-- [ ] Account deletion: in-app path plus functional public web request URL. Google requires both when account creation is offered: https://support.google.com/googleplay/android-developer/answer/13327111
+- [x] Public privacy policy and in-app link/summary implemented; recheck after each deployment.
+- [x] Account deletion: in-app path plus public web request URL implemented. Google requires both when account creation is offered: https://support.google.com/googleplay/android-developer/answer/13327111
 - [ ] App access instructions and reviewer accounts from `PLAY_REVIEWER_ACCESS.md`.
 - [ ] Ads: likely **No** (no ad SDK)—owner verifies final build.
 - [ ] Content rating questionnaire: prepared-food ordering; answer accurately.

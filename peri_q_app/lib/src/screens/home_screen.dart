@@ -41,60 +41,11 @@ class HomeScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Image.asset(
-                                    'assets/images/brand_mark.png',
-                                    width: 42,
-                                    height: 42,
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Text(
-                                  'Peri Q',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineLarge
-                                      ?.copyWith(color: AppTheme.periRed),
-                                ),
-                              ],
-                            ),
-                            const Spacer(),
-                            Flexible(
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: _StoreStatusBadge(
-                                  controller: controller,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
+                        _HomeHeader(controller: controller),
+                        const SizedBox(height: 22),
                         if (controller.isMenuStale) ...[
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppTheme.warning.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Row(
-                              children: [
-                                Icon(Icons.offline_bolt_outlined),
-                                SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Showing the last saved menu. Pull down when you are back online.',
-                                  ),
-                                ),
-                              ],
-                            ),
+                          _OfflineMenuBanner(
+                            onRetry: () => controller.refreshData(),
                           ),
                           const SizedBox(height: 14),
                         ],
@@ -118,22 +69,50 @@ class HomeScreen extends StatelessWidget {
                                   controller.customerCategories[index];
                               final selected =
                                   category == controller.selectedMenuCategory;
-                              return ChoiceChip(
-                                selected: selected,
-                                onSelected: (_) => onBrowseCategory(category),
-                                selectedColor: AppTheme.periRed,
-                                backgroundColor: Colors.white,
-                                side: BorderSide.none,
-                                shape: RoundedRectangleBorder(
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(999),
+                                  boxShadow: selected
+                                      ? [
+                                          BoxShadow(
+                                            color: AppTheme.periRed.withValues(
+                                              alpha: 0.2,
+                                            ),
+                                            blurRadius: 16,
+                                            offset: const Offset(0, 7),
+                                          ),
+                                        ]
+                                      : null,
                                 ),
-                                label: Text(
-                                  category.toUpperCase(),
-                                  style: TextStyle(
+                                child: ChoiceChip(
+                                  selected: selected,
+                                  showCheckmark: false,
+                                  onSelected: (_) => onBrowseCategory(category),
+                                  selectedColor: AppTheme.periRed,
+                                  backgroundColor: Colors.white,
+                                  side: BorderSide(
                                     color: selected
-                                        ? Colors.white
-                                        : AppTheme.ashGrey,
-                                    fontWeight: FontWeight.w700,
+                                        ? AppTheme.periRed
+                                        : Colors.black.withValues(alpha: 0.05),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                    vertical: 8,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  label: Text(
+                                    category.toUpperCase(),
+                                    style: TextStyle(
+                                      color: selected
+                                          ? Colors.white
+                                          : AppTheme.ashGrey,
+                                      fontSize: 12,
+                                      letterSpacing: 0.3,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                 ),
                               );
@@ -158,19 +137,37 @@ class HomeScreen extends StatelessWidget {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
-                        padding: const EdgeInsets.all(22),
+                        padding: const EdgeInsets.all(26),
                         decoration: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: Colors.black.withValues(alpha: 0.05),
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x12000000),
+                              blurRadius: 24,
+                              offset: Offset(0, 12),
+                            ),
+                          ],
                         ),
                         child: Column(
                           children: [
-                            const Icon(
-                              Icons.restaurant_menu_rounded,
-                              size: 44,
-                              color: AppTheme.ashGrey,
+                            Container(
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: AppTheme.periRed.withValues(alpha: 0.08),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.restaurant_menu_rounded,
+                                size: 30,
+                                color: AppTheme.periRed,
+                              ),
                             ),
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 16),
                             Text(
                               'Today’s menu is not published yet.',
                               style: Theme.of(context).textTheme.titleLarge,
@@ -180,6 +177,12 @@ class HomeScreen extends StatelessWidget {
                             const Text(
                               'Pull down to check again or contact the store for help.',
                               textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 14),
+                            TextButton.icon(
+                              onPressed: () => controller.refreshData(),
+                              icon: const Icon(Icons.refresh_rounded),
+                              label: const Text('Try again'),
                             ),
                           ],
                         ),
@@ -251,6 +254,112 @@ class HomeScreen extends StatelessWidget {
   }
 }
 
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final firstName = controller.customerName.trim().split(' ').firstOrNull;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 54,
+          height: 54,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: AppTheme.lightSurface,
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 18,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: Image.asset(
+              'assets/images/brand_mark.png',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                firstName == null || firstName.isEmpty
+                    ? 'WELCOME TO'
+                    : 'WELCOME BACK, ${firstName.toUpperCase()}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppTheme.ashGrey,
+                  fontSize: 10,
+                  letterSpacing: 0.8,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                "Rasta's Peri Q",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: AppTheme.smokeCharcoal,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        _StoreStatusBadge(controller: controller),
+      ],
+    );
+  }
+}
+
+class _OfflineMenuBanner extends StatelessWidget {
+  const _OfflineMenuBanner({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      decoration: BoxDecoration(
+        color: AppTheme.warning.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.offline_bolt_rounded, color: AppTheme.warning),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Showing the last saved menu. Reconnect to see updates.',
+              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+            ),
+          ),
+          TextButton(onPressed: onRetry, child: const Text('Retry')),
+        ],
+      ),
+    );
+  }
+}
+
 class _StoreStatusBadge extends StatelessWidget {
   const _StoreStatusBadge({required this.controller});
 
@@ -300,93 +409,147 @@ class _HeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 196,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF161616), Color(0xFF2A1912)],
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -40,
-            bottom: -40,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0x44F07820),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 360;
+        final imageWidth = constraints.maxWidth * (compact ? 0.55 : 0.58);
+
+        return Container(
+          height: compact ? 226 : 214,
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: AppTheme.smokeCharcoal,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x33000000),
+                blurRadius: 30,
+                offset: Offset(0, 16),
               ),
-            ),
+            ],
           ),
-          Positioned(
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: AppImage(
-              imagePath: settings.imagePath,
-              width: 170,
-              fit: BoxFit.cover,
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(18),
-                bottomRight: Radius.circular(18),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              Positioned(
+                right: 0,
+                top: 0,
+                bottom: 0,
+                width: imageWidth,
+                child: AppImage(
+                  imagePath: settings.imagePath,
+                  width: imageWidth,
+                  fit: BoxFit.cover,
+                  semanticLabel: "Today's Special",
+                ),
               ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(22),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 190),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    settings.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppTheme.chesaOrange,
-                      letterSpacing: 2.2,
-                    ),
+              const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: [
+                      Color(0xFF151515),
+                      Color(0xF21A1715),
+                      Color(0xA61A1715),
+                      Color(0x001A1715),
+                    ],
+                    stops: [0, 0.48, 0.72, 1],
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    settings.title,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      color: Colors.white,
-                      fontSize: 30,
-                      height: 1.0,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    settings.subtitle,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: Colors.white70),
-                  ),
-                  const SizedBox(height: 14),
-                  ElevatedButton(
-                    onPressed: onOrderNow,
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(128, 42),
-                    ),
-                    child: const Text('Order Now'),
-                  ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                right: -55,
+                bottom: -80,
+                child: Container(
+                  width: 190,
+                  height: 190,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppTheme.chesaOrange.withValues(alpha: 0.17),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.all(compact ? 18 : 22),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: compact ? 205 : 235),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.chesaOrange.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: AppTheme.chesaOrange.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          settings.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: AppTheme.chesaOrange,
+                                fontSize: 10,
+                                letterSpacing: 1.4,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      Text(
+                        settings.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.displayLarge
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontSize: compact ? 27 : 30,
+                              fontWeight: FontWeight.w800,
+                              height: 0.98,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        settings.subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          height: 1.35,
+                        ),
+                      ),
+                      const SizedBox(height: 13),
+                      ElevatedButton.icon(
+                        onPressed: onOrderNow,
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(138, 42),
+                          maximumSize: const Size(164, 44),
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          backgroundColor: AppTheme.periRed,
+                        ),
+                        icon: const Icon(
+                          Icons.local_fire_department_rounded,
+                          size: 18,
+                        ),
+                        label: const Text('Order Now'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

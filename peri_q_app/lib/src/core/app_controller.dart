@@ -14,6 +14,7 @@ import '../repositories/menu_repository.dart';
 import '../repositories/order_repository.dart';
 import '../repositories/preferences_repository.dart';
 import '../repositories/store_repository.dart';
+import 'upload_image_optimizer.dart';
 
 class AppController extends ChangeNotifier {
   AppController({
@@ -58,6 +59,11 @@ class AppController extends ChangeNotifier {
   String? bootstrapError;
   bool isMenuStale = false;
   StreamSubscription<void>? _orderChanges;
+  StreamSubscription<AppSettings>? _appSettingsChanges;
+  StreamSubscription<void>? _menuItemChanges;
+  StreamSubscription<void>? _menuCategoryChanges;
+  bool _isRefreshingMenuFromRealtime = false;
+  bool _hasPendingMenuRealtimeRefresh = false;
   String? _pendingOrderRequestId;
 
   bool get canAccessAdmin => isAdmin;
@@ -246,6 +252,8 @@ class AppController extends ChangeNotifier {
       isMenuStale = _menuRepository.lastFetchUsedCache;
       orders = fetchedOrders;
       _startWatchingOrders();
+      _startWatchingAppSettings();
+      _startWatchingMenu();
 
       if (!categories.contains(selectedMenuCategory)) {
         selectedMenuCategory = 'All';
@@ -719,11 +727,16 @@ class AppController extends ChangeNotifier {
     required Uint8List bytes,
     required String fileName,
     required String contentType,
-  }) {
-    return _menuRepository.uploadMenuItemImage(
+  }) async {
+    final optimized = await UploadImageOptimizer.optimize(
       bytes: bytes,
       fileName: fileName,
       contentType: contentType,
+    );
+    return _menuRepository.uploadMenuItemImage(
+      bytes: optimized.bytes,
+      fileName: optimized.fileName,
+      contentType: optimized.contentType,
     );
   }
 
@@ -764,9 +777,74 @@ class AppController extends ChangeNotifier {
         });
   }
 
+  void _startWatchingAppSettings() {
+    _appSettingsChanges?.cancel();
+    _appSettingsChanges = _storeRepository.watchAppSettings().listen(
+      (settings) {
+        _applyAppSettings(settings);
+        notifyListeners();
+      },
+      onError: (_) {
+        // Keep the last successful settings; pull-to-refresh provides recovery.
+      },
+    );
+  }
+
+  void _startWatchingMenu() {
+    _menuItemChanges?.cancel();
+    _menuCategoryChanges?.cancel();
+    _menuItemChanges = _menuRepository.watchMenuItems().listen(
+      (_) => unawaited(_refreshMenuFromRealtime()),
+      onError: (_) {
+        // Keep the last successful menu; pull-to-refresh provides recovery.
+      },
+    );
+    _menuCategoryChanges = _menuRepository.watchMenuCategories().listen(
+      (_) => unawaited(_refreshMenuFromRealtime()),
+      onError: (_) {
+        // Keep the last successful categories; pull-to-refresh provides recovery.
+      },
+    );
+  }
+
+  Future<void> _refreshMenuFromRealtime() async {
+    if (_isRefreshingMenuFromRealtime) {
+      _hasPendingMenuRealtimeRefresh = true;
+      return;
+    }
+    _isRefreshingMenuFromRealtime = true;
+    try {
+      do {
+        _hasPendingMenuRealtimeRefresh = false;
+        try {
+          final results = await Future.wait<dynamic>([
+            _menuRepository.fetchMenuCategories(),
+            _menuRepository.fetchMenuItems(),
+          ]);
+          menuCategories = _orderedCategories(
+            results[0] as List<MenuCategoryModel>,
+          );
+          menuItems = _orderedMenuItems(results[1] as List<MenuItemModel>);
+          isMenuStale = _menuRepository.lastFetchUsedCache;
+          if (!categories.contains(selectedMenuCategory)) {
+            selectedMenuCategory = 'All';
+          }
+          notifyListeners();
+        } catch (_) {
+          // Keep the last successful menu; pull-to-refresh provides recovery.
+        }
+      } while (_hasPendingMenuRealtimeRefresh);
+    } finally {
+      _isRefreshingMenuFromRealtime = false;
+    }
+  }
+
   @override
   void dispose() {
     _orderChanges?.cancel();
+    _appSettingsChanges?.cancel();
+    _menuItemChanges?.cancel();
+    _menuCategoryChanges?.cancel();
     super.dispose();
   }
 
