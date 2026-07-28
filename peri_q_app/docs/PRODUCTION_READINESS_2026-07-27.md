@@ -85,46 +85,53 @@ verification. It contains no signing credentials or private keys.
 - `flutter analyze`: no issues.
 - `flutter test`: 27 tests passed.
 - Debug APK assembly: passed.
-- Release AAB compile/shrink/package path without production config/signing:
-  passed. This artifact is intentionally **not a deliverable**.
-- AAB signing inspection: confirmed that compile-check AAB is unsigned.
-- Debug APK signing inspection: Android debug certificate only; not a release
-  deliverable.
+- Signed, obfuscated release AAB build: passed.
+- Signed, obfuscated release APK build: passed.
+- Google bundletool 1.18.3 validation: passed.
+- AAB JAR signature and certificate inspection: passed.
+- APK Signature Scheme v2 verification: passed.
+- AAB and APK signing-certificate comparison: identical.
 - `pnpm lint`: passed.
 - `pnpm build`: passed and statically generated `/`, `/privacy-policy`,
   `/delete-account`, and `/terms-and-conditions`.
 - `git diff --check`: no whitespace errors.
 - Secret scan of source/config changes: no real Supabase or signing secret found.
 
-## Blocked production verification
+## Signed release verification — 28 July 2026
 
-The existing candidate keystore was found at
-`C:\Users\hp\Desktop\Mokhethi\Keys\peri-q-keys.jks`. It was not altered.
-Its alias/store password/key password are not available to this build process.
-The production Supabase URL/publishable key are also not configured locally.
-Therefore:
+The existing keystore at
+`C:\Users\hp\Desktop\Mokhethi\Keys\peri-q-keys.jks` was used without modifying
+or exposing it. The production client configuration and signing properties
+remained in their Git-ignored local files.
 
-- No signed production AAB has been created or verified.
-- No signed production APK has been created or verified.
-- Authentication, live data, image persistence and cross-platform Realtime have
-  not been exercised against the production project in this pass.
-- No Android device or emulator is connected, so installation, launch and the
-  physical-device user journey have not been tested.
+- AAB: `release/android/rastas-peri-q-v1.0.1-build2-release.aab`
+- AAB SHA-256:
+  `60a24e5c602256b80dee122d14b9e68ddeb4273a15b5a77055356596b3385946`
+- APK: `release/android/rastas-peri-q-v1.0.1-build2-release.apk`
+- APK SHA-256:
+  `5b32f7a6c01fe2e76eeb69741f86259de28de02bc0781636c779bd6e5c5376fb`
+- Package: `za.co.rastasperiq.ordering`
+- Version: `1.0.1` (`versionCode` 2)
+- Minimum/target SDK: 24/36
+- Architectures: arm64-v8a, armeabi-v7a, x86_64
 
-The unsigned compile-check AAB and debug APK must not be uploaded or distributed
-as production artifacts.
+Read-only production checks returned HTTP 200 for Supabase Auth settings,
+`app_settings`, and `menu_items` through the publishable client/RLS path.
+
+BlueStacks local ADB access was enabled (remote ADB remained disabled). The old
+debug-signed version 1.0.0 emulator copy was uninstalled, which removed only its
+local emulator app data. The signed 1.0.1 APK was then installed successfully
+on Android 9/API 28. It launched to the redesigned Sign In screen, switched to
+Create Account, remained alive, and produced no fatal Android log entries.
+
+No production account was created automatically. Authenticated Home/menu,
+Today's Special upload/persistence, logout, password recovery, orders and
+in-app website links still require the owner's manual account/device test.
 
 ## Remaining release steps
 
-1. Run the one SQL migration noted above.
-2. Deploy the updated website with its two public Supabase environment values.
-3. Create ignored `release-config.json` from the example.
-4. Create ignored `android/key.properties` using the existing keystore (or set
-   all four `PERIQ_*` variables) without sharing values in chat or Git.
-5. Confirm the package ID and next version code in Play Console.
-6. Build signed, obfuscated AAB and APK; verify with `jarsigner`, `keytool`, and
-   `apksigner` as documented in `ANDROID_SIGNING_GUIDE.md`.
-7. Connect a physical Android device, install the release APK, and manually test
+1. Confirm the package ID and version code 2 are accepted by Play Console.
+2. Manually install the release APK on a physical Android device and test
    auth, home/menu, Today’s Special upload/sync, logout and every public link.
-8. Upload the verified AAB to Internal testing, run the Pre-launch report, and
+3. Upload the verified AAB to Internal testing, run the Pre-launch report, and
    complete Play App Content/Data Safety declarations before wider release.

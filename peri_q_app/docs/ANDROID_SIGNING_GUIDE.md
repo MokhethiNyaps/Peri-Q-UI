@@ -65,10 +65,11 @@ Expected: `jar verified` and the upload certificate owned by the business. Also 
 
 ## Current status
 
-Do not treat any artifact as upload-ready until the release build used the
-existing keystore and the verification commands above succeeded. A build made
-without all four signing values is unsigned even if its filename contains
-`release`.
+On 28 July 2026 the existing keystore produced a signed AAB and APK for version
+1.0.1/build 2. Google bundletool validated the AAB, `jarsigner` verified its JAR
+signature, `apksigner` verified the APK's v2 signature, and both artifacts used
+the same certificate. The versioned artifacts are in `release/android/` and
+their SHA-256 hashes are recorded in `PRODUCTION_READINESS_2026-07-27.md`.
 
 ## Loss and recovery
 
