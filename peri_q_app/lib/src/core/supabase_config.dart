@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class SupabaseConfig {
   SupabaseConfig._({
     required this.url,
@@ -29,7 +31,7 @@ class SupabaseConfig {
       dartDefineAnonKey,
     ]);
 
-    if (url.isEmpty || publishableKey.isEmpty) {
+    if (!_isSecureUrl(url) || !_isSafePublishableKey(publishableKey)) {
       return const SupabaseConfig.disabled();
     }
 
@@ -49,5 +51,35 @@ class SupabaseConfig {
     }
 
     return '';
+  }
+
+  static bool _isSecureUrl(String value) {
+    final uri = Uri.tryParse(value);
+    return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+  }
+
+  static bool _isSafePublishableKey(String value) {
+    final key = value.trim();
+    if (key.isEmpty || key.startsWith('sb_secret_')) {
+      return false;
+    }
+    if (key.startsWith('sb_publishable_')) {
+      return true;
+    }
+
+    final segments = key.split('.');
+    if (segments.length != 3) {
+      return true;
+    }
+
+    try {
+      final payload = jsonDecode(
+        utf8.decode(base64Url.decode(base64Url.normalize(segments[1]))),
+      );
+      return payload is! Map<String, dynamic> ||
+          payload['role']?.toString() != 'service_role';
+    } catch (_) {
+      return false;
+    }
   }
 }

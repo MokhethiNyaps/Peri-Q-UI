@@ -56,6 +56,14 @@ class SupabaseMenuRepository implements MenuRepository {
   }
 
   @override
+  Stream<void> watchMenuItems() {
+    return _client
+        .from('menu_items')
+        .stream(primaryKey: const ['id'])
+        .map((_) {});
+  }
+
+  @override
   Future<MenuItemModel> addMenuItem(MenuItemModel item) async {
     final response = await _client
         .from('menu_items')
@@ -141,6 +149,14 @@ class SupabaseMenuRepository implements MenuRepository {
     } catch (error) {
       return _cachedCategoriesOrRethrow(error);
     }
+  }
+
+  @override
+  Stream<void> watchMenuCategories() {
+    return _client
+        .from('menu_categories')
+        .stream(primaryKey: const ['id'])
+        .map((_) {});
   }
 
   Future<List<MenuCategoryModel>> _cachedCategoriesOrRethrow(

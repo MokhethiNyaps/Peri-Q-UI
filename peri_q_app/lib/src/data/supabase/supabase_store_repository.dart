@@ -45,6 +45,20 @@ todays_special_menu_item_id
   }
 
   @override
+  Stream<AppSettings> watchAppSettings() {
+    return _client
+        .from('app_settings')
+        .stream(primaryKey: const ['id'])
+        .eq('id', _settingsId)
+        .map((rows) {
+          if (rows.isEmpty) {
+            return const AppSettings(storeOpen: false);
+          }
+          return AppSettings.fromJson(rows.first);
+        });
+  }
+
+  @override
   Future<AppSettings> updateAppSettings(AppSettings settings) async {
     try {
       final response = await _client

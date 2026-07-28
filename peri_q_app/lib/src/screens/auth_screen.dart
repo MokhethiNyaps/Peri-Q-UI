@@ -220,118 +220,356 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     final isSignIn = mode == _AuthMode.signIn;
+    final isCompact = MediaQuery.sizeOf(context).width < 370;
 
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 430),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _BrandHeader(),
-                  const SizedBox(height: 28),
-                  Text(
-                    isSignIn ? 'Welcome back.' : 'Create your account.',
-                    style: Theme.of(context).textTheme.displayLarge,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    isSignIn
-                        ? 'Sign in with email, continue with phone, or order as a guest.'
-                        : 'Save your details and track every Peri Q order from one account.',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                  const SizedBox(height: 22),
-                  _AuthModeSwitch(mode: mode, onChanged: _setMode),
-                  const SizedBox(height: 24),
-                  Form(
-                    key: _emailFormKey,
-                    autovalidateMode: AutovalidateMode.onUserInteraction,
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      child: isSignIn
-                          ? _SignInFields(
-                              key: const ValueKey('auth-sign-in-fields'),
-                              emailController: signInEmailController,
-                              passwordController: signInPasswordController,
-                              onForgotPassword: _showPasswordResetDialog,
-                              validateEmail: _validateEmail,
-                              validatePassword: _validateSignInPassword,
-                            )
-                          : _SignUpFields(
-                              key: const ValueKey('auth-sign-up-fields'),
-                              nameController: signUpNameController,
-                              phoneController: signUpPhoneController,
-                              emailController: signUpEmailController,
-                              passwordController: signUpPasswordController,
-                              confirmPasswordController:
-                                  signUpConfirmPasswordController,
-                              validateName: _validateName,
-                              validatePhone: _validatePhone,
-                              validateEmail: _validateEmail,
-                              validatePassword: _validateNewPassword,
-                              validateConfirmPassword: _validateConfirmPassword,
-                            ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  ElevatedButton(
-                    key: ValueKey(
-                      isSignIn ? 'auth-sign-in-button' : 'auth-sign-up-button',
-                    ),
-                    onPressed: isSubmitting ? null : _submitEmailAuth,
-                    child: Text(isSignIn ? 'Sign In' : 'Create Account'),
-                  ),
-                  if (isSignIn) ...[
-                    const SizedBox(height: 22),
-                    _SectionDivider(label: 'Quick order'),
-                    const SizedBox(height: 18),
-                    Form(
-                      key: _phoneFormKey,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      child: _PhoneField(
-                        fieldKey: const ValueKey('auth-phone-field'),
-                        controller: phoneController,
-                        validator: _validatePhone,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    OutlinedButton.icon(
-                      key: const ValueKey('auth-phone-button'),
-                      onPressed: isSubmitting ? null : _continueWithPhone,
-                      icon: const Icon(Icons.phone_android_rounded),
-                      label: const Text('Continue with Phone'),
-                    ),
-                    const SizedBox(height: 8),
-                    TextButton(
-                      key: const ValueKey('auth-guest-button'),
-                      onPressed: isSubmitting
-                          ? null
-                          : () => _runAuthAction(
-                              widget.controller.startGuestSession,
-                            ),
-                      child: const Text('Continue as Guest'),
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 10),
-                    Center(
-                      child: TextButton(
-                        key: const ValueKey('auth-existing-account-button'),
-                        onPressed: isSubmitting
-                            ? null
-                            : () => _setMode(_AuthMode.signIn),
-                        child: const Text('Already have an account? Sign In'),
-                      ),
-                    ),
-                  ],
-                ],
+      body: Stack(
+        children: [
+          const Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF171717), Color(0xFF30160F)],
+                  stops: [0.42, 1],
+                ),
               ),
             ),
           ),
-        ),
+          Positioned(
+            right: -90,
+            top: 36,
+            child: Container(
+              width: 230,
+              height: 230,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.chesaOrange.withValues(alpha: 0.16),
+              ),
+            ),
+          ),
+          Positioned(
+            left: -75,
+            top: 260,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppTheme.periRed.withValues(alpha: 0.13),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(
+                    isCompact ? 16 : 22,
+                    20,
+                    isCompact ? 16 : 22,
+                    30,
+                  ),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight - 50,
+                    ),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 470),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _BrandHeader(),
+                            const SizedBox(height: 34),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 220),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0.03, 0),
+                                        end: Offset.zero,
+                                      ).animate(animation),
+                                      child: child,
+                                    ),
+                                  ),
+                              child: Column(
+                                key: ValueKey(isSignIn),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    isSignIn
+                                        ? 'Welcome back.'
+                                        : 'Join the flame.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .displayLarge
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontSize: isCompact ? 35 : 40,
+                                          height: 0.98,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    isSignIn
+                                        ? 'Your next flame-grilled favourite is only a few taps away.'
+                                        : 'Save your details, order faster, and follow every meal from one account.',
+                                    style: Theme.of(context).textTheme.bodyLarge
+                                        ?.copyWith(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.68,
+                                          ),
+                                          height: 1.5,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            Container(
+                              padding: EdgeInsets.all(isCompact ? 18 : 24),
+                              decoration: BoxDecoration(
+                                color: AppTheme.lightSurface,
+                                borderRadius: BorderRadius.circular(26),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.7),
+                                ),
+                                boxShadow: const [
+                                  BoxShadow(
+                                    color: Color(0x48000000),
+                                    blurRadius: 40,
+                                    offset: Offset(0, 20),
+                                  ),
+                                ],
+                              ),
+                              child: AutofillGroup(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    _AuthModeSwitch(
+                                      mode: mode,
+                                      onChanged: _setMode,
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Form(
+                                      key: _emailFormKey,
+                                      autovalidateMode:
+                                          AutovalidateMode.onUserInteraction,
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 220,
+                                        ),
+                                        child: isSignIn
+                                            ? _SignInFields(
+                                                key: const ValueKey(
+                                                  'auth-sign-in-fields',
+                                                ),
+                                                emailController:
+                                                    signInEmailController,
+                                                passwordController:
+                                                    signInPasswordController,
+                                                onForgotPassword:
+                                                    _showPasswordResetDialog,
+                                                validateEmail: _validateEmail,
+                                                validatePassword:
+                                                    _validateSignInPassword,
+                                              )
+                                            : _SignUpFields(
+                                                key: const ValueKey(
+                                                  'auth-sign-up-fields',
+                                                ),
+                                                nameController:
+                                                    signUpNameController,
+                                                phoneController:
+                                                    signUpPhoneController,
+                                                emailController:
+                                                    signUpEmailController,
+                                                passwordController:
+                                                    signUpPasswordController,
+                                                confirmPasswordController:
+                                                    signUpConfirmPasswordController,
+                                                validateName: _validateName,
+                                                validatePhone: _validatePhone,
+                                                validateEmail: _validateEmail,
+                                                validatePassword:
+                                                    _validateNewPassword,
+                                                validateConfirmPassword:
+                                                    _validateConfirmPassword,
+                                              ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 18),
+                                    ElevatedButton(
+                                      key: ValueKey(
+                                        isSignIn
+                                            ? 'auth-sign-in-button'
+                                            : 'auth-sign-up-button',
+                                      ),
+                                      onPressed: isSubmitting
+                                          ? null
+                                          : _submitEmailAuth,
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 160,
+                                        ),
+                                        child: isSubmitting
+                                            ? const Row(
+                                                key: ValueKey(
+                                                  'auth-loading-indicator',
+                                                ),
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  SizedBox(
+                                                    width: 18,
+                                                    height: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                          color: Colors.white,
+                                                        ),
+                                                  ),
+                                                  SizedBox(width: 10),
+                                                  Text('Please wait...'),
+                                                ],
+                                              )
+                                            : Row(
+                                                key: ValueKey(
+                                                  'auth-ready-button',
+                                                ),
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    isSignIn
+                                                        ? 'Sign In'
+                                                        : 'Create Account',
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  const Icon(
+                                                    Icons.arrow_forward_rounded,
+                                                    size: 19,
+                                                  ),
+                                                ],
+                                              ),
+                                      ),
+                                    ),
+                                    if (isSignIn) ...[
+                                      const SizedBox(height: 22),
+                                      const _SectionDivider(
+                                        label: 'QUICK ORDER',
+                                      ),
+                                      const SizedBox(height: 18),
+                                      Form(
+                                        key: _phoneFormKey,
+                                        autovalidateMode:
+                                            AutovalidateMode.onUserInteraction,
+                                        child: _PhoneField(
+                                          fieldKey: const ValueKey(
+                                            'auth-phone-field',
+                                          ),
+                                          controller: phoneController,
+                                          validator: _validatePhone,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      OutlinedButton.icon(
+                                        key: const ValueKey(
+                                          'auth-phone-button',
+                                        ),
+                                        onPressed: isSubmitting
+                                            ? null
+                                            : _continueWithPhone,
+                                        icon: const Icon(
+                                          Icons.phone_android_rounded,
+                                        ),
+                                        label: const Text(
+                                          'Continue with Phone',
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Center(
+                                        child: TextButton.icon(
+                                          key: const ValueKey(
+                                            'auth-guest-button',
+                                          ),
+                                          onPressed: isSubmitting
+                                              ? null
+                                              : () => _runAuthAction(
+                                                  widget
+                                                      .controller
+                                                      .startGuestSession,
+                                                ),
+                                          icon: const Icon(
+                                            Icons.person_outline_rounded,
+                                            size: 19,
+                                          ),
+                                          label: const Text(
+                                            'Continue as Guest',
+                                          ),
+                                        ),
+                                      ),
+                                    ] else ...[
+                                      const SizedBox(height: 8),
+                                      Center(
+                                        child: TextButton(
+                                          key: const ValueKey(
+                                            'auth-existing-account-button',
+                                          ),
+                                          onPressed: isSubmitting
+                                              ? null
+                                              : () =>
+                                                    _setMode(_AuthMode.signIn),
+                                          child: const Text(
+                                            'Already have an account? Sign In',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(
+                                          Icons.lock_outline_rounded,
+                                          size: 15,
+                                          color: AppTheme.success,
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Text(
+                                          'Secure sign-in powered by Supabase',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.copyWith(
+                                                fontSize: 11,
+                                                color: AppTheme.ashGrey,
+                                              ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -399,21 +637,52 @@ class _BrandHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.asset(
-            'assets/images/brand_mark.png',
-            width: 46,
-            height: 46,
-            fit: BoxFit.cover,
+        Container(
+          width: 58,
+          height: 58,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: AppTheme.creamWhite,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x30000000),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(15),
+            child: Image.asset(
+              'assets/images/brand_mark.png',
+              fit: BoxFit.contain,
+            ),
           ),
         ),
         const SizedBox(width: 12),
-        Text(
-          'Peri Q',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineLarge?.copyWith(color: AppTheme.periRed),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "RASTA'S PERI Q",
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.2,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              'FLAME. FLAVOUR. VIBES.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppTheme.chesaOrange,
+                fontSize: 10,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.1,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -432,7 +701,8 @@ class _AuthModeSwitch extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: AppTheme.mutedSurface,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
       ),
       child: Row(
         children: [
@@ -443,6 +713,9 @@ class _AuthModeSwitch extends StatelessWidget {
               selected: mode == _AuthMode.signIn,
               onSelected: (_) => onChanged(_AuthMode.signIn),
               selectedColor: AppTheme.periRed,
+              backgroundColor: Colors.transparent,
+              showCheckmark: false,
+              padding: const EdgeInsets.symmetric(vertical: 10),
               labelStyle: TextStyle(
                 color: mode == _AuthMode.signIn
                     ? Colors.white
@@ -459,6 +732,9 @@ class _AuthModeSwitch extends StatelessWidget {
               selected: mode == _AuthMode.signUp,
               onSelected: (_) => onChanged(_AuthMode.signUp),
               selectedColor: AppTheme.periRed,
+              backgroundColor: Colors.transparent,
+              showCheckmark: false,
+              padding: const EdgeInsets.symmetric(vertical: 10),
               labelStyle: TextStyle(
                 color: mode == _AuthMode.signUp
                     ? Colors.white
@@ -502,6 +778,7 @@ class _SignInFields extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Email',
             hintText: 'your@email.com',
+            prefixIcon: Icon(Icons.mail_outline_rounded),
           ),
           validator: validateEmail,
           textInputAction: TextInputAction.next,
@@ -515,6 +792,7 @@ class _SignInFields extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Password',
             hintText: 'Enter your password',
+            prefixIcon: Icon(Icons.lock_outline_rounded),
           ),
           validator: validatePassword,
           textInputAction: TextInputAction.done,
@@ -570,6 +848,7 @@ class _SignUpFields extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Full Name',
             hintText: 'Your name',
+            prefixIcon: Icon(Icons.person_outline_rounded),
           ),
           validator: validateName,
           textInputAction: TextInputAction.next,
@@ -589,6 +868,7 @@ class _SignUpFields extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Email',
             hintText: 'your@email.com',
+            prefixIcon: Icon(Icons.mail_outline_rounded),
           ),
           validator: validateEmail,
           textInputAction: TextInputAction.next,
@@ -602,6 +882,7 @@ class _SignUpFields extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Password',
             hintText: 'Create a password',
+            prefixIcon: Icon(Icons.lock_outline_rounded),
           ),
           validator: validatePassword,
           textInputAction: TextInputAction.next,
@@ -615,6 +896,7 @@ class _SignUpFields extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Confirm Password',
             hintText: 'Repeat your password',
+            prefixIcon: Icon(Icons.lock_reset_rounded),
           ),
           validator: validateConfirmPassword,
           textInputAction: TextInputAction.done,
@@ -643,6 +925,7 @@ class _PhoneField extends StatelessWidget {
       keyboardType: TextInputType.phone,
       autofillHints: const [AutofillHints.telephoneNumber],
       decoration: const InputDecoration(
+        prefixIcon: Icon(Icons.phone_outlined),
         prefixText: '+27 ',
         labelText: 'Phone Number',
         hintText: '71 234 5678',

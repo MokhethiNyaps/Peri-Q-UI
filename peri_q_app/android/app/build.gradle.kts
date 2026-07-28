@@ -9,9 +9,23 @@ plugins {
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("key.properties")
-val hasReleaseSigning = keystorePropertiesFile.exists()
-if (hasReleaseSigning) {
+if (keystorePropertiesFile.exists()) {
     FileInputStream(keystorePropertiesFile).use(keystoreProperties::load)
+} else {
+    mapOf(
+        "storeFile" to "PERIQ_STORE_FILE",
+        "storePassword" to "PERIQ_STORE_PASSWORD",
+        "keyAlias" to "PERIQ_KEY_ALIAS",
+        "keyPassword" to "PERIQ_KEY_PASSWORD",
+    ).forEach { (property, environmentVariable) ->
+        System.getenv(environmentVariable)?.takeIf { it.isNotBlank() }?.let {
+            keystoreProperties[property] = it
+        }
+    }
+}
+val requiredSigningProperties = listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+val hasReleaseSigning = requiredSigningProperties.all {
+    !keystoreProperties.getProperty(it).isNullOrBlank()
 }
 
 android {

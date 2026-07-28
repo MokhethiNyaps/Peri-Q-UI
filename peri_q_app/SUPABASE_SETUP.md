@@ -26,6 +26,18 @@ The schema seeds the catalogue, creates public `menu-images` and private
 status transitions, and installs the trusted `place_order`,
 `attach_payment_proof`, and `delete_own_account` RPCs.
 
+If you already ran `supabase/schema.sql`, do not rerun the entire file just to
+pick up image-upload hardening. Run this migration in the SQL editor instead:
+
+```text
+supabase/migrations/20260727_harden_menu_image_uploads.sql
+```
+
+It applies a 5 MB server-side limit and restricts menu/special uploads to JPG,
+PNG, and WebP. The existing schema also adds `app_settings`, `menu_items`, and
+`menu_categories` to Supabase Realtime so published changes reach the app and
+website without a redeploy.
+
 ## 3. Enable authentication providers
 
 In the Supabase dashboard:
@@ -88,6 +100,11 @@ To build the debug APK against Supabase:
 flutter build apk --debug --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
+For production builds, copy `release-config.example.json` to the ignored
+`release-config.json`, fill in the same two public client values, and use
+`--dart-define-from-file=release-config.json`. This keeps local values out of
+terminal history and Git.
+
 ## 7. Connected tables
 
 - `profiles`: stores app profile data and admin role.
@@ -101,6 +118,20 @@ flutter build apk --debug --dart-define=SUPABASE_URL=https://YOUR_PROJECT.supaba
 - `order_items`: snapshot of the items inside each order.
 - `storage.objects` / `menu-images`: public catalogue photos, admin writes.
 - `storage.objects` / `payment-proofs`: private, owner/admin-scoped EFT files.
+
+## 8. Connect the Vercel website
+
+Add these Production environment variables in the Vercel project and redeploy:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
+```
+
+These values are intentionally public client configuration; RLS remains the
+security boundary. Never put a secret/service-role key in a `NEXT_PUBLIC_*`
+variable. The website reads only the public Today's Special row and subscribes
+to its Realtime updates.
 
 ## Production services
 

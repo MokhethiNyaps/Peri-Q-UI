@@ -7,6 +7,7 @@
 /build/
 *.iml
 .env
+/release-config.json
 android/key.properties
 android/app/*.jks
 android/app/*.keystore

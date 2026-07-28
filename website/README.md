@@ -6,6 +6,7 @@ A static Next.js website for `rastasperiq.co.za`, designed for deployment on Ver
 
 - `/` — landing page
 - `/privacy-policy/` — public privacy policy for the Android app
+- `/terms-and-conditions/` — customer ordering terms
 - `/delete-account/` — public account-deletion instructions for users and Google Play
 
 ## Run locally
@@ -29,6 +30,10 @@ The verified WhatsApp contact is already enabled. To show Instagram, Facebook, o
 4. Redeploy the project.
 
 Only social links with a configured URL are displayed, so the site never sends visitors to a guessed or placeholder account.
+
+## Connect Today's Special
+
+Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in Vercel using the same production Supabase project as the Android app. The public landing page then reads the `app_settings` row and subscribes to realtime updates. Use only a Supabase publishable key; never place a secret or service-role key in a `NEXT_PUBLIC` variable.
 
 ## Deploy to Vercel
 

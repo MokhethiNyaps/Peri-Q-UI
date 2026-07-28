@@ -741,6 +741,9 @@ class _FakeMenuRepository implements MenuRepository {
   }
 
   @override
+  Stream<void> watchMenuItems() => const Stream<void>.empty();
+
+  @override
   Future<MenuItemModel> addMenuItem(MenuItemModel item) async {
     items.add(item);
     return item;
@@ -765,6 +768,9 @@ class _FakeMenuRepository implements MenuRepository {
   Future<List<MenuCategoryModel>> fetchMenuCategories() async {
     return List<MenuCategoryModel>.from(categories);
   }
+
+  @override
+  Stream<void> watchMenuCategories() => const Stream<void>.empty();
 
   @override
   Future<MenuCategoryModel> addMenuCategory(MenuCategoryModel category) async {
@@ -907,6 +913,9 @@ class _FakeStoreRepository implements StoreRepository {
   Future<AppSettings> fetchAppSettings() async {
     return appSettings;
   }
+
+  @override
+  Stream<AppSettings> watchAppSettings() => const Stream<AppSettings>.empty();
 
   @override
   Future<AppSettings> updateAppSettings(AppSettings settings) async {

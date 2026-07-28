@@ -25,6 +25,7 @@ export function SiteFooter() {
             <Link href="/#how-it-works">How it works</Link>
             <Link href="/#visit">Visit us</Link>
             <Link href="/privacy-policy/">Privacy policy</Link>
+            <Link href="/terms-and-conditions/">Terms and conditions</Link>
             <Link href="/delete-account/">Delete account</Link>
           </div>
         </div>

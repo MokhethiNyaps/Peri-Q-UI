@@ -14,6 +14,7 @@ import {
   UtensilsCrossed,
 } from "lucide-react";
 import { SocialLinks } from "@/components/social-links";
+import { TodaysSpecialLive } from "@/components/todays-special-live";
 import { mailtoUrl, siteConfig } from "@/lib/site";
 
 const features = [
@@ -209,6 +210,8 @@ export default function HomePage() {
           </ol>
         </div>
       </section>
+
+      <TodaysSpecialLive />
 
       <section id="visit" className="section-pad bg-cream">
         <div className="site-shell grid overflow-hidden rounded-[2.5rem] bg-charcoal text-white shadow-2xl lg:grid-cols-[1.1fr_0.9fr]">
