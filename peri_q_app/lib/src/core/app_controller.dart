@@ -220,7 +220,10 @@ class AppController extends ChangeNotifier {
       bootstrapError = null;
 
       final preferences = await _preferencesRepository.loadPreferences();
-      final authSession = await _authRepository.restoreSession();
+      var authSession = await _authRepository.restoreSession();
+      if (!authSession.hasSession) {
+        authSession = await _authRepository.signInAnonymously();
+      }
       AppSettings fetchedAppSettings;
       try {
         fetchedAppSettings = await _storeRepository.fetchAppSettings();
@@ -300,97 +303,11 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> startGuestSession() async {
+    if (hasReturningSession && userId != null && isGuest) {
+      return;
+    }
     final session = await _authRepository.signInAnonymously();
     await _activateSession(session, guest: true);
-  }
-
-  Future<void> startPhoneSession({required String phone}) async {
-    customerPhone = _normalizePhone(phone);
-    final session = await _authRepository.signInAnonymously();
-    await _activateSession(session, guest: false);
-    await _authRepository.upsertProfile(
-      name: customerName,
-      phone: customerPhone,
-    );
-  }
-
-  Future<void> signInWithEmail({
-    required String email,
-    required String password,
-  }) async {
-    final session = await _authRepository.signInWithEmail(
-      email: email,
-      password: password,
-    );
-    await _activateSession(session, guest: false);
-  }
-
-  Future<void> registerWithEmail({
-    required String name,
-    required String phone,
-    required String email,
-    required String password,
-  }) async {
-    final normalizedPhone = _normalizePhone(phone);
-    final trimmedName = name.trim();
-    final session = await _authRepository.signUpWithEmail(
-      email: email,
-      password: password,
-      name: trimmedName,
-      phone: normalizedPhone,
-    );
-    customerName = trimmedName;
-    customerPhone = normalizedPhone;
-    await _activateSession(session, guest: false);
-    await _authRepository.upsertProfile(
-      name: customerName,
-      phone: customerPhone,
-    );
-  }
-
-  Future<void> requestPasswordReset({required String email}) {
-    return _authRepository.resetPasswordForEmail(email: email);
-  }
-
-  Future<void> updatePassword({required String newPassword}) {
-    return _authRepository.updatePassword(newPassword: newPassword);
-  }
-
-  Future<void> signOut() async {
-    await _orderChanges?.cancel();
-    _orderChanges = null;
-    await _authRepository.signOut();
-    userId = null;
-    userEmail = null;
-    isAdmin = false;
-    hasReturningSession = false;
-    isGuest = true;
-    customerName = '';
-    customerPhone = '';
-    orders = [];
-    selectedMenuCategory = 'All';
-    cart = [];
-    await _savePreferences();
-    notifyListeners();
-  }
-
-  Future<void> deleteAccount() async {
-    await _authRepository.deleteAccount();
-    await _orderChanges?.cancel();
-    _orderChanges = null;
-    userId = null;
-    userEmail = null;
-    isAdmin = false;
-    hasReturningSession = false;
-    isGuest = true;
-    customerName = '';
-    customerPhone = '';
-    orders = [];
-    cart = [];
-    savedAddresses = [];
-    defaultAddressId = null;
-    await _savePreferences();
-    notifyListeners();
   }
 
   Future<void> updateCustomer({
@@ -857,7 +774,7 @@ class AppController extends ChangeNotifier {
     isAdmin = session.isAdmin;
     hasReturningSession = session.hasSession;
     isGuest = session.hasSession
-        ? (session.isAnonymous ? fallbackPreferences.isGuest : false)
+        ? session.isAnonymous
         : fallbackPreferences.isGuest;
     customerName = _resolveProfileValue(
       session.customerName,

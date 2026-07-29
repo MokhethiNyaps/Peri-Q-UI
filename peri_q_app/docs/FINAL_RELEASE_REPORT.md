@@ -1,120 +1,69 @@
 # Final Release Report
 
-## Executive summary
+## Release summary
 
-The application received a full production-hardening pass across checkout reliability, Supabase trust boundaries, account lifecycle, scoped proof upload, offline/menu recovery, responsive/accessibility states, Android API 36 configuration, signing safety, shrinking, dependency cleanup, tests and Play documentation.
+Version `1.0.2` (build `3`) removes customer login, account creation, password recovery, sign-out and registered-account deletion from the Android app. A fresh installation now creates a private Supabase anonymous session during bootstrap and opens the customer experience after the splash screen. The anonymous session is still required for secure order ownership and tracking.
 
-A release AAB was generated and validated:
-
-- Path: `release/android/rastas_peri_q_chesanyama-v1.0.0-build1-unsigned.aab`
-- Size: 51,667,589 bytes (49.3 MB displayed by Flutter)
-- SHA-256: `F11DB4782B8073399607FBCDF7CBFC5F3722A8E45E51861C68F6006D7C543676`
-- Package: `za.co.rastasperiq.ordering`
-- Version: `1.0.0` / code `1`
-- Target SDK: 36
-- Build time: 2026-07-18 11:58:50 UTC (13:58:50 Africa/Johannesburg)
-
-The bundle is **unsigned by design** because no owner upload key was available. It is valid but not ready for Play upload/internal testing until rebuilt with the production upload key. The updated Supabase schema must also be applied/tested before functional distribution.
-
-## Verification results
-
-| Gate | Exact result |
-|---|---|
-| Formatter | `dart format --output=none --set-exit-if-changed lib test` passed |
-| Flutter analysis | `flutter analyze` — No issues found |
-| Automated tests | `flutter test` — 19 passed |
-| Android debug build | Passed; `app-debug.apk` generated |
-| Release AAB build | Passed with R8/resource shrinking, Dart obfuscation and split debug info |
-| Bundle validation | bundletool 1.18.3 `validate` passed; package/API/version inspected |
-| Signing verification | `jarsigner` reports unsigned (expected blocker; debug signing removed) |
-| App-size analysis | arm64 release APK 19.5 MB; JSON/snapshot/trace saved |
-| Dependency audit | Direct packages current except intentional file-picker 10.x compatibility pin; unused font/dotenv/icon packages removed |
-| Permission audit | Merged source declares only `android.permission.INTERNET`; no broad media/storage/location/camera permission |
-| Security audit | Static schema/client review completed; trusted RPC/RLS fixes implemented in SQL; production database execution not run |
-| Emulator testing | Not tested—no Android emulator available |
-| Physical-device testing | Not tested—no Android device connected |
-| Git diff check | `git diff --check` passed (line-ending notices only) |
-
-## Toolchain and build inputs
-
-- Flutter 3.44.0 stable, revision `559ffa3f75`
-- Dart 3.12.0
-- OpenJDK 21.0.4; Android source/JVM compatibility 17
-- Android Gradle Plugin 9.0.1
-- Gradle 9.1.0
-- Kotlin plugin declaration 2.3.20; compatibility mode retained
-- Application source tree represented by commit: `6f328e3129b3c1acd183e7c1cbb11b300f46c4fb`
-- Build command:
-
-```powershell
-flutter build appbundle --release --obfuscate `
-  --split-debug-info=release/android/symbols `
-  --dart-define=SUPABASE_URL=... `
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=...
-```
+Existing locally stored Supabase sessions are restored, so an already authenticated owner session can retain admin access. No customer or owner password-login entry point is exposed in this release.
 
 ## Release artifacts
 
-- Unsigned AAB: `release/android/rastas_peri_q_chesanyama-v1.0.0-build1-unsigned.aab`
-- R8 mapping: `release/android/r8-mapping.txt`
-- Native debug symbols: `release/android/native-debug-symbols.zip`
-- Dart symbols: `release/android/symbols/app.android-{arm,arm64,x64}.symbols`
-- Size analysis: `release/android/size-analysis/`
+| Artifact | Size | SHA-256 |
+|---|---:|---|
+| `release/android/rastas-peri-q-v1.0.2-build3-release.apk` | 53,502,051 bytes | `9D8A9FD9973DBEDAFBF484FAE88E85E641AA29EC853BBC9B9FA6AC5A8B0A77DB` |
+| `release/android/rastas-peri-q-v1.0.2-build3-release.aab` | 52,479,426 bytes | `61C1118C8F94591EB5EC2758FD810890E713564E7C13AD4E10094A53B567703A` |
+| `release/android/rastas-peri-q-v1.0.2-build3-r8-mapping.txt` | 11,917,671 bytes | `E3171A3965EBC8DECCB79F0724347DB5816656D24947CB70811A7207DBADE025` |
+| `release/android/rastas-peri-q-v1.0.2-build3-dart-symbols.zip` | 3,149,737 bytes | `6DC8D3D53041A0A6103287AA6A68AE3F95FAA7CF6DE89A607DD71EDB90F2673F` |
 
-Keep all symbols/mappings paired with this exact AAB. Rebuilding with signing or code changes creates a new artifact set/checksum.
+Release artifacts and signing material are intentionally ignored by Git. Keep the mapping and Dart symbols paired with this exact AAB.
 
-## Changes made
+## Android identity and signing
 
-### UI, UX and accessibility
+- Package: `za.co.rastasperiq.ordering`
+- Version name: `1.0.2`
+- Version code: `3`
+- Minimum SDK: 24
+- Target/compile SDK: 36
+- APK signature: valid APK Signature Scheme v2, one signer
+- AAB signature: valid JAR signature, same signer certificate as the APK
+- Signing certificate SHA-256: `0BCCBE0AD6A15CD2FEFA9C8E507099259C60BE302ECFD917BA2BFBF28BB218AF`
+- Bundletool 1.18.3 validation: passed
 
-- Centralised theme/spacing/radius tokens and reliable system fonts.
-- Added clear offline, initial connection, empty-menu, unavailable fulfilment, closed-store, loading, upload and submission error states.
-- Made home grid adapt to narrow screens and large text; retained keyboard-safe scrollable forms.
-- Added semantic food-image labels, decode-sized images, tooltips/labels and minimum themed button heights.
-- Added in-app Privacy & Help and visible registered-account deletion.
+## Verification
 
-### Reliability and performance
+| Gate | Result |
+|---|---|
+| Dart formatter | Passed after formatting all changed Dart files |
+| Flutter analysis | `No issues found` |
+| Automated tests | 21 passed |
+| Production Supabase Auth settings | Reachable; anonymous sign-in enabled |
+| Signed release APK | Built and signature/package/version verified |
+| Signed release AAB | Built, signature verified and Bundletool validation passed |
+| Signing certificate comparison | APK and AAB SHA-256 certificate fingerprints match |
+| Connected Android device | None detected by ADB; BlueStacks launch test not run |
 
-- Added checkout submit locking and server idempotency; cart remains on recoverable failure.
-- Added cached last menu with stale indication, pull-to-refresh, resume refresh and Supabase realtime order refresh without polling.
-- Bounded order queries to 100; removed fake stored profile defaults; validated uploads and friendly failures.
+## User-facing changes
 
-### Security and backend
+- Removed login, create-account and password-reset screens and deep-link handling.
+- Removed sign-out and registered-account deletion controls from Profile.
+- Removed customer-facing admin-login guidance.
+- New users receive an anonymous ordering session automatically.
+- Checkout still requests the name and phone number required to fulfil an order.
+- Saved addresses and payment preferences remain local to the app.
+- Existing restored admin sessions can still open the owner dashboard.
 
-- Server-side atomic trusted pricing/order RPC; direct customer order inserts removed.
-- Profile role-escalation protections and strict admin status transitions.
-- Private scoped EFT proof storage/linking and account deletion cleanup.
-- `.env` removed from assets; service/server secrets remain prohibited.
+## Release notes draft
 
-### Android and size
+Removed customer login and account creation for a faster checkout. New installations now open directly into a private guest ordering session, with refreshed home, menu and Today's Special experiences.
 
-- Permanent candidate package/namespace, API 36, predictive-back declaration, no cleartext traffic, no backup and INTERNET-only permission.
-- Non-committed upload-key configuration; debug signing removed.
-- R8/resource shrinking and Dart obfuscation enabled; AAB reduced 6.76% from the measured 55,415,697-byte baseline.
+## Remaining manual checks
 
-## Remaining manual actions
+1. Install the APK on a physical phone and confirm splash → Home without any login/sign-up screen.
+2. Place a complete pickup test order and, if enabled, a delivery/EFT test order.
+3. Upload the AAB to Play Console Internal testing before wider distribution.
+4. Retain the upload keystore, R8 mapping and Dart symbols in secure backups.
+5. Review Play Data Safety and App Access answers against the guest-only experience before submission.
 
-1. Apply/test `supabase/schema.sql` in staging, then production with a backup.
-2. Confirm the package ID before Play app creation.
-3. Generate/back up the upload key, configure ignored `android/key.properties`, rebuild, revalidate and recalculate checksum.
-4. Publish privacy and account-deletion pages; insert final business/support details and URLs.
-5. Configure Supabase Auth providers, anonymous sign-in, custom SMTP and reset redirects.
-6. Run every applicable item in `MANUAL_QA_CHECKLIST.md` on physical Android devices and Play-generated installs.
-7. Upload to Internal testing, then complete closed testing/12-testers-for-14-days if Play requires it for the account.
-8. Complete Data Safety, content rating, target audience, app access, ads/financial/health/news/government declarations and developer identity verification.
-9. Review Play Pre-launch report, Android vitals, crashes/ANRs and device exclusions.
-10. Decide whether to add FCM/crash reporting later; neither is required for current in-app ordering/status.
+## Known warning
 
-## Blockers and risks
-
-- Unsigned artifact: Play upload blocked until owner signing action.
-- Backend migration not deployed/tested: secure order RPC features will fail against the old schema.
-- No emulator/physical-device verification: visual, accessibility, OS and picker behaviour still require device testing.
-- Public privacy/account-deletion URLs and legal retention decisions are missing.
-- File-picker/Kotlin future migration warning remains; current API 36 debug/release builds pass.
-
-## Final status
-
-`BLOCKED — OWNER ACTION REQUIRED`
-
-The engineering package is prepared, but signing credentials, Supabase deployment, public legal URLs and device/Play testing are mandatory owner/external actions. Google Play approval is not guaranteed.
+The release build passes, but Flutter warns that current `file_picker` and `flutter_image_compress_common` versions still apply the Kotlin Gradle Plugin. This is a future migration warning and does not invalidate version 1.0.2.

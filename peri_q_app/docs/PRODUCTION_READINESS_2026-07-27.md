@@ -1,5 +1,7 @@
 # Production Readiness — 27 July 2026
 
+> Historical version 1.0.1 readiness snapshot. Version 1.0.2 removes customer login/account creation; use `FINAL_RELEASE_REPORT.md` for the current signed release.
+
 This report distinguishes implementation and compile checks from production
 verification. It contains no signing credentials or private keys.
 

@@ -202,7 +202,9 @@ order_items (
   }) async {
     final user = _client.auth.currentUser;
     if (user == null) {
-      throw const OrderSubmissionException('Sign in again before uploading.');
+      throw const OrderSubmissionException(
+        'Restart the app before uploading your proof.',
+      );
     }
     if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
       throw const OrderSubmissionException(

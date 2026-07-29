@@ -98,7 +98,7 @@ class PrivacyAndSupportScreen extends StatelessWidget {
           const _PrivacySection(
             title: 'Information used',
             body:
-                'The app uses your name, phone number, optional email, delivery address, order history and any EFT proof you choose to upload to process and support orders. Guest checkout creates an anonymous Supabase session so your orders remain private.',
+                'The app uses your name, phone number, delivery address, order history and any EFT proof you choose to upload to process and support orders. Quick checkout creates an anonymous Supabase session so your orders remain private.',
           ),
           const _PrivacySection(
             title: 'Storage and sharing',

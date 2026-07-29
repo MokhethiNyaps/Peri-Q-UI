@@ -163,7 +163,7 @@ class AdminDashboardScreen extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(24),
                 child: Text(
-                  'Sign in with a Supabase account that has the admin role to manage orders and menu items.',
+                  'Owner permissions are required to manage orders and menu items.',
                   style: Theme.of(context).textTheme.bodyLarge,
                   textAlign: TextAlign.center,
                 ),

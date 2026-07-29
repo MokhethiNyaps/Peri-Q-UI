@@ -16,7 +16,7 @@ Status convention: `[A]` automated passed, `[E]` emulator passed, `[P]` physical
 - [ ] Standard phone, portrait: complete guest order journey.
 - [ ] Large phone and foldable outer display: grids/images remain proportionate.
 - [ ] 7-inch and 10-inch tablet if listing tablet support: no excessive blank space/broken grids.
-- [ ] Landscape checkout/address/auth: keyboard does not hide required fields/buttons.
+- [ ] Landscape checkout/address forms: keyboard does not hide required fields/buttons.
 - [ ] Android minimum supported API and a recent Android 16/API 36 device.
 - [ ] Display cut-out, gesture navigation, three-button navigation, edge-to-edge/status bars.
 - [ ] Predictive/system back from item, cart, checkout and confirmation.
@@ -30,7 +30,7 @@ Status convention: `[A]` automated passed, `[E]` emulator passed, `[P]` physical
 - [ ] Upgrade over previous build; legacy sample profile values are cleared.
 - [ ] Guest: launch → menu → customise → quantity/note → cart → pickup → cash → submit → confirmation → status.
 - [ ] Delivery: saved/new address, trusted fee, cash delivery and EFT options.
-- [ ] Email registration, confirmation requirement, sign-in, invalid credentials, reset email, session restore, sign out.
+- [ ] Fresh install opens the customer app after splash without login/sign-up controls and creates a private anonymous ordering session.
 - [ ] Delete account deliberately; verify Supabase user/profile/orders/proofs and local addresses are removed.
 - [ ] Empty menu, unpublished special, missing/broken food image and unavailable item.
 - [ ] Store closed, ordering paused, pickup off, delivery off, both off, store closes during checkout.
