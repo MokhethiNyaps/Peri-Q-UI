@@ -52,13 +52,13 @@ flutter build apk --release --obfuscate --split-debug-info=release/android/symbo
   --dart-define-from-file=release-config.json
 ```
 
-Copy/rename the output to `release/android/rastas_peri_q_chesanyama-v1.0.1-build2-release.aab` only after verification.
+Copy/rename the output to `release/android/rastas-peri-q-v1.0.0-build1-release.aab` only after verification.
 
 ## Verify
 
 ```powershell
-jarsigner -verify -verbose -certs release\android\rastas_peri_q_chesanyama-v1.0.1-build2-release.aab
-keytool -printcert -jarfile release\android\rastas_peri_q_chesanyama-v1.0.1-build2-release.aab
+jarsigner -verify -verbose -certs release\android\rastas-peri-q-v1.0.0-build1-release.aab
+keytool -printcert -jarfile release\android\rastas-peri-q-v1.0.0-build1-release.aab
 ```
 
 Expected: `jar verified` and the upload certificate owned by the business. Also run bundletool `validate`, upload first to Internal testing, and retain `r8-mapping.txt`, `native-debug-symbols.zip` and the matching Dart symbols for that exact build.
@@ -66,7 +66,7 @@ Expected: `jar verified` and the upload certificate owned by the business. Also 
 ## Current status
 
 On 28 July 2026 the existing keystore produced a signed AAB and APK for version
-1.0.1/build 2. Google bundletool validated the AAB, `jarsigner` verified its JAR
+1.0.0/build 1. Google bundletool validated the AAB, `jarsigner` verified its JAR
 signature, `apksigner` verified the APK's v2 signature, and both artifacts used
 the same certificate. The versioned artifacts are in `release/android/` and
 their SHA-256 hashes are recorded in `PRODUCTION_READINESS_2026-07-27.md`.

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
+import 'auth_screen.dart';
 import 'customer_shell.dart';
 import 'startup_error_screen.dart';
 
@@ -33,9 +34,11 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => widget.controller.bootstrapError != null
+          builder: (_) => widget.controller.hasReturningSession
+              ? CustomerShell(controller: widget.controller)
+              : widget.controller.bootstrapError != null
               ? StartupErrorScreen(controller: widget.controller)
-              : CustomerShell(controller: widget.controller),
+              : AuthScreen(controller: widget.controller),
         ),
       );
     });

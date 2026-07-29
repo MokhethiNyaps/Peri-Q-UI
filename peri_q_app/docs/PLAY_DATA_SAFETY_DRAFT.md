@@ -4,13 +4,14 @@ This is an engineering draft, not a submission. The owner is responsible for che
 
 | Data type | Collected | Shared | Purpose | Required? | Ephemeral? | Transit encryption | Deletion | Collector |
 |---|---|---|---|---|---|---|---|---|
-| Name | Yes | No* | Order fulfilment | Required at checkout | No | HTTPS/TLS | Support/deletion request | App → Supabase |
-| Phone number | Yes | No* | Order contact/fulfilment | Required at checkout | No | HTTPS/TLS | Support/deletion request | App → Supabase |
-| Delivery address | Delivery only | No* | Deliver order | Optional unless delivery | No; also saved locally if user chooses | HTTPS/TLS remotely | Delete locally saved address; support/deletion request for order data | App/SharedPreferences/Supabase order |
-| Authentication data/session identifier | Yes | No* | Guest isolation and security | Required for backend order isolation | Session processing plus encrypted persisted token | HTTPS/TLS | Support/deletion request | Supabase Auth SDK + Android encrypted storage |
-| Order history/items/notes/status | Yes | No* | Fulfilment, support, business records | Required to place an order | No | HTTPS/TLS | Support/deletion request subject to required retention | Supabase database |
-| EFT proof image/PDF | EFT only | No* | Payment reconciliation | Optional unless user chooses/proceeds with EFT proof | No | HTTPS/TLS | Support/deletion request | System picker → private Supabase Storage |
-| App interactions | Minimal operational requests | No* | Core functionality/security | Required for features | Partly | HTTPS/TLS | Follows associated data and provider retention | Supabase service logs—owner must verify retention |
+| Name | Yes | No* | Order fulfilment/account | Required at checkout | No | HTTPS/TLS | In-app account deletion/support request | App → Supabase |
+| Email | For email accounts | No* | Authentication/account management | Optional; not needed for guest | No | HTTPS/TLS | Account deletion | Supabase Auth |
+| Phone number | Yes | No* | Account contact and order fulfilment; not authentication | Required at checkout | No | HTTPS/TLS | Account deletion | App → Supabase |
+| Delivery address | Delivery only | No* | Deliver order | Optional unless delivery | No; also saved locally if user chooses | HTTPS/TLS remotely | Delete saved address/account | App/SharedPreferences/Supabase order |
+| Authentication data/session identifier | Yes | No* | Sign-in, guest isolation, security | Required for backend order isolation | Session processing plus encrypted persisted token | HTTPS/TLS | Sign out/account deletion | Supabase Auth SDK + Android encrypted storage |
+| Order history/items/notes/status | Yes | No* | Fulfilment, support, business records | Required to place an order | No | HTTPS/TLS | Current implementation deletes with account | Supabase database |
+| EFT proof image/PDF | EFT only | No* | Payment reconciliation | Optional unless user chooses/proceeds with EFT proof | No | HTTPS/TLS | Removed before account deletion; support request | System picker → private Supabase Storage |
+| App interactions | Minimal operational requests | No* | Core functionality/security | Required for features | Partly | HTTPS/TLS | Follows associated account/data | Supabase service logs—owner must verify retention |
 | Crash diagnostics/analytics | No SDK configured | No | N/A | N/A | N/A | N/A | N/A | None in app |
 | Push token/notifications | No | No | N/A | N/A | N/A | N/A | N/A | FCM not configured |
 | Advertising identifiers | No | No | N/A | N/A | N/A | N/A | N/A | No ads/tracking SDK |
@@ -20,9 +21,9 @@ This is an engineering draft, not a submission. The owner is responsible for che
 ## Security and retention answers to verify
 
 - Data is encrypted in transit by HTTPS/WSS when the production Supabase URL uses HTTPS.
-- Version 1.0.2 supports anonymous guest use only. Customer login, account creation, password recovery, sign-out and in-app registered-account deletion are not offered. The public deletion/support URL remains available for legacy requests.
+- The application supports guest use, account creation and in-app account deletion. A public web deletion URL is still mandatory and must be supplied.
 - The current schema cascades profiles/orders/items on user deletion and the app removes private proof files first. The owner must decide whether any lawful financial retention is required before production; if retention is required, redesign deletion/anonymisation and update the policy/declaration before launch.
-- Anonymous Auth sessions use encrypted Android storage. Saved addresses/customer details remain in app-private SharedPreferences; Android backup is disabled.
+- Auth sessions and PKCE verifier data use encrypted Android storage and migrate away from legacy SharedPreferences. Saved addresses/customer details remain in app-private SharedPreferences and are removed during in-app deletion; Android backup is disabled.
 - Supabase platform/auth/database/storage logs and backups may have separate retention. Verify and disclose their behaviour.
 - Confirm no SDK or infrastructure was added after this audit, and verify whether support staff export personal data outside Supabase.
 

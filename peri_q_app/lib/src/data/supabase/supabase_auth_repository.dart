@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/auth_deep_links.dart';
 import '../../models/app_auth_session.dart';
 import '../../repositories/auth_repository.dart';
 
@@ -7,6 +8,9 @@ class SupabaseAuthRepository implements AuthRepository {
   SupabaseAuthRepository({required this._client});
 
   final SupabaseClient _client;
+
+  @override
+  bool get usesAuthoritativeSessions => true;
 
   @override
   Future<AppAuthSession> restoreSession() async {
@@ -27,6 +31,93 @@ class SupabaseAuthRepository implements AuthRepository {
     }
 
     return _buildSession(user);
+  }
+
+  @override
+  Future<AppAuthSession> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    final response = await _client.auth.signInWithPassword(
+      email: email.trim(),
+      password: password,
+    );
+    final user = response.user ?? _client.auth.currentUser;
+    if (user == null) {
+      throw StateError('Supabase did not return a user session.');
+    }
+
+    return _buildSession(user);
+  }
+
+  @override
+  Future<AppAuthSession> signUpWithEmail({
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+  }) async {
+    final normalizedEmail = email.trim();
+    final response = await _client.auth.signUp(
+      email: normalizedEmail,
+      password: password,
+      data: {'full_name': name.trim(), 'phone': phone.trim()},
+    );
+    final user = response.user ?? _client.auth.currentUser;
+    final session = response.session ?? _client.auth.currentSession;
+
+    if (user == null) {
+      throw StateError('Supabase did not return a user account.');
+    }
+
+    if (session == null) {
+      throw StateError(
+        'Account created. Check your email to confirm it, then sign in.',
+      );
+    }
+
+    await upsertProfile(name: name, phone: phone);
+    return _buildSession(user);
+  }
+
+  @override
+  Future<void> resetPasswordForEmail({required String email}) {
+    return _client.auth.resetPasswordForEmail(
+      email.trim(),
+      redirectTo: AuthDeepLinks.resetPasswordUrl,
+    );
+  }
+
+  @override
+  Future<void> updatePassword({required String newPassword}) async {
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
+  }
+
+  @override
+  Future<void> signOut() async {
+    await _client.auth.signOut();
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw StateError('No signed-in account is available.');
+    }
+    final bucket = _client.storage.from('payment-proofs');
+    final orderFolders = await bucket.list(path: user.id);
+    final proofPaths = <String>[];
+    for (final folder in orderFolders) {
+      final files = await bucket.list(path: '${user.id}/${folder.name}');
+      proofPaths.addAll(
+        files.map((file) => '${user.id}/${folder.name}/${file.name}'),
+      );
+    }
+    if (proofPaths.isNotEmpty) {
+      await bucket.remove(proofPaths);
+    }
+    await _client.rpc('delete_own_account');
+    await _client.auth.signOut(scope: SignOutScope.local);
   }
 
   @override

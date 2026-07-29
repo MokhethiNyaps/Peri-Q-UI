@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peri_q_app/src/core/app_controller.dart';
+import 'package:peri_q_app/src/core/auth_deep_links.dart';
 import 'package:peri_q_app/src/models/app_auth_session.dart';
 import 'package:peri_q_app/src/models/app_preferences.dart';
 import 'package:peri_q_app/src/models/app_settings.dart';
@@ -14,18 +16,74 @@ import 'package:peri_q_app/src/repositories/menu_repository.dart';
 import 'package:peri_q_app/src/repositories/order_repository.dart';
 import 'package:peri_q_app/src/repositories/preferences_repository.dart';
 import 'package:peri_q_app/src/repositories/store_repository.dart';
+import 'package:peri_q_app/src/screens/auth_screen.dart';
+import 'package:peri_q_app/src/screens/reset_password_screen.dart';
 
 void main() {
-  group('AppController guest access', () {
-    test('creates an anonymous ordering session during bootstrap', () async {
-      final harness = _ControllerHarness();
+  group('AppController authentication', () {
+    test(
+      'registers email users, activates the session, and stores profile data',
+      () async {
+        final harness = _ControllerHarness();
+        await harness.controller.bootstrapFuture;
 
+        await harness.controller.registerWithEmail(
+          name: 'New Customer',
+          phone: '071 234 5678',
+          email: 'new@example.com',
+          password: 'secret1',
+        );
+
+        expect(harness.controller.isGuest, isFalse);
+        expect(harness.controller.userId, 'new-user');
+        expect(harness.controller.userEmail, 'new@example.com');
+        expect(harness.controller.customerName, 'New Customer');
+        expect(harness.controller.customerPhone, '+27 71 234 5678');
+        expect(harness.auth.upsertedName, 'New Customer');
+        expect(harness.auth.upsertedPhone, '+27 71 234 5678');
+        expect(harness.orders.lastUserId, 'new-user');
+      },
+    );
+
+    test('sends password reset requests through the auth repository', () async {
+      final harness = _ControllerHarness();
       await harness.controller.bootstrapFuture;
 
-      expect(harness.controller.hasReturningSession, isTrue);
-      expect(harness.controller.isGuest, isTrue);
-      expect(harness.controller.userId, 'anon-user');
-      expect(harness.orders.lastUserId, 'anon-user');
+      await harness.controller.requestPasswordReset(email: 'reset@example.com');
+
+      expect(harness.auth.resetEmail, 'reset@example.com');
+    });
+
+    test(
+      'updates recovered user passwords through the auth repository',
+      () async {
+        final harness = _ControllerHarness();
+        await harness.controller.bootstrapFuture;
+
+        await harness.controller.updatePassword(newPassword: 'new-secret1');
+
+        expect(harness.auth.updatedPassword, 'new-secret1');
+      },
+    );
+
+    test('deletes the account and clears local personal data', () async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+      await harness.controller.signInWithEmail(
+        email: 'customer@example.com',
+        password: 'secret1',
+      );
+      await harness.controller.addSavedAddress(
+        label: 'Home',
+        address: '1 Main Street',
+      );
+
+      await harness.controller.deleteAccount();
+
+      expect(harness.controller.hasReturningSession, isFalse);
+      expect(harness.controller.savedAddresses, isEmpty);
+      expect(harness.controller.userId, isNull);
+      expect(harness.auth.signedOut, isTrue);
     });
   });
 
@@ -150,6 +208,123 @@ void main() {
         expect(harness.controller.todaysSpecialItem, isNull);
       },
     );
+  });
+
+  group('AuthScreen', () {
+    testWidgets('exposes sign up and password reset flows with validation', (
+      tester,
+    ) async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+
+      await tester.pumpWidget(
+        MaterialApp(home: AuthScreen(controller: harness.controller)),
+      );
+
+      expect(
+        find.byKey(const ValueKey('auth-create-account-tab')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('auth-forgot-password-button')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('auth-phone-button')), findsNothing);
+      expect(find.byKey(const ValueKey('auth-guest-button')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('auth-create-account-tab')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('auth-sign-up-name-field')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('auth-sign-up-email-field')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('auth-sign-up-phone-field')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('auth-sign-up-password-field')),
+        findsOneWidget,
+      );
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('auth-sign-up-button')),
+      );
+      await tester.tap(find.byKey(const ValueKey('auth-sign-up-button')));
+      await tester.pump();
+
+      expect(find.text('Enter your full name.'), findsOneWidget);
+      expect(find.text('Enter a valid email address.'), findsOneWidget);
+      expect(find.text('Use at least 6 characters.'), findsOneWidget);
+    });
+  });
+
+  group('Password recovery', () {
+    test('recognizes only the configured password recovery deep link', () {
+      expect(
+        AuthDeepLinks.isPasswordReset(
+          Uri.parse('rastasperiq://reset-password?code=abc'),
+        ),
+        isTrue,
+      );
+      expect(
+        AuthDeepLinks.isPasswordReset(
+          Uri.parse('rastasperiq://another-screen?code=abc'),
+        ),
+        isFalse,
+      );
+      expect(
+        AuthDeepLinks.isPasswordReset(
+          Uri.parse('https://example.com/reset-password?code=abc'),
+        ),
+        isFalse,
+      );
+    });
+
+    testWidgets('updates the password and returns the user to sign in', (
+      tester,
+    ) async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+
+      await tester.pumpWidget(
+        MaterialApp(home: ResetPasswordScreen(controller: harness.controller)),
+      );
+
+      await tester.enterText(
+        find.byKey(const ValueKey('reset-password-field')),
+        'new-secret1',
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey('reset-password-confirm-field')),
+        'new-secret1',
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('reset-password-submit-button')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('reset-password-submit-button')),
+      );
+      await tester.pump();
+      await tester.runAsync(() async {
+        for (var attempt = 0; attempt < 100; attempt += 1) {
+          if (harness.auth.signedOut) {
+            return;
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
+      });
+      await tester.pumpAndSettle();
+
+      expect(harness.auth.updatedPassword, 'new-secret1');
+      expect(harness.auth.signedOut, isTrue);
+      expect(find.byType(AuthScreen), findsOneWidget);
+    });
   });
 
   group('AppController category management', () {
@@ -467,6 +642,12 @@ class _ControllerHarness {
 class _FakeAuthRepository implements AuthRepository {
   String? upsertedName;
   String? upsertedPhone;
+  String? resetEmail;
+  String? updatedPassword;
+  bool signedOut = false;
+
+  @override
+  bool get usesAuthoritativeSessions => true;
 
   @override
   Future<AppAuthSession> restoreSession() async {
@@ -480,6 +661,56 @@ class _FakeAuthRepository implements AuthRepository {
       userId: 'anon-user',
       isAnonymous: true,
     );
+  }
+
+  @override
+  Future<AppAuthSession> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    return AppAuthSession(
+      hasSession: true,
+      userId: 'email-user',
+      email: email,
+      customerName: 'Existing Customer',
+      customerPhone: '+27 70 000 0000',
+    );
+  }
+
+  @override
+  Future<AppAuthSession> signUpWithEmail({
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+  }) async {
+    return AppAuthSession(
+      hasSession: true,
+      userId: 'new-user',
+      email: email,
+      customerName: name,
+      customerPhone: phone,
+    );
+  }
+
+  @override
+  Future<void> resetPasswordForEmail({required String email}) async {
+    resetEmail = email;
+  }
+
+  @override
+  Future<void> updatePassword({required String newPassword}) async {
+    updatedPassword = newPassword;
+  }
+
+  @override
+  Future<void> signOut() async {
+    signedOut = true;
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    signedOut = true;
   }
 
   @override

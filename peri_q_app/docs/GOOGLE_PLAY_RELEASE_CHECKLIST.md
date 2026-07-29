@@ -5,13 +5,13 @@ Checked against official Google Play guidance available on 18 July 2026. The exa
 ## Technical release
 
 - [x] Permanent candidate application ID/namespace: `za.co.rastasperiq.ordering` (owner must confirm before app creation).
-- [x] Version `1.0.2` / code `3`; increment code for every replacement upload.
+- [x] First unreleased version reset to `1.0.0` / code `1`; increment the code for every replacement uploaded to Play.
 - [x] Compile/target Android 16 API 36. From 31 August 2026, Play requires API 36 for new phone/tablet apps/updates: https://support.google.com/googleplay/android-developer/answer/11926878
 - [x] 64-bit `arm64-v8a` present; App Bundle also contains armv7/x86_64 and Play will split per device.
 - [x] INTERNET is the only permission; system picker needs no broad storage/media permission.
 - [x] Release shrinking/obfuscation and symbol artifacts generated.
-- [x] Production APK/AAB built with production Supabase client configuration; signatures and Bundletool validation passed.
-- [x] Upload key configured outside Git; APK and AAB signer-certificate fingerprints match.
+- [x] Production AAB built and validated with bundletool 1.18.3.
+- [x] Release APK and AAB signed with the configured upload key and independently verified.
 - [ ] Apply/test production Supabase schema and Auth/Storage settings.
 - [ ] Upload to Internal testing; review supported-device catalogue and App Integrity certificate fingerprints.
 - [ ] Run Pre-launch report; triage crashes, ANRs, accessibility and security warnings.
@@ -24,13 +24,13 @@ Checked against official Google Play guidance available on 18 July 2026. The exa
 
 **Full description (draft):**
 
-Rasta's Peri Q Chesanyama makes local food ordering simple. Browse today's menu and specials, customise your meal, add a note, and choose pickup or available local delivery. Check out without creating an account, select cash or EFT where available, and follow your order from Pending to Preparing, Ready and Completed inside the app.
+Rasta's Peri Q Chesanyama makes local food ordering simple. Browse today's menu and specials, customise your meal, add a note, and choose pickup or available local delivery. Check out as a guest or sign in, select cash or EFT where available, and follow your order from Pending to Preparing, Ready and Completed inside the app.
 
 Features:
 
 - Today's menu, specials and food categories
 - Clear prices and availability
-- Quick checkout without account registration
+- Guest checkout
 - Pickup and available local delivery
 - Cash and EFT options configured by the store
 - Order number, preparation estimate and in-app status
@@ -38,7 +38,7 @@ Features:
 
 No marketplace, driver tracking or subscription is included.
 
-**Release notes (1.0.2 draft):** Removed customer login and account creation for a faster checkout. New installations now open directly into a private guest ordering session, with refreshed home, menu and Today's Special experiences.
+**Release notes (1.0.0 draft):** Order with an email/password account or continue as a guest. Phone-only authentication has been removed, so no SMS or OTP is required. Includes menu, checkout, order-status, password-recovery, privacy and account-deletion improvements.
 
 - [x] Support email: `contact@rastasperiq.co.za`
 - [x] Support website: `https://rastasperiq.co.za/`
@@ -59,7 +59,7 @@ No marketplace, driver tracking or subscription is included.
 
 - [ ] Data Safety based on `PLAY_DATA_SAFETY_DRAFT.md`; owner verifies Supabase/provider practices. Required for closed/open/production tracks: https://support.google.com/googleplay/android-developer/answer/10787469
 - [x] Public privacy policy and in-app link/summary implemented; recheck after each deployment.
-- [x] Customer account creation and password sign-in are not offered in version 1.0.2. The public deletion/support URL remains available for legacy requests; the in-app account-deletion requirement is not applicable while account creation is disabled.
+- [x] Account deletion: in-app path plus public web request URL implemented. Google requires both when account creation is offered: https://support.google.com/googleplay/android-developer/answer/13327111
 - [ ] App access instructions and reviewer accounts from `PLAY_REVIEWER_ACCESS.md`.
 - [ ] Ads: likely **No** (no ad SDK)—owner verifies final build.
 - [ ] Content rating questionnaire: prepared-food ordering; answer accurately.
@@ -78,4 +78,4 @@ No marketplace, driver tracking or subscription is included.
 
 ## Release decision
 
-Use `release/android/rastas-peri-q-v1.0.2-build3-release.aab` for Play Console Internal testing first. Google Play approval cannot be guaranteed.
+Upload `release/android/rastas-peri-q-v1.0.0-build1-release.aab` to Internal testing first. Keep the APK for direct device testing. Google Play approval cannot be guaranteed.

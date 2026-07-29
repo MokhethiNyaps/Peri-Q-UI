@@ -1,7 +1,5 @@
 # Final Production Audit
 
-> Historical audit snapshot from version 1.0.0. For the current guest-only signed release, use `FINAL_RELEASE_REPORT.md`.
-
 Audit date: 18 July 2026  
 Scope: Flutter/Dart source, Supabase schema and policies, Android release configuration, assets, dependencies, tests, documentation and generated release outputs.
 

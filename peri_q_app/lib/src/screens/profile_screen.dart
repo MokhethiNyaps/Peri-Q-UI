@@ -4,6 +4,7 @@ import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/order.dart';
 import 'admin_dashboard_screen.dart';
+import 'auth_screen.dart';
 import 'payment_preferences_screen.dart';
 import 'privacy_and_support_screen.dart';
 import 'saved_addresses_screen.dart';
@@ -64,7 +65,9 @@ class ProfileScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Quick checkout enabled',
+                            controller.isGuest
+                                ? 'Guest checkout enabled'
+                                : 'Signed in',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
                                   color: AppTheme.chesaOrange,
@@ -128,7 +131,7 @@ class ProfileScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 8),
-              if (controller.canAccessAdmin) ...[
+              if (controller.canAccessAdmin)
                 InkWell(
                   onTap: () {
                     Navigator.of(context).push(
@@ -173,14 +176,119 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppTheme.mutedSurface,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.lock_outline_rounded,
+                        color: AppTheme.ashGrey,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Admin tools unlock automatically for Supabase users with the admin role.',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 24),
+              const SizedBox(height: 24),
+              if (!controller.isGuest) ...[
+                OutlinedButton.icon(
+                  onPressed: () => _confirmAccountDeletion(context),
+                  icon: const Icon(Icons.delete_forever_outlined),
+                  label: const Text('Delete Account'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppTheme.periRed,
+                  ),
+                ),
+                const SizedBox(height: 8),
               ],
+              Center(
+                child: TextButton(
+                  onPressed: () async {
+                    await controller.signOut();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(
+                        builder: (_) => AuthScreen(controller: controller),
+                      ),
+                      (route) => false,
+                    );
+                  },
+                  child: const Text('Sign Out'),
+                ),
+              ),
             ],
           );
         },
       ),
     );
+  }
+
+  Future<void> _confirmAccountDeletion(BuildContext context) async {
+    final confirmationController = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete account permanently?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This removes your Supabase account, profile and linked orders. This cannot be undone. Type DELETE to confirm.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmationController,
+              textCapitalization: TextCapitalization.characters,
+              decoration: const InputDecoration(labelText: 'Type DELETE'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              confirmationController.text.trim() == 'DELETE',
+            ),
+            child: const Text('Delete permanently'),
+          ),
+        ],
+      ),
+    );
+    confirmationController.dispose();
+    if (confirmed != true || !context.mounted) return;
+    try {
+      await controller.deleteAccount();
+      if (!context.mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => AuthScreen(controller: controller)),
+        (_) => false,
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'The account could not be deleted. Check your connection and try again, or contact support.',
+          ),
+        ),
+      );
+    }
   }
 }
 

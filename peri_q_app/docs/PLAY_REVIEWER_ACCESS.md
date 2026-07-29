@@ -2,7 +2,7 @@
 
 ## Customer access
 
-The menu opens automatically after the splash screen. Quick checkout uses Supabase Anonymous Auth behind the scenes; no login, account creation, password or OTP is requested. Do not store private credentials in this repository or screenshots.
+The menu can be reached through **Continue as Guest**. Guest checkout uses Supabase Anonymous Auth; no OTP is required. Email/password account features can be tested with a dedicated reviewer customer account supplied privately in Play Console. Phone-number-only authentication is not offered; a phone number is collected only as contact/order information. Do not store reviewer credentials in this repository or screenshots.
 
 ## Reviewer preparation (owner action)
 
@@ -14,7 +14,7 @@ The menu opens automatically after the splash screen. Quick checkout uses Supaba
 
 ## Admin access
 
-Admin UI appears only when a previously stored Supabase session has a trusted `profiles.role` of `admin`; database policies independently enforce it. Version 1.0.2 does not expose an admin/customer login screen, so the owner dashboard is not available from a fresh public installation. Never provide the owner's account or service-role key.
+Admin UI appears only when the authenticated user's trusted `profiles.role` is `admin`; database policies independently enforce it. If admin functionality is within review scope, create a dedicated reviewer-admin account, promote it from a trusted Supabase admin session, enter its credentials only in Play Console, and remove/demote it after review. Never provide the owner's account or service-role key.
 
 ## Suggested review flow
 
@@ -24,6 +24,6 @@ Admin UI appears only when a previously stored Supabase session has a trusted `p
 4. View the stored order number/estimate and My Orders status.
 5. Use the dedicated admin account if supplied to advance Pending → Preparing → Ready → Completed, then return to customer view to observe realtime status.
 6. For EFT testing, choose EFT and upload a small non-sensitive sample JPG/PDF; confirm it remains private.
-7. Confirm Profile has no login, sign-up, password-reset, sign-out or registered-account deletion controls. Public deletion/support requests remain available at `https://rastasperiq.co.za/delete-account/`.
+7. For account deletion, use the dedicated reviewer customer account and **Profile → Delete Account**. A guest session does not show the registered-account deletion action.
 
 Reviewer constraints: push notifications are not configured and are not needed; status is visible inside the app. There is no driver/map tracking. Production orders/store-hours must not block evaluation.

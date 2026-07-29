@@ -1,69 +1,86 @@
 # Final Release Report
 
-## Release summary
+## Release outcome
 
-Version `1.0.2` (build `3`) removes customer login, account creation, password recovery, sign-out and registered-account deletion from the Android app. A fresh installation now creates a private Supabase anonymous session during bootstrap and opens the customer experience after the splash screen. The anonymous session is still required for secure order ownership and tracking.
+The corrected Android release is ready for manual device testing and Play Console
+Internal testing. Email/password registration, sign-in and password recovery are
+available again. **Continue as Guest** remains available. Phone-number-only sign-in
+has been removed, so this build does not require SMS, OTP or Twilio.
 
-Existing locally stored Supabase sessions are restored, so an already authenticated owner session can retain admin access. No customer or owner password-login entry point is exposed in this release.
+The phone number collected during email registration and checkout is contact and
+order-fulfilment information only; it is not an authentication method.
+
+## Corrected release identity
+
+- Package: `za.co.rastasperiq.ordering`
+- Version: `1.0.0`
+- Version code: `1`
+- Compile/target SDK: 36
+- Build type: signed release, R8/resource shrinking, Dart obfuscation and split
+  debug information
+- Build date: 29 July 2026 (Africa/Johannesburg)
 
 ## Release artifacts
 
-| Artifact | Size | SHA-256 |
+| Artifact | Size (bytes) | SHA-256 |
 |---|---:|---|
-| `release/android/rastas-peri-q-v1.0.2-build3-release.apk` | 53,502,051 bytes | `9D8A9FD9973DBEDAFBF484FAE88E85E641AA29EC853BBC9B9FA6AC5A8B0A77DB` |
-| `release/android/rastas-peri-q-v1.0.2-build3-release.aab` | 52,479,426 bytes | `61C1118C8F94591EB5EC2758FD810890E713564E7C13AD4E10094A53B567703A` |
-| `release/android/rastas-peri-q-v1.0.2-build3-r8-mapping.txt` | 11,917,671 bytes | `E3171A3965EBC8DECCB79F0724347DB5816656D24947CB70811A7207DBADE025` |
-| `release/android/rastas-peri-q-v1.0.2-build3-dart-symbols.zip` | 3,149,737 bytes | `6DC8D3D53041A0A6103287AA6A68AE3F95FAA7CF6DE89A607DD71EDB90F2673F` |
+| `release/android/rastas-peri-q-v1.0.0-build1-release.apk` | 53,846,927 | `F767136C79AA3218E33F780BE93E48674CADFA5C8D24A396EE9EAD7943C1B3C4` |
+| `release/android/rastas-peri-q-v1.0.0-build1-release.aab` | 52,689,227 | `851876E338083F6A17BC0B7505494ACE21925E1113D074B40D7EB739BB4A2425` |
+| `release/android/rastas-peri-q-v1.0.0-build1-r8-mapping.txt` | 11,917,671 | `E3171A3965EBC8DECCB79F0724347DB5816656D24947CB70811A7207DBADE025` |
+| `release/android/rastas-peri-q-v1.0.0-build1-dart-symbols.zip` | 3,187,861 | `40E71CC183795DF30AAC9111966C5BCC711165272BF9511136E0AEBD0D7D0231` |
 
-Release artifacts and signing material are intentionally ignored by Git. Keep the mapping and Dart symbols paired with this exact AAB.
+The ignored `release/android/` directory contains local release outputs and is not
+committed to Git. Keep the mapping and Dart symbols paired with this exact AAB.
 
-## Android identity and signing
-
-- Package: `za.co.rastasperiq.ordering`
-- Version name: `1.0.2`
-- Version code: `3`
-- Minimum SDK: 24
-- Target/compile SDK: 36
-- APK signature: valid APK Signature Scheme v2, one signer
-- AAB signature: valid JAR signature, same signer certificate as the APK
-- Signing certificate SHA-256: `0BCCBE0AD6A15CD2FEFA9C8E507099259C60BE302ECFD917BA2BFBF28BB218AF`
-- Bundletool 1.18.3 validation: passed
-
-## Verification
+## Verification evidence
 
 | Gate | Result |
 |---|---|
-| Dart formatter | Passed after formatting all changed Dart files |
-| Flutter analysis | `No issues found` |
-| Automated tests | 21 passed |
-| Production Supabase Auth settings | Reachable; anonymous sign-in enabled |
-| Signed release APK | Built and signature/package/version verified |
-| Signed release AAB | Built, signature verified and Bundletool validation passed |
-| Signing certificate comparison | APK and AAB SHA-256 certificate fingerprints match |
-| Connected Android device | None detected by ADB; BlueStacks launch test not run |
+| Formatting | `dart format lib test` completed |
+| Static analysis | `flutter analyze --no-pub` — no issues found |
+| Automated tests | `flutter test --no-pub` — all 27 tests passed |
+| Release APK | Built successfully; APK Signature Scheme v2 verified |
+| Release AAB | Built successfully; `jarsigner` verified the bundle |
+| Bundle validation | bundletool 1.18.3 `validate` passed |
+| Manifest | package/version confirmed as `za.co.rastasperiq.ordering`, `1.0.0` / code `1` |
+| Signing identity | APK and AAB certificate SHA-256: `0BCCBE0AD6A15CD2FEFA9C8E507099259C60BE302ECFD917BA2BFBF28BB218AF` |
+| Phone auth removal | No phone sign-in action, OTP verification, SMS or Twilio integration remains |
+| Account access | Email/password sign-in, registration, recovery and guest access remain covered by tests |
 
-## User-facing changes
+## What changed in this correction
 
-- Removed login, create-account and password-reset screens and deep-link handling.
-- Removed sign-out and registered-account deletion controls from Profile.
-- Removed customer-facing admin-login guidance.
-- New users receive an anonymous ordering session automatically.
-- Checkout still requests the name and phone number required to fulfil an order.
-- Saved addresses and payment preferences remain local to the app.
-- Existing restored admin sessions can still open the owner dashboard.
+- Reverted the accidental removal of the entire account-authentication experience.
+- Restored email/password sign-in, account creation, password-reset deep links,
+  profile/account lifecycle and authenticated order access.
+- Removed only the standalone **Continue with Phone** authentication path and its
+  anonymous-session wrapper.
+- Kept **Continue as Guest** on the sign-in screen.
+- Kept the sign-up phone field as customer contact data.
+- Reset the unreleased app identity to the first Play version, `1.0.0+1`.
+- Deleted all old APK and AAB outputs before producing this corrected release.
 
-## Release notes draft
+## Remaining owner testing
 
-Removed customer login and account creation for a faster checkout. New installations now open directly into a private guest ordering session, with refreshed home, menu and Today's Special experiences.
+1. Install the release APK manually on a phone and test email registration,
+   email/password sign-in, password recovery, guest checkout and order contact.
+2. Confirm the password-reset email opens the app through
+   `rastasperiq://reset-password` and allows a password update.
+3. Test a fresh installation and a signed release installation before uploading.
+4. Upload the signed AAB to Play Console **Internal testing** first, then inspect
+   the pre-launch report and tester feedback.
+5. Keep a secure backup of the upload keystore and its passwords. Do not commit
+   them to Git.
 
-## Remaining manual checks
+## Supabase note
 
-1. Install the APK on a physical phone and confirm splash → Home without any login/sign-up screen.
-2. Place a complete pickup test order and, if enabled, a delivery/EFT test order.
-3. Upload the AAB to Play Console Internal testing before wider distribution.
-4. Retain the upload keystore, R8 mapping and Dart symbols in secure backups.
-5. Review Play Data Safety and App Access answers against the guest-only experience before submission.
+The production schema was reported as already applied directly in Supabase. That
+does not invalidate this build, but future database changes should first be applied
+to a separate staging Supabase project populated with non-production test data.
+Confirm Email and Anonymous Auth are enabled. Phone Auth can remain disabled.
 
-## Known warning
+## Final status
 
-The release build passes, but Flutter warns that current `file_picker` and `flutter_image_compress_common` versions still apply the Kotlin Gradle Plugin. This is a future migration warning and does not invalidate version 1.0.2.
+`READY FOR MANUAL APK TESTING AND PLAY INTERNAL TESTING`
+
+Play approval is external and cannot be guaranteed. Do not upload the APK to Play;
+use the AAB for Play Console and keep the APK for manual device testing.

@@ -1,6 +1,8 @@
 # Production Readiness — 27 July 2026
 
-> Historical version 1.0.1 readiness snapshot. Version 1.0.2 removes customer login/account creation; use `FINAL_RELEASE_REPORT.md` for the current signed release.
+> Historical snapshot: this report describes the superseded 1.0.1/build 2 package.
+> The corrected current package is documented in `FINAL_RELEASE_REPORT.md` as
+> 1.0.0/build 1 because no bundle had yet been uploaded to Play Console.
 
 This report distinguishes implementation and compile checks from production
 verification. It contains no signing credentials or private keys.
