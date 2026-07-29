@@ -13,10 +13,37 @@ type Special = {
   imageUrl: string;
 };
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-const supabasePublishableKey =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "";
-const isConfigured = Boolean(supabaseUrl && supabasePublishableKey);
+type PublicSupabaseConfig = {
+  url: string;
+  publishableKey: string;
+};
+
+function readPublicSupabaseConfig(): PublicSupabaseConfig | null {
+  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").trim();
+  const publishableKey = (
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? ""
+  ).trim();
+
+  if (!url || !publishableKey) return null;
+
+  try {
+    const parsedUrl = new URL(url);
+    if (
+      parsedUrl.protocol !== "https:" ||
+      parsedUrl.username ||
+      parsedUrl.password
+    ) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return { url, publishableKey };
+}
+
+const supabaseConfig = readPublicSupabaseConfig();
+const isConfigured = supabaseConfig !== null;
 
 function imageUrlFor(path: unknown) {
   const value = typeof path === "string" ? path.trim() : "";
@@ -30,63 +57,87 @@ export function TodaysSpecialLive() {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!isConfigured) return;
+    if (!supabaseConfig) return;
 
-    const supabase = createClient(supabaseUrl, supabasePublishableKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-        detectSessionInUrl: false,
-      },
-    });
     let active = true;
+    let removeRealtimeChannel: (() => void) | undefined;
 
-    const loadSpecial = async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select(
-          "todays_special_enabled,todays_special_label,todays_special_title,todays_special_subtitle,todays_special_image_path",
+    try {
+      const supabase = createClient(
+        supabaseConfig.url,
+        supabaseConfig.publishableKey,
+        {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false,
+          },
+        },
+      );
+
+      const loadSpecial = async () => {
+        try {
+          const { data, error } = await supabase
+            .from("app_settings")
+            .select(
+              "todays_special_enabled,todays_special_label,todays_special_title,todays_special_subtitle,todays_special_image_path",
+            )
+            .eq("id", "default")
+            .maybeSingle();
+
+          if (!active) return;
+          if (error || !data) {
+            setFailed(true);
+            setLoading(false);
+            return;
+          }
+
+          setSpecial({
+            enabled: data.todays_special_enabled ?? true,
+            label: data.todays_special_label || "TODAY'S SPECIAL",
+            title: data.todays_special_title || "Fresh from the flame",
+            subtitle:
+              data.todays_special_subtitle || "Ask the team about today's plate.",
+            imageUrl: imageUrlFor(data.todays_special_image_path),
+          });
+          setFailed(false);
+          setLoading(false);
+        } catch {
+          if (!active) return;
+          setFailed(true);
+          setLoading(false);
+        }
+      };
+
+      void loadSpecial();
+      const channel = supabase
+        .channel("website-todays-special")
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "app_settings",
+            filter: "id=eq.default",
+          },
+          () => void loadSpecial(),
         )
-        .eq("id", "default")
-        .maybeSingle();
+        .subscribe();
 
-      if (!active) return;
-      if (error || !data) {
+      removeRealtimeChannel = () => {
+        void supabase.removeChannel(channel);
+      };
+    } catch {
+      queueMicrotask(() => {
+        if (!active) return;
         setFailed(true);
         setLoading(false);
-        return;
-      }
-
-      setSpecial({
-        enabled: data.todays_special_enabled ?? true,
-        label: data.todays_special_label || "TODAY'S SPECIAL",
-        title: data.todays_special_title || "Fresh from the flame",
-        subtitle:
-          data.todays_special_subtitle || "Ask the team about today's plate.",
-        imageUrl: imageUrlFor(data.todays_special_image_path),
       });
-      setFailed(false);
-      setLoading(false);
-    };
-
-    void loadSpecial();
-    const channel = supabase
-      .channel("website-todays-special")
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "app_settings",
-          filter: "id=eq.default",
-        },
-        () => void loadSpecial(),
-      )
-      .subscribe();
+    }
 
     return () => {
       active = false;
-      void supabase.removeChannel(channel);
+      removeRealtimeChannel?.();
     };
   }, []);
 
