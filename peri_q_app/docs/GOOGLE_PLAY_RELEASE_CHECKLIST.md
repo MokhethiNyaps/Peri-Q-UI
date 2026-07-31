@@ -5,7 +5,8 @@ Checked against official Google Play guidance available on 18 July 2026. The exa
 ## Technical release
 
 - [x] Permanent candidate application ID/namespace: `za.co.rastasperiq.ordering` (owner must confirm before app creation).
-- [x] First unreleased version reset to `1.0.0` / code `1`; increment the code for every replacement uploaded to Play.
+- [x] First closed-test release used `1.0.0` / code `1`; the second candidate is
+  `1.0.1` / code `2`, preserving the existing package and signing identity.
 - [x] Compile/target Android 16 API 36. From 31 August 2026, Play requires API 36 for new phone/tablet apps/updates: https://support.google.com/googleplay/android-developer/answer/11926878
 - [x] 64-bit `arm64-v8a` present; App Bundle also contains armv7/x86_64 and Play will split per device.
 - [x] INTERNET, POST_NOTIFICATIONS and VIBRATE are present for transactional
@@ -45,6 +46,12 @@ continue as a guest. Phone-only authentication has been removed, so no SMS or
 OTP is required. Includes high-priority new-order alerts for administrators and
 order-status updates for customers, plus menu, checkout, password-recovery,
 privacy and account-deletion improvements.
+
+**Release notes (1.0.1 draft):** Customer contact and fulfilment details are now
+clearer for authorised staff. The owner dashboard prominently shows whether an
+order is for delivery or pickup, with the customer phone number and delivery
+address/instructions where required. Includes compatibility handling for older
+orders and reliability checks for both fulfilment types.
 
 - [x] Support email: `contact@rastasperiq.co.za`
 - [x] Support website: `https://rastasperiq.co.za/`
@@ -86,7 +93,7 @@ privacy and account-deletion improvements.
 
 ## Release decision
 
-After completing `FCM_MANUAL_SETUP.md` and the two-device smoke test, upload
-`release/android/rastas-peri-q-v1.0.0-build1-fcm-release.aab` to Internal
-testing first. Keep the matching APK for direct device testing. Google Play
-approval cannot be guaranteed.
+After completing the owner-dashboard delivery/pickup smoke test, upload
+`release/android/rastas-peri-q-v1.0.1-build2-order-details-release.aab` as the
+second closed-test release. Keep the matching APK for direct device testing.
+Google Play approval cannot be guaranteed.

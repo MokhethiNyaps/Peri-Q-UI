@@ -558,6 +558,49 @@ void main() {
     });
 
     test(
+      'requires and submits contact and address details for delivery orders',
+      () async {
+        final harness = _ControllerHarness(
+          appSettings: const AppSettings(
+            openingTime: '00:00',
+            closingTime: '00:00',
+          ),
+        );
+        await harness.controller.bootstrapFuture;
+        await harness.controller.startGuestSession();
+        await harness.controller.updateCustomer(
+          name: 'Delivery Customer',
+          phone: '0712345678',
+        );
+        harness.controller.addToCart(_menuItem(id: 'plate', name: 'Plate'));
+
+        await expectLater(
+          harness.controller.placeOrder(
+            orderType: OrderType.delivery,
+            paymentMethod: PaymentMethod.cashDelivery,
+          ),
+          throwsA(isA<OrderSubmissionException>()),
+        );
+        expect(harness.orders.lastDraft, isNull);
+
+        await harness.controller.placeOrder(
+          orderType: OrderType.delivery,
+          paymentMethod: PaymentMethod.cashDelivery,
+          deliveryAddress:
+              '12 Main Street, Bloemfontein\nRing the side gate bell.',
+        );
+
+        expect(harness.orders.lastDraft?.customerName, 'Delivery Customer');
+        expect(harness.orders.lastDraft?.customerPhone, '+27 712345678');
+        expect(harness.orders.lastDraft?.orderType, OrderType.delivery);
+        expect(
+          harness.orders.lastDraft?.deliveryAddress,
+          '12 Main Street, Bloemfontein\nRing the side gate bell.',
+        );
+      },
+    );
+
+    test(
       'reuses the idempotency key after a recoverable submission failure',
       () async {
         final harness = _ControllerHarness(
@@ -589,6 +632,8 @@ void main() {
 
         expect(harness.orders.requestIds, hasLength(2));
         expect(harness.orders.requestIds.first, harness.orders.requestIds.last);
+        expect(harness.orders.lastDraft?.orderType, OrderType.pickup);
+        expect(harness.orders.lastDraft?.deliveryAddress, isNull);
         expect(harness.controller.cart, isEmpty);
         await Future<void>.delayed(Duration.zero);
         expect(harness.notifications.newOrderIds, ['order-2']);
@@ -855,6 +900,7 @@ class _FakeMenuRepository implements MenuRepository {
 
 class _FakeOrderRepository implements OrderRepository {
   String? lastUserId;
+  OrderDraft? lastDraft;
   bool failNextCreate = false;
   final List<String> requestIds = [];
   final List<OrderStatus> updatedStatuses = [];
@@ -886,6 +932,7 @@ class _FakeOrderRepository implements OrderRepository {
 
   @override
   Future<OrderModel> createOrder(OrderDraft draft, {String? userId}) async {
+    lastDraft = draft;
     requestIds.add(draft.clientRequestId);
     if (failNextCreate) {
       failNextCreate = false;

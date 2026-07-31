@@ -5,6 +5,7 @@ import '../core/app_theme.dart';
 import '../models/menu_item.dart';
 import '../models/order.dart';
 import '../widgets/app_image.dart';
+import '../widgets/admin_order_fulfilment_panel.dart';
 import '../widgets/order_status_chip.dart';
 import 'admin_app_settings_screen.dart';
 import 'admin_category_manager_screen.dart';
@@ -536,15 +537,15 @@ class _IncomingOrderCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
+          AdminOrderFulfilmentPanel(order: order),
+          const SizedBox(height: 14),
           Text(
-            order.customerName,
-            style: Theme.of(context).textTheme.bodyLarge,
+            'Order items',
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
-          Text(
-            order.orderType.label,
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           ...order.items.map(
             (item) => Padding(
               padding: const EdgeInsets.only(bottom: 6),

@@ -5,10 +5,12 @@ Status convention: `[A]` automated passed, `[E]` emulator passed, `[P]` physical
 ## Automated/build evidence
 
 - [A] `flutter analyze` has no issues.
-- [A] 27 unit/widget tests pass.
+- [A] 32 unit/widget tests pass, including delivery submission and admin
+  fulfilment-detail rendering.
 - [A] Android release APK builds and its v2 signature verifies.
 - [A] Android release AAB builds with shrinking/obfuscation and its signature verifies.
-- [A] bundletool validates package `za.co.rastasperiq.ordering`, target SDK 36, version code 1.
+- [A] bundletool validates package `za.co.rastasperiq.ordering`, target SDK 36,
+  version code 2.
 
 ## Device and layout matrix
 
@@ -30,6 +32,10 @@ Status convention: `[A]` automated passed, `[E]` emulator passed, `[P]` physical
 - [ ] Upgrade over previous build; legacy sample profile values are cleared.
 - [ ] Guest: launch → menu → customise → quantity/note → cart → pickup → cash → submit → confirmation → status.
 - [ ] Delivery: saved/new address, trusted fee, cash delivery and EFT options.
+- [ ] Place a clearly labelled test delivery order, then confirm the exact name,
+  phone, address/instructions and `delivery` type in Supabase Table Editor.
+- [ ] Place a pickup order without an address and confirm it is accepted and
+  stored with a null delivery address.
 - [ ] Email registration, confirmation requirement, sign-in, invalid credentials, reset email/deep link, session restore, sign out.
 - [ ] Confirm there is no phone-number-only sign-in or SMS/OTP prompt; the sign-up phone field is contact information only.
 - [ ] Delete account deliberately; verify Supabase user/profile/orders/proofs and local addresses are removed.
@@ -59,7 +65,11 @@ Status convention: `[A]` automated passed, `[E]` emulator passed, `[P]` physical
 ## Admin and security
 
 - [ ] Customer manipulates route/client state: admin screen remains blocked and RLS denies writes.
-- [ ] Admin sees customer contact, notes, type, payment and proof; menu/category/settings CRUD succeeds.
+- [ ] Admin sees a prominent pickup/delivery label, customer name, selectable
+  phone, delivery address/instructions, payment and item notes.
+- [ ] A pickup card states that the customer collects and no address is needed.
+- [ ] A legacy delivery order with no address shows an explicit warning instead
+  of failing to load.
 - [ ] Destructive menu/category/order actions require confirmation and failures recover.
 - [ ] Malicious REST/RPC tests from security guide all fail as expected.
 - [ ] Proof URL/object is not public; one customer cannot list/read another's file.
