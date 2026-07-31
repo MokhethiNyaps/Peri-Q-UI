@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1021766704313",
+    "project_id": "rastas-peri-q",
+    "storage_bucket": "rastas-peri-q.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1021766704313:android:0dccd9e3fa7e43b77a8f68",
+        "android_client_info": {
+          "package_name": "za.co.rastasperiq.ordering"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhTPCPp82fQ-XrT8V4wE58qUsqnogYtA8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

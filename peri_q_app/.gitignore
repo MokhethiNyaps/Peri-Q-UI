@@ -7,6 +7,9 @@
 /build/
 *.iml
 .env
+supabase/.env*
+firebase-service-account*.json
+*service-account-key*.json
 /release-config.json
 android/key.properties
 android/app/*.jks

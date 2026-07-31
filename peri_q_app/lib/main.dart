@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -5,6 +7,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'src/app.dart';
 import 'src/core/supabase_config.dart';
 import 'src/data/local/secure_auth_storage.dart';
+import 'src/data/notifications/firebase_push_notification_service.dart';
+import 'src/repositories/notification_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,6 +24,15 @@ Future<void> main() async {
     ),
   );
   final supabaseConfig = SupabaseConfig.fromSources();
+  var firebaseIsReady = false;
+
+  try {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    firebaseIsReady = true;
+  } catch (_) {
+    // Push notification startup must never prevent ordering from launching.
+  }
 
   if (supabaseConfig.isConfigured) {
     final sessionKey =
@@ -36,5 +49,23 @@ Future<void> main() async {
     );
   }
 
-  runApp(PeriQApp(supabaseConfig: supabaseConfig));
+  NotificationRepository notificationRepository =
+      const NoopNotificationRepository();
+  if (firebaseIsReady && supabaseConfig.isConfigured) {
+    try {
+      notificationRepository = await FirebasePushNotificationService.initialize(
+        client: Supabase.instance.client,
+      );
+    } catch (_) {
+      // Existing app functionality remains available if notification
+      // permission, device services, or local notification setup fails.
+    }
+  }
+
+  runApp(
+    PeriQApp(
+      supabaseConfig: supabaseConfig,
+      notificationRepository: notificationRepository,
+    ),
+  );
 }

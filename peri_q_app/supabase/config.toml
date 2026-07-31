@@ -1,0 +1,2 @@
+[functions.order-push]
+verify_jwt = true

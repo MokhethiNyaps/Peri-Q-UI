@@ -13,6 +13,7 @@ import 'package:peri_q_app/src/models/order.dart';
 import 'package:peri_q_app/src/models/todays_special_settings.dart';
 import 'package:peri_q_app/src/repositories/auth_repository.dart';
 import 'package:peri_q_app/src/repositories/menu_repository.dart';
+import 'package:peri_q_app/src/repositories/notification_repository.dart';
 import 'package:peri_q_app/src/repositories/order_repository.dart';
 import 'package:peri_q_app/src/repositories/preferences_repository.dart';
 import 'package:peri_q_app/src/repositories/store_repository.dart';
@@ -42,6 +43,9 @@ void main() {
         expect(harness.auth.upsertedName, 'New Customer');
         expect(harness.auth.upsertedPhone, '+27 71 234 5678');
         expect(harness.orders.lastUserId, 'new-user');
+        await Future<void>.delayed(Duration.zero);
+        expect(harness.notifications.registeredUserIds, ['new-user']);
+        expect(harness.notifications.registeredAdminRoles, [isFalse]);
       },
     );
 
@@ -84,6 +88,7 @@ void main() {
       expect(harness.controller.savedAddresses, isEmpty);
       expect(harness.controller.userId, isNull);
       expect(harness.auth.signedOut, isTrue);
+      expect(harness.notifications.unregisterCount, 1);
     });
   });
 
@@ -585,6 +590,8 @@ void main() {
         expect(harness.orders.requestIds, hasLength(2));
         expect(harness.orders.requestIds.first, harness.orders.requestIds.last);
         expect(harness.controller.cart, isEmpty);
+        await Future<void>.delayed(Duration.zero);
+        expect(harness.notifications.newOrderIds, ['order-2']);
       },
     );
 
@@ -595,7 +602,39 @@ void main() {
 
       await harness.controller.advanceOrderStatus(order);
       expect(harness.orders.updatedStatuses, [OrderStatus.preparing]);
+      await Future<void>.delayed(Duration.zero);
+      expect(harness.notifications.statusOrderIds, ['order-1']);
     });
+
+    test(
+      'notification failures never roll back committed order work',
+      () async {
+        final harness = _ControllerHarness(
+          appSettings: const AppSettings(
+            openingTime: '00:00',
+            closingTime: '00:00',
+          ),
+        );
+        harness.notifications.failRequests = true;
+        await harness.controller.bootstrapFuture;
+        await harness.controller.startGuestSession();
+        await harness.controller.updateCustomer(
+          name: 'Guest Customer',
+          phone: '0712345678',
+        );
+        harness.controller.addToCart(_menuItem(id: 'plate', name: 'Plate'));
+
+        final order = await harness.controller.placeOrder(
+          orderType: OrderType.pickup,
+          paymentMethod: PaymentMethod.cashCollection,
+        );
+        await harness.controller.advanceOrderStatus(order);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(harness.controller.cart, isEmpty);
+        expect(harness.orders.updatedStatuses, [OrderStatus.preparing]);
+      },
+    );
   });
 }
 
@@ -606,6 +645,7 @@ class _ControllerHarness {
     TodaysSpecialSettings? todaysSpecialSettings,
     AppSettings? appSettings,
     AppPreferences? seedPreferences,
+    _FakeNotificationRepository? notificationRepository,
   }) : auth = _FakeAuthRepository(),
        menu = _FakeMenuRepository(
          menuItems ?? const [],
@@ -615,6 +655,7 @@ class _ControllerHarness {
        preferences = _FakePreferencesRepository(
          seedPreferences ?? const AppPreferences(),
        ),
+       notifications = notificationRepository ?? _FakeNotificationRepository(),
        store = _FakeStoreRepository(
          appSettings ??
              AppSettings(
@@ -628,12 +669,14 @@ class _ControllerHarness {
       orderRepository: orders,
       preferencesRepository: preferences,
       storeRepository: store,
+      notificationRepository: notifications,
     );
   }
 
   final _FakeAuthRepository auth;
   final _FakeMenuRepository menu;
   final _FakeOrderRepository orders;
+  final _FakeNotificationRepository notifications;
   final _FakePreferencesRepository preferences;
   final _FakeStoreRepository store;
   late final AppController controller;
@@ -886,6 +929,57 @@ class _FakeOrderRepository implements OrderRepository {
     required String contentType,
   }) async {
     return 'proof/$orderId/$fileName';
+  }
+}
+
+class _FakeNotificationRepository implements NotificationRepository {
+  final List<String> registeredUserIds = [];
+  final List<bool> registeredAdminRoles = [];
+  final List<String> newOrderIds = [];
+  final List<String> statusOrderIds = [];
+  int unregisterCount = 0;
+  bool isDisposed = false;
+  bool failRequests = false;
+
+  @override
+  Future<void> registerForSession({
+    required String userId,
+    required bool isAdmin,
+  }) async {
+    if (failRequests) {
+      throw StateError('Notifications unavailable');
+    }
+    registeredUserIds.add(userId);
+    registeredAdminRoles.add(isAdmin);
+  }
+
+  @override
+  Future<void> unregisterCurrentSession() async {
+    if (failRequests) {
+      throw StateError('Notifications unavailable');
+    }
+    unregisterCount += 1;
+  }
+
+  @override
+  Future<void> notifyNewOrder(OrderModel order) async {
+    if (failRequests) {
+      throw StateError('Notifications unavailable');
+    }
+    newOrderIds.add(order.id);
+  }
+
+  @override
+  Future<void> notifyOrderStatusChanged(OrderModel order) async {
+    if (failRequests) {
+      throw StateError('Notifications unavailable');
+    }
+    statusOrderIds.add(order.id);
+  }
+
+  @override
+  void dispose() {
+    isDisposed = true;
   }
 }
 

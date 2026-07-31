@@ -43,6 +43,12 @@ Status convention: `[A]` automated passed, `[E]` emulator passed, `[P]` physical
 
 ## Connectivity and lifecycle
 
+- [ ] Android 13+: allow and deny notification permission; ordering remains usable in both cases.
+- [ ] Admin receives a sound/vibration `admin_orders` alert for a new order in foreground, background and terminated states.
+- [ ] Customer receives `client_order_updates` for Preparing, Ready, Completed and Cancelled in foreground, background and terminated states.
+- [ ] Notification tap opens the app; current Supabase order data is restored/refreshed.
+- [ ] Token refresh, reinstall, account switch, sign-out and account deletion do not leak one customer's notifications to another.
+- [ ] Retry/repeated UI actions do not generate duplicate notifications for the same order/status.
 - [ ] Slow mobile data: splash/menu/checkout progress remains clear.
 - [ ] Offline after one successful menu load: stale banner and cached menu visible; ordering safely disabled when settings cannot be verified.
 - [ ] Fresh install offline: retry screen, no fake success/data.

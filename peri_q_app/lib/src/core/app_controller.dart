@@ -11,6 +11,7 @@ import '../models/order.dart';
 import '../models/todays_special_settings.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/menu_repository.dart';
+import '../repositories/notification_repository.dart';
 import '../repositories/order_repository.dart';
 import '../repositories/preferences_repository.dart';
 import '../repositories/store_repository.dart';
@@ -23,6 +24,7 @@ class AppController extends ChangeNotifier {
     required this._orderRepository,
     required this._preferencesRepository,
     required this._storeRepository,
+    this._notificationRepository = const NoopNotificationRepository(),
   }) {
     bootstrapFuture = _bootstrap();
   }
@@ -32,6 +34,7 @@ class AppController extends ChangeNotifier {
   final OrderRepository _orderRepository;
   final PreferencesRepository _preferencesRepository;
   final StoreRepository _storeRepository;
+  final NotificationRepository _notificationRepository;
 
   late final Future<void> bootstrapFuture;
 
@@ -254,6 +257,7 @@ class AppController extends ChangeNotifier {
       _startWatchingOrders();
       _startWatchingAppSettings();
       _startWatchingMenu();
+      unawaited(_registerNotificationsForCurrentSession());
 
       if (!categories.contains(selectedMenuCategory)) {
         selectedMenuCategory = 'All';
@@ -349,6 +353,7 @@ class AppController extends ChangeNotifier {
   Future<void> signOut() async {
     await _orderChanges?.cancel();
     _orderChanges = null;
+    await _unregisterNotificationsBestEffort();
     await _authRepository.signOut();
     userId = null;
     userEmail = null;
@@ -365,6 +370,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> deleteAccount() async {
+    await _unregisterNotificationsBestEffort();
     await _authRepository.deleteAccount();
     await _orderChanges?.cancel();
     _orderChanges = null;
@@ -576,6 +582,7 @@ class AppController extends ChangeNotifier {
     orders = [order, ...orders];
     cart = [];
     notifyListeners();
+    unawaited(_notifyNewOrderBestEffort(order));
     return order;
   }
 
@@ -616,6 +623,7 @@ class AppController extends ChangeNotifier {
       status: nextStatus,
     );
     _replaceOrder(updatedOrder);
+    unawaited(_notifyOrderStatusBestEffort(updatedOrder));
   }
 
   Future<void> rejectOrder(OrderModel order) async {
@@ -624,6 +632,7 @@ class AppController extends ChangeNotifier {
       status: OrderStatus.cancelled,
     );
     _replaceOrder(updatedOrder);
+    unawaited(_notifyOrderStatusBestEffort(updatedOrder));
   }
 
   void reorder(OrderModel order) {
@@ -748,6 +757,46 @@ class AppController extends ChangeNotifier {
     _startWatchingOrders();
     await _savePreferences();
     notifyListeners();
+    unawaited(_registerNotificationsForCurrentSession());
+  }
+
+  Future<void> _registerNotificationsForCurrentSession() async {
+    final sessionUserId = userId;
+    if (sessionUserId == null || sessionUserId.isEmpty) {
+      return;
+    }
+    try {
+      await _notificationRepository.registerForSession(
+        userId: sessionUserId,
+        isAdmin: isAdmin,
+      );
+    } catch (_) {
+      // Push registration is best effort and must not block authentication.
+    }
+  }
+
+  Future<void> _unregisterNotificationsBestEffort() async {
+    try {
+      await _notificationRepository.unregisterCurrentSession();
+    } catch (_) {
+      // Signing out/deleting an account must remain available if FCM is down.
+    }
+  }
+
+  Future<void> _notifyNewOrderBestEffort(OrderModel order) async {
+    try {
+      await _notificationRepository.notifyNewOrder(order);
+    } catch (_) {
+      // The order is already committed; notification delivery is independent.
+    }
+  }
+
+  Future<void> _notifyOrderStatusBestEffort(OrderModel order) async {
+    try {
+      await _notificationRepository.notifyOrderStatusChanged(order);
+    } catch (_) {
+      // The status change remains authoritative even if push delivery fails.
+    }
   }
 
   void _startWatchingOrders() {
@@ -835,6 +884,7 @@ class AppController extends ChangeNotifier {
     _appSettingsChanges?.cancel();
     _menuItemChanges?.cancel();
     _menuCategoryChanges?.cancel();
+    _notificationRepository.dispose();
     super.dispose();
   }
 

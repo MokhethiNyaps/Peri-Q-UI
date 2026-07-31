@@ -13,14 +13,20 @@ import 'data/supabase/supabase_auth_repository.dart';
 import 'data/supabase/supabase_menu_repository.dart';
 import 'data/supabase/supabase_order_repository.dart';
 import 'data/supabase/supabase_store_repository.dart';
+import 'repositories/notification_repository.dart';
 import 'screens/splash_screen.dart';
 import 'screens/reset_password_screen.dart';
 import 'screens/supabase_config_missing_screen.dart';
 
 class PeriQApp extends StatefulWidget {
-  const PeriQApp({super.key, required this.supabaseConfig});
+  const PeriQApp({
+    super.key,
+    required this.supabaseConfig,
+    this.notificationRepository = const NoopNotificationRepository(),
+  });
 
   final SupabaseConfig supabaseConfig;
+  final NotificationRepository notificationRepository;
 
   @override
   State<PeriQApp> createState() => _PeriQAppState();
@@ -49,6 +55,7 @@ class _PeriQAppState extends State<PeriQApp> {
       orderRepository: SupabaseOrderRepository(client: client),
       preferencesRepository: SharedPreferencesRepository(),
       storeRepository: SupabaseStoreRepository(client: client),
+      notificationRepository: widget.notificationRepository,
     );
 
     _authSubscription = client.auth.onAuthStateChange.listen(
