@@ -54,9 +54,10 @@ order is for delivery or pickup, with the customer phone number and delivery
 address/instructions where required. Includes compatibility handling for older
 orders and reliability checks for both fulfilment types.
 
-**Release notes (1.0.2 draft):** Faster, more reliable app launch and clearer
-feedback while placing an order. Improved phone-number validation during
-sign-up. Includes closed-test stability and release validation updates.
+**Release notes (1.0.2 draft):** Updated the app icon with the Rasta Peri Q
+brand mark for a clearer home-screen experience. Faster, more reliable app
+launch, clearer feedback while placing an order, and improved phone-number
+validation during sign-up. Includes closed-test stability updates.
 
 - [x] Support email: `contact@rastasperiq.co.za`
 - [x] Support website: `https://rastasperiq.co.za/`

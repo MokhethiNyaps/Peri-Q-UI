@@ -2,10 +2,20 @@
 
 ## Outcome
 
-This release is ready for the next Google Play closed-testing upload. It keeps
-the existing application ID, upload-signing identity, backend contract, UI
-structure, authentication methods, and order flow unchanged except for the
-three focused improvements below.
+This replacement release is ready for the next Google Play closed-testing
+upload. It keeps version `1.0.2` / code `3`, the existing application ID,
+upload-signing identity, backend contract, UI structure, authentication
+methods, and order flow unchanged. It supersedes the previously generated
+build-3 files, which were removed before this release was produced.
+
+## Launcher icon replacement
+
+The installed Android launcher icon now uses
+`assets/images/brand_mark.png`. The adaptive-icon foreground and all legacy
+Android density fallbacks were regenerated: mdpi (48 px), hdpi (72 px), xhdpi
+(96 px), xxhdpi (144 px), and xxxhdpi (192 px). This removes the prior
+small-text-heavy icon from the installed app while preserving the existing
+adaptive icon background treatment on Android 8 and newer.
 
 ## Selected changes
 
@@ -74,22 +84,23 @@ errors or change-related warnings were introduced.
 
 | Artifact | SHA-256 |
 |---|---|
-| `release/android/rastas-peri-q-v1.0.2-build3-closed-test-maintenance-release.apk` | `167D43A8738EB713EB5DD4A76547A9067F6C325EA9B3EF04E7561EFC74B3A6BC` |
-| `release/android/rastas-peri-q-v1.0.2-build3-closed-test-maintenance-release.aab` | `2CF35F154A7137D477FB800231392E0279C51BD2D05C4CF9B54F670868262900` |
-| `release/android/rastas-peri-q-v1.0.2-build3-closed-test-maintenance-r8-mapping.txt` | `152389278FD6CCEE0D015EB6FB355DF420E80AF2929BF1FF27E9FF70EBCC79C2` |
-| `release/android/rastas-peri-q-v1.0.2-build3-closed-test-maintenance-dart-symbols.zip` | `E0B253CBED84B5F7065768EED4484591E7D2DC18ADF9F865295A22D3D3146EC8` |
+| `release/android/rastas-peri-q-v1.0.2-build3-brand-mark-launcher-release.apk` | `FE2279C28FADDCBDE6DA1DC1E8F89243CCA77CE81F4CCFC82649AED69D74ADD9` |
+| `release/android/rastas-peri-q-v1.0.2-build3-brand-mark-launcher-release.aab` | `466A990DEF20D3BF1CBD3AC827B17232DF2D8CD47D560C9D1B8947291B048B9D` |
+| `release/android/rastas-peri-q-v1.0.2-build3-brand-mark-launcher-r8-mapping.txt` | `152389278FD6CCEE0D015EB6FB355DF420E80AF2929BF1FF27E9FF70EBCC79C2` |
 
 `release/android/` is intentionally ignored by Git. Retain the mapping file
-and Dart symbols with this exact AAB for any future crash-symbolication need.
+with this exact AAB for any future crash-symbolication need.
 
 ## Manual smoke test before upload
 
-1. Install the signed APK on a test Android device and cold-launch it. Confirm
-   that the splash is visible for at least 1.4 seconds and then routes normally.
-2. On sign-up, verify a formatted valid number is accepted and a number with
+1. Install the signed APK on a test Android device and confirm the phone's
+   launcher shows the new Rasta Peri Q brand-mark icon.
+2. Cold-launch it. Confirm that the splash is visible for at least 1.4 seconds
+   and then routes normally.
+3. On sign-up, verify a formatted valid number is accepted and a number with
    fewer than nine digits is rejected.
-3. Place one pickup or delivery test order. Confirm the button immediately
+4. Place one pickup or delivery test order. Confirm the button immediately
    changes to the spinner state, completes once, and the usual confirmation and
    order-status flow remains intact.
-4. Upload **only the AAB** to the existing closed-testing track. The APK is for
+5. Upload **only the AAB** to the existing closed-testing track. The APK is for
    direct device testing and must not be uploaded to Play Console.
