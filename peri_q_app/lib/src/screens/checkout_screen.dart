@@ -363,11 +363,31 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: SafeArea(
           child: ElevatedButton(
+            key: const ValueKey('checkout-place-order-button'),
             onPressed: isSubmitting ? null : _submitOrder,
-            child: Text(
-              isSubmitting
-                  ? 'Placing order...'
-                  : 'Place Order • R${total.toStringAsFixed(0)}',
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 160),
+              child: isSubmitting
+                  ? const Row(
+                      key: ValueKey('checkout-placing'),
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Text('Placing order…'),
+                      ],
+                    )
+                  : Text(
+                      key: const ValueKey('checkout-ready'),
+                      'Place Order • R${total.toStringAsFixed(0)}',
+                    ),
             ),
           ),
         ),

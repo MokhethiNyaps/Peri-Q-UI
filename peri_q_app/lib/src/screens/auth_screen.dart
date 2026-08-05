@@ -566,9 +566,9 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   String? _validatePhone(String? value) {
-    final normalized = (value ?? '').replaceAll(RegExp(r'[\s()-]'), '');
-    if (normalized.length < 8) {
-      return 'Enter a valid phone number.';
+    final normalized = (value ?? '').replaceAll(RegExp(r'[\s()\-+]'), '');
+    if (normalized.length < 9) {
+      return 'Enter a valid phone number (min 9 digits).';
     }
     return null;
   }

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
@@ -29,8 +27,10 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 2),
     )..repeat();
 
-    Timer(const Duration(seconds: 2), () async {
-      await widget.controller.bootstrapFuture;
+    Future.wait<void>([
+      widget.controller.bootstrapFuture,
+      Future<void>.delayed(const Duration(milliseconds: 1400)),
+    ]).then((_) {
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(

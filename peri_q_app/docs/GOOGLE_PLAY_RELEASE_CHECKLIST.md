@@ -5,8 +5,9 @@ Checked against official Google Play guidance available on 18 July 2026. The exa
 ## Technical release
 
 - [x] Permanent candidate application ID/namespace: `za.co.rastasperiq.ordering` (owner must confirm before app creation).
-- [x] First closed-test release used `1.0.0` / code `1`; the second candidate is
-  `1.0.1` / code `2`, preserving the existing package and signing identity.
+- [x] Closed-test releases use increasing version codes: `1.0.0` / code `1`,
+  `1.0.1` / code `2`, and this candidate `1.0.2` / code `3`, preserving the
+  existing package and signing identity.
 - [x] Compile/target Android 16 API 36. From 31 August 2026, Play requires API 36 for new phone/tablet apps/updates: https://support.google.com/googleplay/android-developer/answer/11926878
 - [x] 64-bit `arm64-v8a` present; App Bundle also contains armv7/x86_64 and Play will split per device.
 - [x] INTERNET, POST_NOTIFICATIONS and VIBRATE are present for transactional
@@ -53,6 +54,10 @@ order is for delivery or pickup, with the customer phone number and delivery
 address/instructions where required. Includes compatibility handling for older
 orders and reliability checks for both fulfilment types.
 
+**Release notes (1.0.2 draft):** Faster, more reliable app launch and clearer
+feedback while placing an order. Improved phone-number validation during
+sign-up. Includes closed-test stability and release validation updates.
+
 - [x] Support email: `contact@rastasperiq.co.za`
 - [x] Support website: `https://rastasperiq.co.za/`
 - [x] Privacy URL: `https://rastasperiq.co.za/privacy-policy/`
@@ -93,7 +98,8 @@ orders and reliability checks for both fulfilment types.
 
 ## Release decision
 
-After completing the owner-dashboard delivery/pickup smoke test, upload
-`release/android/rastas-peri-q-v1.0.1-build2-order-details-release.aab` as the
-second closed-test release. Keep the matching APK for direct device testing.
-Google Play approval cannot be guaranteed.
+After completing the v1.0.2 smoke test in
+`docs/CLOSED_TEST_V1_0_2_REPORT.md`, upload
+`release/android/rastas-peri-q-v1.0.2-build3-closed-test-maintenance-release.aab`
+as the next closed-test release. Keep the matching APK for direct device
+testing. Google Play approval cannot be guaranteed.

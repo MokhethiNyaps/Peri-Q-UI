@@ -7,7 +7,7 @@ $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $releaseConfigPath = Join-Path $projectRoot 'release-config.json'
 $signingConfigPath = Join-Path $projectRoot 'android\key.properties'
-$symbolsPath = Join-Path $projectRoot 'release\android\symbols-v1.0.1-build2-order-details'
+$symbolsPath = Join-Path $projectRoot 'release\android\symbols-v1.0.2-build3-closed-test-maintenance'
 
 if (-not (Test-Path -LiteralPath $releaseConfigPath)) {
     throw "Missing ignored release configuration: $releaseConfigPath"

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -18,7 +19,9 @@ import 'package:peri_q_app/src/repositories/order_repository.dart';
 import 'package:peri_q_app/src/repositories/preferences_repository.dart';
 import 'package:peri_q_app/src/repositories/store_repository.dart';
 import 'package:peri_q_app/src/screens/auth_screen.dart';
+import 'package:peri_q_app/src/screens/checkout_screen.dart';
 import 'package:peri_q_app/src/screens/reset_password_screen.dart';
+import 'package:peri_q_app/src/screens/splash_screen.dart';
 
 void main() {
   group('AppController authentication', () {
@@ -266,6 +269,98 @@ void main() {
       expect(find.text('Enter your full name.'), findsOneWidget);
       expect(find.text('Enter a valid email address.'), findsOneWidget);
       expect(find.text('Use at least 6 characters.'), findsOneWidget);
+    });
+
+    testWidgets('accepts formatted phone numbers and rejects short ones', (
+      tester,
+    ) async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+      await tester.pumpWidget(
+        MaterialApp(home: AuthScreen(controller: harness.controller)),
+      );
+
+      await tester.tap(find.byKey(const ValueKey('auth-create-account-tab')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-sign-up-phone-field')),
+        '07123',
+      );
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('auth-sign-up-button')),
+      );
+      await tester.tap(find.byKey(const ValueKey('auth-sign-up-button')));
+      await tester.pump();
+      expect(
+        find.text('Enter a valid phone number (min 9 digits).'),
+        findsOneWidget,
+      );
+
+      await tester.enterText(
+        find.byKey(const ValueKey('auth-sign-up-phone-field')),
+        '+27 73 642 3549',
+      );
+      await tester.pump();
+      expect(
+        find.text('Enter a valid phone number (min 9 digits).'),
+        findsNothing,
+      );
+    });
+  });
+
+  group('SplashScreen', () {
+    testWidgets('waits for the minimum display time before routing', (
+      tester,
+    ) async {
+      final harness = _ControllerHarness();
+      await harness.controller.bootstrapFuture;
+      await tester.pumpWidget(
+        MaterialApp(home: SplashScreen(controller: harness.controller)),
+      );
+
+      await tester.pump(const Duration(milliseconds: 1399));
+      expect(find.byType(SplashScreen), findsOneWidget);
+
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
+      expect(find.byType(AuthScreen), findsOneWidget);
+    });
+  });
+
+  group('CheckoutScreen', () {
+    testWidgets('shows a spinner while an order is being submitted', (
+      tester,
+    ) async {
+      final delayedOrders = _DelayedOrderRepository();
+      final harness = _ControllerHarness(
+        orderRepository: delayedOrders,
+        appSettings: const AppSettings(
+          openingTime: '00:00',
+          closingTime: '00:00',
+        ),
+      );
+      await harness.controller.bootstrapFuture;
+      await harness.controller.startGuestSession();
+      await harness.controller.updateCustomer(
+        name: 'Test Customer',
+        phone: '0712345678',
+      );
+      harness.controller.addToCart(_menuItem(id: 'plate', name: 'Plate'));
+
+      await tester.pumpWidget(
+        MaterialApp(home: CheckoutScreen(controller: harness.controller)),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('checkout-place-order-button')),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('checkout-placing')), findsOneWidget);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+      delayedOrders.completeSubmission();
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Order Placed!'), findsOneWidget);
     });
   });
 
@@ -691,12 +786,13 @@ class _ControllerHarness {
     AppSettings? appSettings,
     AppPreferences? seedPreferences,
     _FakeNotificationRepository? notificationRepository,
+    _FakeOrderRepository? orderRepository,
   }) : auth = _FakeAuthRepository(),
        menu = _FakeMenuRepository(
          menuItems ?? const [],
          menuCategories ?? const [],
        ),
-       orders = _FakeOrderRepository(),
+       orders = orderRepository ?? _FakeOrderRepository(),
        preferences = _FakePreferencesRepository(
          seedPreferences ?? const AppPreferences(),
        ),
@@ -976,6 +1072,21 @@ class _FakeOrderRepository implements OrderRepository {
     required String contentType,
   }) async {
     return 'proof/$orderId/$fileName';
+  }
+}
+
+class _DelayedOrderRepository extends _FakeOrderRepository {
+  final _submissionCompleter = Completer<OrderModel>();
+  OrderModel? _pendingOrder;
+
+  @override
+  Future<OrderModel> createOrder(OrderDraft draft, {String? userId}) async {
+    _pendingOrder = await super.createOrder(draft, userId: userId);
+    return _submissionCompleter.future;
+  }
+
+  void completeSubmission() {
+    _submissionCompleter.complete(_pendingOrder);
   }
 }
 
