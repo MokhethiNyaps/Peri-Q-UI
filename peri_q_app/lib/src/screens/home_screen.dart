@@ -310,7 +310,7 @@ class _HomeHeader extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                "Rasta's Peri Q",
+                "RastasperiQ",
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(

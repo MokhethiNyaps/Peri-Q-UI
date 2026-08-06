@@ -36,7 +36,7 @@ class PrivacyAndSupportScreen extends StatelessWidget {
           Text('Need help?', style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 8),
           Text(
-            'Contact Rasta’s Peri Q Chesanyama about an order, account, payment proof or data request.',
+            'Contact RastasperiQ about an order, account, payment proof or data request.',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           const SizedBox(height: 16),
@@ -66,7 +66,7 @@ class PrivacyAndSupportScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _ExternalLinkTile(
-            title: 'Rasta\'s Peri Q website',
+            title: 'RastasperiQ website',
             subtitle: 'rastasperiq.co.za',
             icon: Icons.language_rounded,
             onTap: () => _open(context, AppExternalLinks.website),

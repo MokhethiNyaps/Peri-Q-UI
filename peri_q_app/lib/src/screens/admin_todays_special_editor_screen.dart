@@ -149,7 +149,7 @@ class _AdminTodaysSpecialEditorScreenState
       previewImageBytes = null;
       imagePathController.text = _defaultImagePath;
     });
-    _showMessage('Image reset to the Rasta\'s Peri Q brand mark.');
+    _showMessage('Image reset to the RastasperiQ brand mark.');
   }
 
   void _showMessage(String message, {bool isError = false}) {

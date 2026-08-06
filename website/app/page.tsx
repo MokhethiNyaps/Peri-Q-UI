@@ -85,7 +85,7 @@ export default function HomePage() {
               <span className="block text-orange">proper fire.</span>
             </h1>
             <p className="mt-7 max-w-xl text-base leading-8 text-white/68 sm:text-lg">
-              Your Rasta&apos;s Peri Q favourites, ordered simply. Browse the menu,
+              Your RastasperiQ favourites, ordered simply. Browse the menu,
               choose pickup or delivery, and follow your order from your phone.
             </p>
 
@@ -127,7 +127,7 @@ export default function HomePage() {
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(240,120,32,0.16),transparent_58%)]" />
               <Image
                 src="/brand-mark.png"
-                alt="Rasta's Peri Q Chesanyama — Flame. Flavour. Vibes."
+                alt="RastasperiQ — Flame. Flavour. Vibes."
                 width={1024}
                 height={1024}
                 priority
@@ -158,7 +158,7 @@ export default function HomePage() {
               <h2 className="section-title mt-5">Your order, without the guesswork.</h2>
             </div>
             <p className="max-w-xl text-base leading-8 text-ash lg:ml-auto">
-              The Rasta&apos;s Peri Q app keeps ordering clear and convenient, whether you
+              The RastasperiQ app keeps ordering clear and convenient, whether you
               want to collect your meal or have it delivered.
             </p>
           </div>
@@ -246,7 +246,7 @@ export default function HomePage() {
                 <MapPin size={23} aria-hidden="true" />
               </span>
               <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange">
-                Rasta&apos;s Peri Q Chesanyama
+                RastasperiQ
               </p>
               <address className="mt-3 text-xl font-bold not-italic leading-8 text-white">
                 28 King Edward Rd
@@ -270,8 +270,7 @@ export default function HomePage() {
               Questions? We&apos;re here.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-8 text-white/72">
-              Message, call, or email the team for help with an order or the Rasta&apos;s
-              Peri Q app.
+              Message, call, or email the team for help with an order or the RastasperiQ app.
             </p>
           </div>
           <SocialLinks />

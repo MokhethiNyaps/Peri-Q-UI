@@ -1,7 +1,7 @@
 {
-  "name": "Rasta's Peri Q Chesanyama",
-  "short_name": "Rasta Peri Q",
-  "description": "Flame-grilled food from Rasta's Peri Q Chesanyama.",
+  "name": "RastasperiQ",
+  "short_name": "RastasperiQ",
+  "description": "Flame-grilled food from RastasperiQ.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1A1A1A",

@@ -163,7 +163,7 @@ class _PeriQAppState extends State<PeriQApp> {
       return MaterialApp(
         navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
-        title: 'Peri Q',
+        title: 'RastasperiQ',
         theme: AppTheme.lightTheme,
         home: const SupabaseConfigMissingScreen(),
       );
@@ -175,7 +175,7 @@ class _PeriQAppState extends State<PeriQApp> {
         return MaterialApp(
           navigatorKey: _navigatorKey,
           debugShowCheckedModeBanner: false,
-          title: 'Peri Q',
+          title: 'RastasperiQ',
           theme: AppTheme.lightTheme,
           home: SplashScreen(controller: controller!),
         );

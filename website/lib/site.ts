@@ -1,8 +1,8 @@
 export const siteConfig = {
-  name: "Rasta's Peri Q Chesanyama",
-  shortName: "Rasta Peri Q",
+  name: "RastasperiQ",
+  shortName: "RastasperiQ",
   description:
-    "Flame-grilled food, easy ordering, and pickup or delivery from Rasta's Peri Q Chesanyama in Bloemfontein.",
+    "Flame-grilled food, easy ordering, and pickup or delivery from RastasperiQ in Bloemfontein.",
   url: "https://rastasperiq.co.za",
   email: "contact@rastasperiq.co.za",
   phones: ["+27 73 642 3549", "+27 67 227 1229"],

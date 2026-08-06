@@ -7,8 +7,8 @@ import "./globals.css";
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {
-    default: "Rasta's Peri Q Chesanyama | Flame. Flavour. Vibes.",
-    template: "%s | Rasta's Peri Q",
+    default: "RastasperiQ | Flame. Flavour. Vibes.",
+    template: "%s | RastasperiQ",
   },
   description: siteConfig.description,
   applicationName: siteConfig.name,
@@ -23,14 +23,14 @@ export const metadata: Metadata = {
     locale: "en_ZA",
     url: siteConfig.url,
     siteName: siteConfig.name,
-    title: "Rasta's Peri Q Chesanyama",
+    title: "RastasperiQ",
     description: siteConfig.description,
     images: [
       {
         url: "/brand-mark.png",
         width: 1024,
         height: 1024,
-        alt: "Rasta's Peri Q Chesanyama logo",
+        alt: "RastasperiQ logo",
       },
     ],
   },

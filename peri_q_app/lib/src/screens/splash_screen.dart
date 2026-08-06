@@ -102,17 +102,10 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  "RASTA'S",
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white70,
-                    letterSpacing: 5,
-                  ),
-                ),
-                Text(
-                  'PERI Q',
+                  "RASTASPERIQ",
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                     color: Colors.white,
-                    fontSize: 48,
+                    fontSize: 44, // Slightly smaller to fit if needed
                   ),
                 ),
                 Text(

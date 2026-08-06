@@ -10,7 +10,7 @@ export function Brand({ compact = false, inverted = false }: BrandProps) {
   return (
     <Link
       href="/"
-      aria-label="Rasta's Peri Q home"
+      aria-label="RastasperiQ home"
       className="group flex items-center gap-3"
     >
       <span
@@ -35,7 +35,7 @@ export function Brand({ compact = false, inverted = false }: BrandProps) {
             inverted ? "text-white" : "text-charcoal"
           }`}
         >
-          Rasta&apos;s Peri Q
+          RastasperiQ
         </span>
         {!compact && (
           <span

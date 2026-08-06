@@ -20,9 +20,9 @@ abstract final class AppExternalLinks {
   static final Uri supportEmail = Uri(
     scheme: 'mailto',
     path: supportEmailAddress,
-    queryParameters: {'subject': "Rasta's Peri Q app support"},
+    queryParameters: {'subject': "RastasperiQ app support"},
   );
   static final Uri whatsApp = Uri.parse(
-    'https://wa.me/$whatsAppNumber?text=Hello%20Rasta%27s%20Peri%20Q%2C%20I%20need%20help%20with%20the%20app.',
+    'https://wa.me/$whatsAppNumber?text=Hello%20RastasperiQ%2C%20I%20need%20help%20with%20the%20app.',
   );
 }

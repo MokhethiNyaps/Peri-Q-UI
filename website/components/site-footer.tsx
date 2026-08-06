@@ -46,7 +46,7 @@ export function SiteFooter() {
 
       <div className="border-t border-white/10">
         <div className="site-shell flex flex-col gap-2 py-5 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Rasta&apos;s Peri Q Chesanyama.</p>
+          <p>© {new Date().getFullYear()} RastasperiQ.</p>
           <p>Flame. Flavour. Vibes.</p>
         </div>
       </div>
