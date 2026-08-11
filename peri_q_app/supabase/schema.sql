@@ -168,7 +168,7 @@ create table if not exists public.app_settings (
   todays_special_label text not null default 'TODAY''S SPECIAL',
   todays_special_title text not null default 'Chicken, Pork & Wors Plate',
   todays_special_subtitle text not null default 'R70 - Flame-grilled meats served with pap',
-  todays_special_image_path text not null default 'assets/images/brand_mark.png',
+  todays_special_image_path text not null default 'assets/images/white-app-icon.png',
   todays_special_menu_item_id text default 'combo-chicken-pork-wors',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
@@ -184,7 +184,7 @@ alter table public.app_settings
   add column if not exists todays_special_label text not null default 'TODAY''S SPECIAL',
   add column if not exists todays_special_title text not null default 'Chicken, Pork & Wors Plate',
   add column if not exists todays_special_subtitle text not null default 'R70 - Flame-grilled meats served with pap',
-  add column if not exists todays_special_image_path text not null default 'assets/images/brand_mark.png',
+  add column if not exists todays_special_image_path text not null default 'assets/images/white-app-icon.png',
   add column if not exists todays_special_menu_item_id text default 'combo-chicken-pork-wors';
 
 drop trigger if exists app_settings_touch_updated_at on public.app_settings;
@@ -200,7 +200,7 @@ update public.app_settings
 set
   todays_special_title = 'Chicken, Pork & Wors Plate',
   todays_special_subtitle = 'R70 - Flame-grilled meats served with pap',
-  todays_special_image_path = 'assets/images/brand_mark.png',
+  todays_special_image_path = 'assets/images/white-app-icon.png',
   todays_special_menu_item_id = 'combo-chicken-pork-wors'
 where id = 'default'
   and (
@@ -283,7 +283,7 @@ values
     'Flame-grilled chicken, juicy pork and traditional wors served with pap.',
     70,
     'Combo Plates',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     25,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -294,7 +294,7 @@ values
     'Grilled chicken, wors and tender liver served with pap.',
     70,
     'Combo Plates',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     25,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -305,7 +305,7 @@ values
     'Tender beef and traditional wors served with pap.',
     60,
     'Combo Plates',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     25,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -316,7 +316,7 @@ values
     'A hearty combination of pork, beef and wors served with pap.',
     60,
     'Combo Plates',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     25,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -327,7 +327,7 @@ values
     'Choice of pork, beef or chicken served with liver and wors, accompanied by pap.',
     80,
     'Combo Plates',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     25,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -338,7 +338,7 @@ values
     'Grilled pork served with pap.',
     40,
     'Pork Meals',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     20,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -349,7 +349,7 @@ values
     'Tender pork and traditional wors served with pap.',
     50,
     'Pork Meals',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     20,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -360,7 +360,7 @@ values
     'Grilled chicken and wors served with pap and fresh salad.',
     50,
     'Chicken Meals',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     20,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -371,7 +371,7 @@ values
     'Tender liver served with pap and fresh salad.',
     50,
     'Liver Meals',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     20,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -382,7 +382,7 @@ values
     'Traditional liver meal served with pap.',
     40,
     'Liver Meals',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     20,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -393,7 +393,7 @@ values
     'Traditional South African wors served with pap.',
     50,
     'Wors Meals',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     20,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -404,7 +404,7 @@ values
     'Assorted grilled meats served with generous portions of pap. Perfect for sharing with family and friends.',
     350,
     'Family Meals',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     35,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -415,7 +415,7 @@ values
     'From R60. Choose your preferred meat served with pap.',
     60,
     'Build Your Own Meal',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     25,
     array['Mild', 'Medium', 'Hot', 'Extra Hot']
@@ -426,7 +426,7 @@ values
     'Additional serving of freshly prepared pap.',
     10,
     'Sides',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     10,
     array['Regular']
@@ -437,7 +437,7 @@ values
     'Fresh mixed salad.',
     10,
     'Sides',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     10,
     array['Regular']
@@ -448,7 +448,7 @@ values
     'Sweet and smoky barbecue sauce.',
     0,
     'Sauces',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     2,
     array['Regular']
@@ -459,7 +459,7 @@ values
     'Signature mixed sauce packed with flavour.',
     0,
     'Sauces',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     2,
     array['Regular']
@@ -470,7 +470,7 @@ values
     'Light and zesty lemon herb sauce.',
     0,
     'Sauces',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     2,
     array['Regular']
@@ -481,7 +481,7 @@ values
     'Hot and spicy peri-peri sauce.',
     0,
     'Sauces',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     2,
     array['Regular']
@@ -492,7 +492,7 @@ values
     'Chilled 330ml can of Coca-Cola.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -503,7 +503,7 @@ values
     'Chilled 330ml can of Coca-Cola No Sugar.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -514,7 +514,7 @@ values
     'Chilled 330ml can of Fanta Orange.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -525,7 +525,7 @@ values
     'Chilled 330ml can of Sprite.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -536,7 +536,7 @@ values
     'Chilled 330ml can of Stoney Ginger Beer.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -547,7 +547,7 @@ values
     'Chilled 330ml can of Creme Soda.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -558,7 +558,7 @@ values
     'Chilled 330ml can of Sparletta Pine Nut.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -569,7 +569,7 @@ values
     'Chilled 330ml can of Sparletta Cream Soda.',
     15,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -580,7 +580,7 @@ values
     'Chilled 500ml bottle of Bonaqua still water.',
     12,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -591,7 +591,7 @@ values
     'Chilled 500ml bottle of Bonaqua sparkling water.',
     12,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -602,7 +602,7 @@ values
     'Chilled 330ml can of Appletiser.',
     20,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']
@@ -613,7 +613,7 @@ values
     'Chilled 330ml can of Grapetiser Red.',
     20,
     'Cold Drinks',
-    'assets/images/brand_mark.png',
+    'assets/images/white-app-icon.png',
     true,
     5,
     array['Regular']

@@ -55,7 +55,7 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
     imagePathController = TextEditingController(text: special.imagePath);
     imageOptions = {
       ...widget.controller.menuItems.map((item) => item.imagePath),
-      'assets/images/brand_mark.png',
+      'assets/images/white-app-icon.png',
     }.toList();
   }
 
@@ -340,7 +340,7 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                     controller: imagePathController,
                     decoration: const InputDecoration(
                       labelText: 'Image Path or Public URL',
-                      hintText: 'assets/images/brand_mark.png',
+                      hintText: 'assets/images/white-app-icon.png',
                     ),
                     validator: _requiredText(
                       'Enter an image asset path or URL.',

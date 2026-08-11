@@ -13,14 +13,14 @@ import { siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Delete Your Account",
   description:
-    "Instructions for deleting a Rasta's Peri Q account and associated personal information.",
+    "Instructions for deleting a RastasperiQ account and associated personal information.",
   alternates: { canonical: "/delete-account/" },
 };
 
 const deletionEmail = `mailto:${siteConfig.email}?subject=${encodeURIComponent(
-  "Rasta's Peri Q account deletion request",
+  "RastasperiQ account deletion request",
 )}&body=${encodeURIComponent(
-  "Hello Rasta's Peri Q team,\n\nPlease delete my app account and associated personal information.\n\nAccount email or phone number:\n\nThank you.",
+  "Hello RastasperiQ team,\n\nPlease delete my app account and associated personal information.\n\nAccount email or phone number:\n\nThank you.",
 )}`;
 
 export default function DeleteAccountPage() {
@@ -45,7 +45,7 @@ export default function DeleteAccountPage() {
               Delete your account
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">
-              You can request deletion from inside the Rasta&apos;s Peri Q app or contact
+              You can request deletion from inside the RastasperiQ app or contact
               us directly if you cannot access your account.
             </p>
           </div>
@@ -96,7 +96,7 @@ export default function DeleteAccountPage() {
                 </a>
                 <a
                   href={`${siteConfig.whatsappUrl}?text=${encodeURIComponent(
-                    "Hello, I need help deleting my Rasta's Peri Q app account.",
+                    "Hello, I need help deleting my RastasperiQ app account.",
                   )}`}
                   target="_blank"
                   rel="noreferrer"

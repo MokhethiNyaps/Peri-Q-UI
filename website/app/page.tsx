@@ -53,7 +53,7 @@ export default function HomePage() {
     "@type": "Restaurant",
     name: siteConfig.name,
     url: siteConfig.url,
-    logo: `${siteConfig.url}/brand-mark.png`,
+    logo: `${siteConfig.url}/Logo.png`,
     email: siteConfig.email,
     telephone: siteConfig.phones[0],
     address: {
@@ -126,10 +126,10 @@ export default function HomePage() {
             <div className="hero-logo-wrap relative aspect-square overflow-hidden rounded-[3.25rem] bg-cream p-7 ring-1 ring-orange/20 sm:p-10">
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_28%,rgba(240,120,32,0.16),transparent_58%)]" />
               <Image
-                src="/brand-mark.png"
-                alt="RastasperiQ — Flame. Flavour. Vibes."
-                width={1024}
-                height={1024}
+                src="/logo-squere.png"
+                alt="RastasperiQ logo"
+                width={1254}
+                height={1254}
                 priority
                 className="relative h-full w-full scale-[1.28] object-contain drop-shadow-[0_28px_36px_rgba(0,0,0,0.45)]"
               />

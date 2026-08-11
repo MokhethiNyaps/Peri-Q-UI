@@ -609,7 +609,7 @@ class _BrandHeader extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15),
             child: Image.asset(
-              'assets/images/brand_mark.png',
+              'assets/images/white-app-icon.png',
               fit: BoxFit.contain,
             ),
           ),
@@ -619,7 +619,7 @@ class _BrandHeader extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "RASTASPERIQ",
+              "RastasperiQ",
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: Colors.white,
                 fontWeight: FontWeight.w800,

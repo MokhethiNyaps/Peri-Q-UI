@@ -610,7 +610,7 @@ void main() {
         description: 'A plate',
         price: 60,
         category: 'Meals',
-        imagePath: 'assets/images/brand_mark.png',
+        imagePath: 'assets/images/white-app-icon.png',
         addOns: const [AddOnOption(name: 'Extra sauce', price: 5)],
       );
 
@@ -1216,7 +1216,7 @@ MenuItemModel _menuItem({
     description: '$name description',
     price: 50,
     category: category,
-    imagePath: 'assets/images/brand_mark.png',
+    imagePath: 'assets/images/white-app-icon.png',
     isAvailable: isAvailable,
   );
 }

@@ -123,7 +123,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        'Your recovery link has been verified. Enter a new password for your Peri Q account.',
+                        'Your recovery link has been verified. Enter a new password for your RastasperiQ account.',
                         style: Theme.of(context).textTheme.bodyLarge,
                         textAlign: TextAlign.center,
                       ),

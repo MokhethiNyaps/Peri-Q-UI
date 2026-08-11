@@ -34,7 +34,7 @@ class _AdminTodaysSpecialEditorScreenState
 
   late final List<String> imageOptions;
 
-  static const _defaultImagePath = 'assets/images/brand_mark.png';
+  static const _defaultImagePath = 'assets/images/white-app-icon.png';
   static const _maxImageBytes = 5 * 1024 * 1024;
 
   @override
@@ -375,7 +375,7 @@ class _AdminTodaysSpecialEditorScreenState
               controller: imagePathController,
               decoration: const InputDecoration(
                 labelText: 'Image Path or URL',
-                hintText: 'assets/images/brand_mark.png',
+                hintText: 'assets/images/white-app-icon.png',
               ),
               validator: _requiredText('Enter an image asset path or URL.'),
               onChanged: (_) => setState(() => previewImageBytes = null),

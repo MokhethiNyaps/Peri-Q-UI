@@ -8,8 +8,8 @@
   "theme_color": "#C8240B",
   "icons": [
     {
-      "src": "/brand-mark.png",
-      "sizes": "1024x1024",
+      "src": "/white-app-icon.png",
+      "sizes": "1254x1254",
       "type": "image/png",
       "purpose": "any"
     }

@@ -1,14 +1,14 @@
 # Google Play Release Checklist
 
-Checked against official Google Play guidance available on 18 July 2026. The exact requirements shown in the owner's Play Console are authoritative.
+Checked against official Google Play and Android guidance available on 11 August 2026. The exact requirements shown in the owner's Play Console are authoritative.
 
 ## Technical release
 
 - [x] Permanent candidate application ID/namespace: `za.co.rastasperiq.ordering` (owner must confirm before app creation).
 - [x] Closed-test releases use increasing version codes: `1.0.0` / code `1`,
-  `1.0.1` / code `2`, and this candidate `1.0.2` / code `3`, preserving the
-  existing package and signing identity.
-- [x] Compile/target Android 16 API 36. From 31 August 2026, Play requires API 36 for new phone/tablet apps/updates: https://support.google.com/googleplay/android-developer/answer/11926878
+  `1.0.1` / code `2`, `1.0.2` / code `3`, and this candidate `1.0.3` / code
+  `4`, preserving the existing package and signing identity.
+- [x] Compile/target Android 16 API 36. From 31 August 2026, Play requires API 36 for new phone/tablet app updates: https://developer.android.com/google/play/requirements/target-sdk
 - [x] 64-bit `arm64-v8a` present; App Bundle also contains armv7/x86_64 and Play will split per device.
 - [x] INTERNET, POST_NOTIFICATIONS and VIBRATE are present for transactional
   order alerts; system picker needs no broad storage/media permission.
@@ -23,12 +23,12 @@ Checked against official Google Play guidance available on 18 July 2026. The exa
 
 ## Store listing draft
 
-**App name:** Rasta's Peri Q  
+**App name:** RastasperiQ
 **Short description (draft):** Order today's flame-grilled meals for pickup or local delivery.  
 
 **Full description (draft):**
 
-Rasta's Peri Q Chesanyama makes local food ordering simple. Browse today's menu and specials, customise your meal, add a note, and choose pickup or available local delivery. Check out as a guest or sign in, select cash or EFT where available, and follow your order from Pending to Preparing, Ready and Completed inside the app.
+RastasperiQ makes local food ordering simple. Browse today's menu and specials, customise your meal, add a note, and choose pickup or available local delivery. Check out as a guest or sign in, select cash or EFT where available, and follow your order from Pending to Preparing, Ready and Completed inside the app.
 
 Features:
 
@@ -54,10 +54,10 @@ order is for delivery or pickup, with the customer phone number and delivery
 address/instructions where required. Includes compatibility handling for older
 orders and reliability checks for both fulfilment types.
 
-**Release notes (1.0.2 draft):** Updated the app icon with the Rasta Peri Q
-brand mark for a clearer home-screen experience. Faster, more reliable app
-launch, clearer feedback while placing an order, and improved phone-number
-validation during sign-up. Includes closed-test stability updates.
+**Release notes (1.0.3 draft):** Updated RastasperiQ branding across the
+website and Android app, including icon-only usage where appropriate. Keeps the
+existing package and upload-signing identity while advancing the closed-test
+release to version code 4.
 
 - [x] Support email: `contact@rastasperiq.co.za`
 - [x] Support website: `https://rastasperiq.co.za/`
@@ -99,8 +99,7 @@ validation during sign-up. Includes closed-test stability updates.
 
 ## Release decision
 
-After completing the v1.0.2 smoke test in
-`docs/CLOSED_TEST_V1_0_2_REPORT.md`, upload
-`release/android/rastas-peri-q-v1.0.2-build3-closed-test-maintenance-release.aab`
-as the next closed-test release. Keep the matching APK for direct device
-testing. Google Play approval cannot be guaranteed.
+After completing the v1.0.3 smoke test, upload
+`release/android/rastasperiq-v1.0.3-build4-closed-test-release.aab` as the next
+closed-test release. Keep the matching APK for direct device testing. Google
+Play approval cannot be guaranteed.

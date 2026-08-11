@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
   manifest: "/site.webmanifest",
   icons: {
-    icon: "/brand-mark.png",
-    apple: "/brand-mark.png",
+    icon: "/white-app-icon.png",
+    apple: "/white-app-icon.png",
   },
   openGraph: {
     type: "website",
@@ -27,8 +27,8 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     images: [
       {
-        url: "/brand-mark.png",
-        width: 1024,
+        url: "/Logo.png",
+        width: 1536,
         height: 1024,
         alt: "RastasperiQ logo",
       },

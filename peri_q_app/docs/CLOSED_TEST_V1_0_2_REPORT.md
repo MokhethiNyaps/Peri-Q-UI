@@ -11,7 +11,7 @@ build-3 files, which were removed before this release was produced.
 ## Launcher icon replacement
 
 The installed Android launcher icon now uses
-`assets/images/brand_mark.png`. The adaptive-icon foreground and all legacy
+`assets/images/white-app-icon.png`. The adaptive-icon foreground and all legacy
 Android density fallbacks were regenerated: mdpi (48 px), hdpi (72 px), xhdpi
 (96 px), xxhdpi (144 px), and xxxhdpi (192 px). This removes the prior
 small-text-heavy icon from the installed app while preserving the existing
@@ -94,7 +94,7 @@ with this exact AAB for any future crash-symbolication need.
 ## Manual smoke test before upload
 
 1. Install the signed APK on a test Android device and confirm the phone's
-   launcher shows the new Rasta Peri Q brand-mark icon.
+   launcher shows the RastasperiQ icon-only launcher asset.
 2. Cold-launch it. Confirm that the splash is visible for at least 1.4 seconds
    and then routes normally.
 3. On sign-up, verify a formatted valid number is accepted and a number with

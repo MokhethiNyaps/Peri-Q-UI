@@ -47,8 +47,8 @@ const isConfigured = supabaseConfig !== null;
 
 function imageUrlFor(path: unknown) {
   const value = typeof path === "string" ? path.trim() : "";
-  if (!value || value.startsWith("assets/images/")) return "/brand-mark.png";
-  return value.startsWith("https://") ? value : "/brand-mark.png";
+  if (!value || value.startsWith("assets/images/")) return "/white-app-icon.png";
+  return value.startsWith("https://") ? value : "/white-app-icon.png";
 }
 
 export function TodaysSpecialLive() {

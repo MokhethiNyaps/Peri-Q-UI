@@ -46,7 +46,7 @@ The app must be **simple**, **fast**, and **easy for non-technical people**.
 ### 1. Splash Screen
 
 - Logo
-- Business name / Rasta's Peri Q Chesanyama
+- Business name / RastasperiQ
 
 Then automatically go to the home screen.
 

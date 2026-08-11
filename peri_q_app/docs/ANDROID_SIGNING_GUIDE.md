@@ -52,13 +52,13 @@ flutter build apk --release --obfuscate --split-debug-info=release/android/symbo
   --dart-define-from-file=release-config.json
 ```
 
-Copy/rename the output to `release/android/rastas-peri-q-v1.0.0-build1-release.aab` only after verification.
+Copy/rename the output to `release/android/rastasperiq-v1.0.3-build4-closed-test-release.aab` only after verification.
 
 ## Verify
 
 ```powershell
-jarsigner -verify -verbose -certs release\android\rastas-peri-q-v1.0.0-build1-release.aab
-keytool -printcert -jarfile release\android\rastas-peri-q-v1.0.0-build1-release.aab
+jarsigner -verify -verbose -certs release\android\rastasperiq-v1.0.3-build4-closed-test-release.aab
+keytool -printcert -jarfile release\android\rastasperiq-v1.0.3-build4-closed-test-release.aab
 ```
 
 Expected: `jar verified` and the upload certificate owned by the business. Also run bundletool `validate`, upload first to Internal testing, and retain `r8-mapping.txt`, `native-debug-symbols.zip` and the matching Dart symbols for that exact build.

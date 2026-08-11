@@ -1,4 +1,4 @@
-# Rasta's Peri Q website
+# RastasperiQ website
 
 A static Next.js website for `rastasperiq.co.za`, designed for deployment on Vercel.
 

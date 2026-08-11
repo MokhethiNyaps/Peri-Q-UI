@@ -15,7 +15,7 @@ import { mailtoUrl, siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How Rasta's Peri Q Chesanyama collects, uses, stores, and protects information in its Android ordering app.",
+    "How RastasperiQ collects, uses, stores, and protects information in its Android ordering app.",
   alternates: { canonical: "/privacy-policy/" },
 };
 
@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
               Privacy policy
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">
-              This policy explains what information the Rasta&apos;s Peri Q Android app
+              This policy explains what information the RastasperiQ Android app
               uses, why it is needed, and the choices available to you.
             </p>
             <div className="mt-8 inline-flex items-center rounded-full border border-white/12 bg-white/7 px-4 py-2 text-xs font-bold text-white/70">
@@ -111,20 +111,20 @@ export default function PrivacyPolicyPage() {
 
         <article className="policy-content max-w-3xl">
           <p className="!mt-0 text-lg !leading-8 text-charcoal">
-            Rasta&apos;s Peri Q Chesanyama respects your privacy. We only process
+            RastasperiQ respects your privacy. We only process
             information needed to provide food ordering, fulfilment, payment
             reconciliation, customer support, and app security.
           </p>
 
           <h2 id="who-we-are">1. Who we are</h2>
           <p>
-            The Rasta&apos;s Peri Q Chesanyama Android app is operated by
-            <strong> Rasta&apos;s Peri Q Chesanyama</strong> at {siteConfig.address}.
+            The RastasperiQ Android app is operated by
+            <strong> RastasperiQ</strong> at {siteConfig.address}.
           </p>
 
           <h2 id="scope">2. Scope of this policy</h2>
           <p>
-            This policy applies to the Rasta&apos;s Peri Q Android mobile app and the
+            This policy applies to the RastasperiQ Android mobile app and the
             services used to place and manage orders from our single store. The app
             lets customers view a menu, create an account or use guest checkout,
             choose pickup or delivery, submit order details, and follow order status.
@@ -272,7 +272,7 @@ export default function PrivacyPolicyPage() {
 
           <h2 id="contact-policy">13. Contact us</h2>
           <p>
-            Contact Rasta&apos;s Peri Q Chesanyama if you have a privacy question or want to
+            Contact RastasperiQ if you have a privacy question or want to
             exercise one of the rights described above.
           </p>
 

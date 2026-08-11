@@ -285,7 +285,7 @@ class _HomeHeader extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: Image.asset(
-              'assets/images/brand_mark.png',
+              'assets/images/white-app-icon.png',
               fit: BoxFit.contain,
             ),
           ),

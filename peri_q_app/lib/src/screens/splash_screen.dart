@@ -95,14 +95,14 @@ class _SplashScreenState extends State<SplashScreen>
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(32),
                     child: Image.asset(
-                      'assets/images/brand_mark.png',
+                      'assets/images/white-app-icon.png',
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
                 const SizedBox(height: 28),
                 Text(
-                  "RASTASPERIQ",
+                  "RastasperiQ",
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                     color: Colors.white,
                     fontSize: 44, // Slightly smaller to fit if needed

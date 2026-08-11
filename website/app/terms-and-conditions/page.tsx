@@ -6,7 +6,7 @@ import { mailtoUrl, siteConfig } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Terms and Conditions",
   description:
-    "Terms for using the Rasta's Peri Q mobile ordering app and related services.",
+    "Terms for using the RastasperiQ mobile ordering app and related services.",
   alternates: { canonical: "/terms-and-conditions/" },
 };
 
@@ -32,7 +32,7 @@ export default function TermsAndConditionsPage() {
               Terms and conditions
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">
-              These terms explain the basic rules for using the Rasta&apos;s Peri Q
+              These terms explain the basic rules for using the RastasperiQ
               ordering app and related customer services.
             </p>
             <div className="mt-8 inline-flex items-center rounded-full border border-white/12 bg-white/7 px-4 py-2 text-xs font-bold text-white/70">
@@ -51,7 +51,7 @@ export default function TermsAndConditionsPage() {
 
           <h2>1. About the service</h2>
           <p>
-            The app is operated by <strong>Rasta&apos;s Peri Q Chesanyama</strong> at {" "}
+            The app is operated by <strong>RastasperiQ</strong> at {" "}
             {siteConfig.address}. It allows customers to browse menu information, place
             pickup or delivery orders when available, submit payment information, and
             follow order status.

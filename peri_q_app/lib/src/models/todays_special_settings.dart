@@ -4,7 +4,7 @@ class TodaysSpecialSettings {
     this.label = "TODAY'S SPECIAL",
     this.title = 'Chicken, Pork & Wors Plate',
     this.subtitle = 'R70 - Flame-grilled meats served with pap',
-    this.imagePath = 'assets/images/brand_mark.png',
+    this.imagePath = 'assets/images/white-app-icon.png',
     this.menuItemId = 'combo-chicken-pork-wors',
   });
 
@@ -51,7 +51,7 @@ class TodaysSpecialSettings {
       ),
       imagePath: _stringOrDefault(
         json['todays_special_image_path'],
-        'assets/images/brand_mark.png',
+        'assets/images/white-app-icon.png',
       ),
       menuItemId: _nullableString(json['todays_special_menu_item_id']),
     );

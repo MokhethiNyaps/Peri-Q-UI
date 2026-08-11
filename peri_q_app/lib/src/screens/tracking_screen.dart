@@ -135,7 +135,7 @@ class TrackingScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Peri Q Branch\n$storeAddress\n$branchPhoneDisplay',
+                  'RastasperiQ Branch\n$storeAddress\n$branchPhoneDisplay',
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 12),

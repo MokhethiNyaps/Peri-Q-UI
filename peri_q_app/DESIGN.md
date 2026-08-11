@@ -1,4 +1,4 @@
-# Rasta's Peri Q Chesanyama — Design & Brand Architecture
+# RastasperiQ — Design & Brand Architecture
 
 This document serves as the single source of truth for the **Peri Q** mobile application design system, screen architecture, user flows, and implementation guide. It connects the high-fidelity screens generated within the **Stitch Project** with a concrete technical blueprint for development.
 
@@ -6,7 +6,7 @@ This document serves as the single source of truth for the **Peri Q** mobile app
 
 ## 1. Project Overview & Stitch Metadata
 
-* **Stitch Project Name**: `Rasta's Peri Q Chesanyama — Food Ordering App`
+* **Stitch Project Name**: `RastasperiQ — Food Ordering App`
 * **Stitch Project ID**: `projects/10136017228007500213`
 * **Design System Asset**: `assets/16885437860906962396`
 * **Target Platforms**: Android (Primary) and iOS (Responsive Modern Layouts)

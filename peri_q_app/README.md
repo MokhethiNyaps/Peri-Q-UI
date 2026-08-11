@@ -1,4 +1,4 @@
-# Rasta's Peri Q Chesanyama
+# RastasperiQ
 
 Production-oriented Flutter/Supabase ordering app for a single local store.
 

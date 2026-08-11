@@ -52,7 +52,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
     }
     imageOptions = {
       ...widget.controller.menuItems.map((menuItem) => menuItem.imagePath),
-      'assets/images/brand_mark.png',
+      'assets/images/white-app-icon.png',
     }.toList();
 
     nameController = TextEditingController(text: item?.name ?? '');
@@ -222,7 +222,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'Changes save directly to the Peri Q database and update the app menu after saving.',
+              'Changes save directly to the RastasperiQ database and update the app menu after saving.',
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
@@ -303,7 +303,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
               controller: imagePathController,
               decoration: const InputDecoration(
                 labelText: 'Image Path or Public URL',
-                hintText: 'assets/images/brand_mark.png',
+                hintText: 'assets/images/white-app-icon.png',
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {

@@ -112,7 +112,7 @@ terminal history and Git.
   Special text, image path/URL, visibility, linked menu item, and operating
   hours.
 - `menu_categories`: public category list managed from the owner dashboard.
-- `menu_items`: public menu catalog seeded with the Rasta's PeriQ Chesanyama
+- `menu_items`: public menu catalog seeded with the RastasperiQ
   menu.
 - `orders`: order headers tied to the signed-in user and idempotent request.
 - `order_items`: snapshot of the items inside each order.

@@ -21,7 +21,7 @@ export function Brand({ compact = false, inverted = false }: BrandProps) {
         } ${compact ? "size-11" : "size-13"}`}
       >
         <Image
-          src="/brand-mark.png"
+          src="/white-app-icon.png"
           alt=""
           width={64}
           height={64}
