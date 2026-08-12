@@ -2,10 +2,10 @@
 
 ## Outcome
 
-This release is ready for upload to the existing Google Play Closed Testing
-track. The project was inspected before changing release values: the previous
-local Android version was `1.0.2+3`, so this candidate uses version `1.0.3`
-with `versionCode` `4`.
+This release is ready for future upload to the existing Google Play Closed
+Testing track. The AAB has not been uploaded. The project was inspected before
+release work: the current local Android version is `1.0.3+4`, and this task
+preserved version `1.0.3` with `versionCode` `4`.
 
 ## Branding
 
@@ -13,6 +13,11 @@ with `versionCode` `4`.
 - Icon-only usage now points to `white-app-icon.png`.
 - Full-logo website usage now points to `Logo.png` or `logo-squere.png` without
   adjacent duplicate `RastasperiQ` text.
+- Android launcher resources now use the icon-only `White-App-Icon.png` master.
+- Native and Flutter splash screens now use the full-logo `Logo-squere.png`
+  master without separate `RastasperiQ` text.
+- The home header switches to a two-row layout on narrow screens so the store
+  status badge no longer compresses the brand title.
 
 ## Android release configuration
 
@@ -32,8 +37,8 @@ with `versionCode` `4`.
 
 | Artifact | Size (bytes) | SHA-256 |
 |---|---:|---|
-| `release/android/rastasperiq-v1.0.3-build4-closed-test-release.apk` | 56,678,574 | `B1EE86003DA2D0877FB99FF5F13616C4113F9BA63082D22ABCDB11FF9177BE06` |
-| `release/android/rastasperiq-v1.0.3-build4-closed-test-release.aab` | 55,578,023 | `54BF6A615FAFD3311AA19389F086619FA7910A93C2E2EAE25F49CD474B3EEACE` |
+| `release/android/rastasperiq-v1.0.3-build4-closed-test-release.apk` | 58,097,767 | `0CEC5969AA161CDAE5605FAB425D5F0A9D47BA73F423E96886A6A6D8AFC12C7F` |
+| `release/android/rastasperiq-v1.0.3-build4-closed-test-release.aab` | 56,988,546 | `4CC37EC1AAD5BF00A05E0A45B4EF6374D007436DD3877D18657CF1D6791A0479` |
 
 `release/android/` is intentionally ignored by Git. Keep the matching symbol
 folder `release/android/symbols-v1.0.3-build4-closed-test` with this AAB.

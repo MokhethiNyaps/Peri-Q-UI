@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
-import '../core/app_theme.dart';
 import 'auth_screen.dart';
 import 'customer_shell.dart';
 import 'startup_error_screen.dart';
@@ -53,75 +52,35 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D),
+      backgroundColor: const Color(0xFFFBF1EC),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Positioned(
-            bottom: -120,
-            left: -60,
-            right: -60,
-            child: Container(
-              height: 360,
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  colors: [
-                    Color(0x66C8240B),
-                    Color(0x44F07820),
-                    Colors.transparent,
-                  ],
-                ),
-              ),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.all(28),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 116,
-                  height: 116,
+                  width: 240,
+                  height: 240,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(32),
+                    borderRadius: BorderRadius.circular(8),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color(0x66C8240B),
-                        blurRadius: 24,
-                        spreadRadius: 2,
+                        color: Color(0x16000000),
+                        blurRadius: 28,
+                        offset: Offset(0, 14),
                       ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(32),
+                    borderRadius: BorderRadius.circular(8),
                     child: Image.asset(
-                      'assets/images/white-app-icon.png',
-                      fit: BoxFit.cover,
+                      'assets/images/logo-squere.png',
+                      fit: BoxFit.contain,
                     ),
                   ),
-                ),
-                const SizedBox(height: 28),
-                Text(
-                  "RastasperiQ",
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                    color: Colors.white,
-                    fontSize: 44, // Slightly smaller to fit if needed
-                  ),
-                ),
-                Text(
-                  'CHESANYAMA',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Colors.white70,
-                    letterSpacing: 6,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  'Authentically Grilled. Delivered Hot.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: Colors.white60),
                 ),
               ],
             ),
@@ -138,8 +97,8 @@ class _SplashScreenState extends State<SplashScreen>
                   return LinearProgressIndicator(
                     value: _animationController.value,
                     minHeight: 6,
-                    backgroundColor: Colors.white10,
-                    color: AppTheme.periRed,
+                    backgroundColor: const Color(0x1AC8240B),
+                    color: const Color(0xFFC8240B),
                   );
                 },
               ),
