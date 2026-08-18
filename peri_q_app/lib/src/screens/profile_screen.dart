@@ -130,6 +130,15 @@ class ProfileScreen extends StatelessWidget {
                   },
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _ProfileTile(
+                  title: 'App Theme',
+                  subtitle: _themeModeSubtitle(controller.themeMode),
+                  icon: Icons.brightness_medium_outlined,
+                  onTap: () => _showThemePicker(context),
+                ),
+              ),
               const SizedBox(height: 8),
               if (controller.canAccessAdmin)
                 InkWell(
@@ -199,6 +208,74 @@ class ProfileScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  String _themeModeSubtitle(ThemeMode mode) {
+    switch (mode) {
+      case ThemeMode.system:
+        return 'System Default';
+      case ThemeMode.light:
+        return 'Light Mode';
+      case ThemeMode.dark:
+        return 'Dark Mode';
+    }
+  }
+
+  void _showThemePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'App Theme',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                RadioListTile<ThemeMode>(
+                  title: const Text('System Default'),
+                  value: ThemeMode.system,
+                  groupValue: controller.themeMode,
+                  onChanged: (val) {
+                    if (val != null) controller.setThemeMode(val);
+                    Navigator.pop(context);
+                  },
+                ),
+                RadioListTile<ThemeMode>(
+                  title: const Text('Light Mode'),
+                  value: ThemeMode.light,
+                  groupValue: controller.themeMode,
+                  onChanged: (val) {
+                    if (val != null) controller.setThemeMode(val);
+                    Navigator.pop(context);
+                  },
+                ),
+                RadioListTile<ThemeMode>(
+                  title: const Text('Dark Mode'),
+                  value: ThemeMode.dark,
+                  groupValue: controller.themeMode,
+                  onChanged: (val) {
+                    if (val != null) controller.setThemeMode(val);
+                    Navigator.pop(context);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 

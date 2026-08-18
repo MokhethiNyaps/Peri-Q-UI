@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 
 import '../models/app_auth_session.dart';
 import '../models/app_preferences.dart';
@@ -57,6 +58,7 @@ class AppController extends ChangeNotifier {
   TodaysSpecialSettings todaysSpecialSettings = const TodaysSpecialSettings();
   bool hasReturningSession = false;
   String selectedMenuCategory = 'All';
+  ThemeMode themeMode = ThemeMode.system;
 
   bool isBootstrapping = true;
   String? bootstrapError;
@@ -91,6 +93,7 @@ class AppController extends ChangeNotifier {
       savedAddresses: List<SavedAddress>.from(savedAddresses),
       defaultAddressId: defaultAddressId,
       preferredPaymentMethod: preferredPaymentMethod,
+      themeMode: themeMode,
     );
   }
 
@@ -249,6 +252,7 @@ class AppController extends ChangeNotifier {
       savedAddresses = List<SavedAddress>.from(preferences.savedAddresses);
       defaultAddressId = _validDefaultAddressId(preferences.defaultAddressId);
       preferredPaymentMethod = preferences.preferredPaymentMethod;
+      themeMode = preferences.themeMode;
       _applyAppSettings(fetchedAppSettings);
       menuCategories = _orderedCategories(fetchedMenuCategories);
       menuItems = _orderedMenuItems(fetchedMenuItems);
@@ -407,6 +411,12 @@ class AppController extends ChangeNotifier {
         phone: customerPhone,
       );
     }
+    notifyListeners();
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    themeMode = mode;
+    await _savePreferences();
     notifyListeners();
   }
 

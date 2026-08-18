@@ -684,7 +684,7 @@ class _AuthModeSwitch extends StatelessWidget {
   }
 }
 
-class _SignInFields extends StatelessWidget {
+class _SignInFields extends StatefulWidget {
   const _SignInFields({
     super.key,
     required this.emailController,
@@ -701,13 +701,20 @@ class _SignInFields extends StatelessWidget {
   final FormFieldValidator<String> validatePassword;
 
   @override
+  State<_SignInFields> createState() => _SignInFieldsState();
+}
+
+class _SignInFieldsState extends State<_SignInFields> {
+  bool _obscurePassword = true;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextFormField(
           key: const ValueKey('auth-sign-in-email-field'),
-          controller: emailController,
+          controller: widget.emailController,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
           decoration: const InputDecoration(
@@ -715,28 +722,35 @@ class _SignInFields extends StatelessWidget {
             hintText: 'your@email.com',
             prefixIcon: Icon(Icons.mail_outline_rounded),
           ),
-          validator: validateEmail,
+          validator: widget.validateEmail,
           textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: 16),
         TextFormField(
           key: const ValueKey('auth-sign-in-password-field'),
-          controller: passwordController,
-          obscureText: true,
+          controller: widget.passwordController,
+          obscureText: _obscurePassword,
           autofillHints: const [AutofillHints.password],
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Password',
             hintText: 'Enter your password',
-            prefixIcon: Icon(Icons.lock_outline_rounded),
+            prefixIcon: const Icon(Icons.lock_outline_rounded),
+            suffixIcon: IconButton(
+              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+              ),
+            ),
           ),
-          validator: validatePassword,
+          validator: widget.validatePassword,
           textInputAction: TextInputAction.done,
         ),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
             key: const ValueKey('auth-forgot-password-button'),
-            onPressed: onForgotPassword,
+            onPressed: widget.onForgotPassword,
             child: const Text('Forgot password?'),
           ),
         ),
@@ -745,7 +759,7 @@ class _SignInFields extends StatelessWidget {
   }
 }
 
-class _SignUpFields extends StatelessWidget {
+class _SignUpFields extends StatefulWidget {
   const _SignUpFields({
     super.key,
     required this.nameController,
@@ -772,12 +786,20 @@ class _SignUpFields extends StatelessWidget {
   final FormFieldValidator<String> validateConfirmPassword;
 
   @override
+  State<_SignUpFields> createState() => _SignUpFieldsState();
+}
+
+class _SignUpFieldsState extends State<_SignUpFields> {
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         TextFormField(
           key: const ValueKey('auth-sign-up-name-field'),
-          controller: nameController,
+          controller: widget.nameController,
           textCapitalization: TextCapitalization.words,
           autofillHints: const [AutofillHints.name],
           decoration: const InputDecoration(
@@ -785,19 +807,19 @@ class _SignUpFields extends StatelessWidget {
             hintText: 'Your name',
             prefixIcon: Icon(Icons.person_outline_rounded),
           ),
-          validator: validateName,
+          validator: widget.validateName,
           textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: 16),
         _PhoneField(
           fieldKey: const ValueKey('auth-sign-up-phone-field'),
-          controller: phoneController,
-          validator: validatePhone,
+          controller: widget.phoneController,
+          validator: widget.validatePhone,
         ),
         const SizedBox(height: 16),
         TextFormField(
           key: const ValueKey('auth-sign-up-email-field'),
-          controller: emailController,
+          controller: widget.emailController,
           keyboardType: TextInputType.emailAddress,
           autofillHints: const [AutofillHints.email],
           decoration: const InputDecoration(
@@ -805,35 +827,49 @@ class _SignUpFields extends StatelessWidget {
             hintText: 'your@email.com',
             prefixIcon: Icon(Icons.mail_outline_rounded),
           ),
-          validator: validateEmail,
+          validator: widget.validateEmail,
           textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: 16),
         TextFormField(
           key: const ValueKey('auth-sign-up-password-field'),
-          controller: passwordController,
-          obscureText: true,
+          controller: widget.passwordController,
+          obscureText: _obscurePassword,
           autofillHints: const [AutofillHints.newPassword],
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Password',
             hintText: 'Create a password',
-            prefixIcon: Icon(Icons.lock_outline_rounded),
+            prefixIcon: const Icon(Icons.lock_outline_rounded),
+            suffixIcon: IconButton(
+              tooltip: _obscurePassword ? 'Show password' : 'Hide password',
+              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              icon: Icon(
+                _obscurePassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+              ),
+            ),
           ),
-          validator: validatePassword,
+          validator: widget.validatePassword,
           textInputAction: TextInputAction.next,
         ),
         const SizedBox(height: 16),
         TextFormField(
           key: const ValueKey('auth-sign-up-confirm-password-field'),
-          controller: confirmPasswordController,
-          obscureText: true,
+          controller: widget.confirmPasswordController,
+          obscureText: _obscureConfirmPassword,
           autofillHints: const [AutofillHints.newPassword],
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Confirm Password',
             hintText: 'Repeat your password',
-            prefixIcon: Icon(Icons.lock_reset_rounded),
+            prefixIcon: const Icon(Icons.lock_reset_rounded),
+            suffixIcon: IconButton(
+              tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
+              onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+              icon: Icon(
+                _obscureConfirmPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+              ),
+            ),
           ),
-          validator: validateConfirmPassword,
+          validator: widget.validateConfirmPassword,
           textInputAction: TextInputAction.done,
         ),
       ],

@@ -445,8 +445,8 @@ class _HeroBanner extends StatelessWidget {
         final compact = constraints.maxWidth < 360;
         final imageWidth = constraints.maxWidth * (compact ? 0.55 : 0.58);
         final bannerHeight = isLandscape
-            ? (compact ? 156 : 150)
-            : (compact ? 226 : 214);
+            ? (compact ? 156.0 : 150.0)
+            : (compact ? 226.0 : 214.0);
         final contentPadding = isLandscape
             ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
             : EdgeInsets.all(compact ? 18 : 22);

@@ -177,6 +177,8 @@ class _PeriQAppState extends State<PeriQApp> {
           debugShowCheckedModeBanner: false,
           title: 'RastasperiQ',
           theme: AppTheme.lightTheme,
+          darkTheme: AppTheme.darkTheme,
+          themeMode: controller!.themeMode,
           home: SplashScreen(controller: controller!),
         );
       },

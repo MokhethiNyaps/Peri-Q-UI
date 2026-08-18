@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'order.dart';
 
 class SavedAddress {
@@ -60,6 +61,7 @@ class AppPreferences {
     this.savedAddresses = const [],
     this.defaultAddressId,
     this.preferredPaymentMethod = PaymentMethod.cashCollection,
+    this.themeMode = ThemeMode.system,
   });
 
   final bool hasReturningSession;
@@ -71,6 +73,7 @@ class AppPreferences {
   final List<SavedAddress> savedAddresses;
   final String? defaultAddressId;
   final PaymentMethod preferredPaymentMethod;
+  final ThemeMode themeMode;
 
   AppPreferences copyWith({
     bool? hasReturningSession,
@@ -83,6 +86,7 @@ class AppPreferences {
     String? defaultAddressId,
     bool clearDefaultAddressId = false,
     PaymentMethod? preferredPaymentMethod,
+    ThemeMode? themeMode,
   }) {
     return AppPreferences(
       hasReturningSession: hasReturningSession ?? this.hasReturningSession,
@@ -97,11 +101,18 @@ class AppPreferences {
           : (defaultAddressId ?? this.defaultAddressId),
       preferredPaymentMethod:
           preferredPaymentMethod ?? this.preferredPaymentMethod,
+      themeMode: themeMode ?? this.themeMode,
     );
   }
 
   factory AppPreferences.fromJson(Map<String, dynamic> json) {
     final savedAddressValues = json['savedAddresses'] as List<dynamic>? ?? [];
+    
+    ThemeMode mode = ThemeMode.system;
+    final themeStr = json['themeMode'] as String?;
+    if (themeStr == 'light') mode = ThemeMode.light;
+    else if (themeStr == 'dark') mode = ThemeMode.dark;
+
     return AppPreferences(
       hasReturningSession: json['hasReturningSession'] as bool? ?? false,
       isGuest: json['isGuest'] as bool? ?? true,
@@ -118,6 +129,7 @@ class AppPreferences {
       preferredPaymentMethod: paymentMethodFromCode(
         json['preferredPaymentMethod'] as String? ?? 'cash_collection',
       ),
+      themeMode: mode,
     );
   }
 
@@ -134,6 +146,7 @@ class AppPreferences {
           .toList(),
       'defaultAddressId': defaultAddressId,
       'preferredPaymentMethod': preferredPaymentMethod.code,
+      'themeMode': themeMode.name,
     };
   }
 }
