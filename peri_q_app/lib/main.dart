@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'src/app.dart';
 import 'src/core/supabase_config.dart';
 import 'src/data/local/secure_auth_storage.dart';
@@ -23,7 +25,13 @@ Future<void> main() async {
       systemNavigationBarContrastEnforced: false,
     ),
   );
-  final supabaseConfig = SupabaseConfig.fromSources();
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (_) {
+    // Proceed without .env if not found
+  }
+
+  final supabaseConfig = SupabaseConfig.fromSources(dotenv.env);
   var firebaseIsReady = false;
 
   try {
