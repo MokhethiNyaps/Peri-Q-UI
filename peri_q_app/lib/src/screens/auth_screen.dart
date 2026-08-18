@@ -488,28 +488,6 @@ class _AuthScreenState extends State<AuthScreen> {
                                       ),
                                     ],
                                     const SizedBox(height: 4),
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        const Icon(
-                                          Icons.lock_outline_rounded,
-                                          size: 15,
-                                          color: AppTheme.success,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        Text(
-                                          'Secure sign-in powered by Supabase',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .bodySmall
-                                              ?.copyWith(
-                                                fontSize: 11,
-                                                color: AppTheme.ashGrey,
-                                              ),
-                                        ),
-                                      ],
-                                    ),
                                   ],
                                 ),
                               ),
@@ -559,6 +537,9 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   String? _validateConfirmPassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Confirm your password.';
+    }
     if (value != signUpPasswordController.text) {
       return 'Passwords do not match.';
     }

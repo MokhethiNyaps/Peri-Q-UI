@@ -64,6 +64,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           paymentMethod == PaymentMethod.cashDelivery) {
         paymentMethod = PaymentMethod.cashCollection;
       }
+      if (orderType == OrderType.delivery &&
+          paymentMethod == PaymentMethod.cashCollection) {
+        paymentMethod = PaymentMethod.cashDelivery;
+      }
     });
   }
 

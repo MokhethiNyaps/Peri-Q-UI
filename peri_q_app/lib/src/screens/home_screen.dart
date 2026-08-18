@@ -190,7 +190,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
                   sliver: SliverLayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.crossAxisExtent;
@@ -440,11 +440,21 @@ class _HeroBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        final viewport = MediaQuery.sizeOf(context);
+        final isLandscape = viewport.width > viewport.height;
         final compact = constraints.maxWidth < 360;
         final imageWidth = constraints.maxWidth * (compact ? 0.55 : 0.58);
+        final bannerHeight = isLandscape
+            ? (compact ? 156 : 150)
+            : (compact ? 226 : 214);
+        final contentPadding = isLandscape
+            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
+            : EdgeInsets.all(compact ? 18 : 22);
+        final maxContentWidth = isLandscape ? 210.0 : (compact ? 205.0 : 235.0);
+        final titleFontSize = isLandscape ? 22.0 : (compact ? 27.0 : 30.0);
 
         return Container(
-          height: compact ? 226 : 214,
+          height: bannerHeight,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
             color: AppTheme.smokeCharcoal,
@@ -501,9 +511,9 @@ class _HeroBanner extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: EdgeInsets.all(compact ? 18 : 22),
+                padding: contentPadding,
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: compact ? 205 : 235),
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -533,43 +543,55 @@ class _HeroBanner extends StatelessWidget {
                               ),
                         ),
                       ),
-                      const SizedBox(height: 9),
+                      SizedBox(height: isLandscape ? 6 : 9),
                       Text(
                         settings.title,
-                        maxLines: 2,
+                        maxLines: isLandscape ? 1 : 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.displayLarge
                             ?.copyWith(
                               color: Colors.white,
-                              fontSize: compact ? 27 : 30,
+                              fontSize: titleFontSize,
                               fontWeight: FontWeight.w800,
                               height: 0.98,
                             ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        settings.subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          height: 1.35,
+                      SizedBox(height: isLandscape ? 4 : 8),
+                      if (!isLandscape)
+                        Text(
+                          settings.subtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            height: 1.35,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 13),
+                      SizedBox(height: isLandscape ? 8 : 13),
                       ElevatedButton.icon(
                         onPressed: onOrderNow,
                         style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(138, 42),
-                          maximumSize: const Size(164, 44),
+                          minimumSize: Size(
+                            isLandscape ? 120 : 138,
+                            isLandscape ? 36 : 42,
+                          ),
+                          maximumSize: Size(
+                            isLandscape ? 150 : 164,
+                            isLandscape ? 38 : 44,
+                          ),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           backgroundColor: AppTheme.periRed,
                         ),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.local_fire_department_rounded,
-                          size: 18,
+                          size: isLandscape ? 16 : 18,
                         ),
-                        label: const Text('Order Now'),
+                        label: Text(
+                          'Order Now',
+                          style: TextStyle(
+                            fontSize: isLandscape ? 13 : null,
+                          ),
+                        ),
                       ),
                     ],
                   ),

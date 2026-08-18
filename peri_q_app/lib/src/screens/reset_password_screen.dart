@@ -20,6 +20,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   bool _isSubmitting = false;
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -157,11 +158,25 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       TextFormField(
                         key: const ValueKey('reset-password-confirm-field'),
                         controller: _confirmPasswordController,
-                        obscureText: _obscurePassword,
+                        obscureText: _obscureConfirmPassword,
                         autofillHints: const [AutofillHints.newPassword],
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: 'Confirm New Password',
                           hintText: 'Repeat your new password',
+                          suffixIcon: IconButton(
+                            tooltip: _obscureConfirmPassword
+                                ? 'Show password'
+                                : 'Hide password',
+                            onPressed: () => setState(
+                              () => _obscureConfirmPassword =
+                                  !_obscureConfirmPassword,
+                            ),
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_rounded
+                                  : Icons.visibility_off_rounded,
+                            ),
+                          ),
                         ),
                         validator: _validateConfirmation,
                         textInputAction: TextInputAction.done,
@@ -200,6 +215,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   }
 
   String? _validateConfirmation(String? value) {
+    if (value == null || value.isEmpty) {
+      return 'Confirm your password.';
+    }
     if (value != _passwordController.text) {
       return 'Passwords do not match.';
     }

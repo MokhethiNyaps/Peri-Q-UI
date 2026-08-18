@@ -176,29 +176,6 @@ class ProfileScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.mutedSurface,
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.lock_outline_rounded,
-                        color: AppTheme.ashGrey,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Admin tools unlock automatically for Supabase users with the admin role.',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               const SizedBox(height: 24),
               if (!controller.isGuest) ...[
@@ -214,16 +191,7 @@ class ProfileScreen extends StatelessWidget {
               ],
               Center(
                 child: TextButton(
-                  onPressed: () async {
-                    await controller.signOut();
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(
-                        builder: (_) => AuthScreen(controller: controller),
-                      ),
-                      (route) => false,
-                    );
-                  },
+                  onPressed: () => _confirmSignOut(context),
                   child: const Text('Sign Out'),
                 ),
               ),
@@ -231,6 +199,35 @@ class ProfileScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Sign out?'),
+        content: const Text(
+          'You will need to sign in again to access your saved addresses and order history.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await controller.signOut();
+    if (!context.mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => AuthScreen(controller: controller)),
+      (route) => false,
     );
   }
 

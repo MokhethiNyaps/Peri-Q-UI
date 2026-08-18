@@ -329,15 +329,18 @@ class _AddressEditorState extends State<_AddressEditor> {
 
   @override
   Widget build(BuildContext context) {
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+    final viewPadding = MediaQuery.viewPaddingOf(context);
     return Padding(
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
         top: 20,
-        bottom: MediaQuery.viewInsetsOf(context).bottom + 20,
+        bottom: viewInsets.bottom + viewPadding.bottom + 20,
       ),
       child: Form(
         key: _formKey,
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,9 +389,17 @@ class _AddressEditorState extends State<_AddressEditor> {
               ),
             ),
             const SizedBox(height: 18),
-            ElevatedButton(
-              onPressed: isSaving ? null : _save,
-              child: Text(isSaving ? 'Saving...' : 'Save Address'),
+            SafeArea(
+              top: false,
+              left: false,
+              right: false,
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isSaving ? null : _save,
+                  child: Text(isSaving ? 'Saving...' : 'Save Address'),
+                ),
+              ),
             ),
           ],
         ),

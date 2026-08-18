@@ -365,6 +365,9 @@ class AppController extends ChangeNotifier {
     orders = [];
     selectedMenuCategory = 'All';
     cart = [];
+    savedAddresses = [];
+    defaultAddressId = null;
+    preferredPaymentMethod = PaymentMethod.cashCollection;
     await _savePreferences();
     notifyListeners();
   }
