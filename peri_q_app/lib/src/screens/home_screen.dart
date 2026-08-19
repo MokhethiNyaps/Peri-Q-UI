@@ -139,10 +139,10 @@ class HomeScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(26),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
                           ),
                           boxShadow: const [
                             BoxShadow(
@@ -276,7 +276,7 @@ class _HomeHeader extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppTheme.lightSurface,
                 borderRadius: BorderRadius.circular(17),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
                 boxShadow: const [
                   BoxShadow(
                     color: Color(0x14000000),

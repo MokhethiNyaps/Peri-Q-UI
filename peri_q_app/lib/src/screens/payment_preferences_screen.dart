@@ -114,7 +114,7 @@ class _PaymentPreferenceCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: selected ? AppTheme.periRed : Colors.transparent,

@@ -87,7 +87,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                 onSelected: (_) => widget.controller
                                     .setSelectedMenuCategory(category),
                                 selectedColor: AppTheme.periRed,
-                                backgroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).cardColor,
                                 side: BorderSide.none,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(999),

@@ -162,10 +162,10 @@ class ProfileScreen extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        const CircleAvatar(
+                        CircleAvatar(
                           radius: 22,
-                          backgroundColor: Colors.white,
-                          child: Icon(
+                          backgroundColor: Theme.of(context).cardColor,
+                          child: const Icon(
                             Icons.admin_panel_settings_outlined,
                             color: AppTheme.periRed,
                           ),
@@ -387,7 +387,7 @@ class _ProfileTile extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(

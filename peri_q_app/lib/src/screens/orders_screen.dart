@@ -130,7 +130,7 @@ class _OrderCard extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
@@ -220,7 +220,7 @@ class _EmptyState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),

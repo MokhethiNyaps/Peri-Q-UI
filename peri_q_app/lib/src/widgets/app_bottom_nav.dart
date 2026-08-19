@@ -29,7 +29,7 @@ class AppBottomNav extends StatelessWidget {
       height: 84,
       shape: const CircularNotchedRectangle(),
       notchMargin: 8,
-      color: Colors.white,
+      color: Theme.of(context).colorScheme.surface,
       elevation: 14,
       child: Row(
         children: [

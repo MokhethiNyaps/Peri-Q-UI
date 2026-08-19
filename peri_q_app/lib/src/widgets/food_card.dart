@@ -30,7 +30,7 @@ class FoodCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: radius,
             boxShadow: const [
               BoxShadow(
@@ -120,7 +120,7 @@ class FoodCard extends StatelessWidget {
       borderRadius: radius,
       child: Ink(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).cardColor,
           borderRadius: radius,
           boxShadow: const [
             BoxShadow(

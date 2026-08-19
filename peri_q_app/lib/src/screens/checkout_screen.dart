@@ -172,7 +172,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Column(
@@ -233,7 +233,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
@@ -335,7 +335,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(18),
                 ),
                 child: Row(
@@ -466,7 +466,7 @@ class _ChoiceCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
               color: selected ? AppTheme.periRed : Colors.transparent,
@@ -542,7 +542,7 @@ class _PaymentTile extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).cardColor,
             border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
           ),
           child: Row(

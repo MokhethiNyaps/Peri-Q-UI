@@ -26,7 +26,7 @@ class AdminOrderFulfilmentPanel extends StatelessWidget {
         border: Border.all(
           color: isDelivery
               ? AppTheme.chesaOrange.withValues(alpha: 0.35)
-              : Colors.black.withValues(alpha: 0.06),
+              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
         ),
       ),
       child: Column(
