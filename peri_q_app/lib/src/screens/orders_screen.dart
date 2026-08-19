@@ -118,11 +118,6 @@ class _OrderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isTerminal = order.status == OrderStatus.completed ||
         order.status == OrderStatus.cancelled;
-    final progressColor = order.status == OrderStatus.cancelled
-        ? AppTheme.ashGrey
-        : order.status == OrderStatus.completed
-            ? AppTheme.success
-            : null;
 
     return InkWell(
       onTap: onTap,

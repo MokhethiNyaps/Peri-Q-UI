@@ -244,33 +244,33 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                RadioListTile<ThemeMode>(
-                  title: const Text('System Default'),
-                  value: ThemeMode.system,
+                RadioGroup<ThemeMode>(
                   groupValue: controller.themeMode,
                   onChanged: (val) {
-                    if (val != null) controller.setThemeMode(val);
-                    Navigator.pop(context);
+                    if (val != null) {
+                      controller.setThemeMode(val);
+                      Navigator.pop(context);
+                    }
                   },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RadioListTile<ThemeMode>(
+                        title: const Text('System Default'),
+                        value: ThemeMode.system,
+                      ),
+                      RadioListTile<ThemeMode>(
+                        title: const Text('Light Mode'),
+                        value: ThemeMode.light,
+                      ),
+                      RadioListTile<ThemeMode>(
+                        title: const Text('Dark Mode'),
+                        value: ThemeMode.dark,
+                      ),
+                    ],
+                  ),
                 ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Light Mode'),
-                  value: ThemeMode.light,
-                  groupValue: controller.themeMode,
-                  onChanged: (val) {
-                    if (val != null) controller.setThemeMode(val);
-                    Navigator.pop(context);
-                  },
-                ),
-                RadioListTile<ThemeMode>(
-                  title: const Text('Dark Mode'),
-                  value: ThemeMode.dark,
-                  groupValue: controller.themeMode,
-                  onChanged: (val) {
-                    if (val != null) controller.setThemeMode(val);
-                    Navigator.pop(context);
-                  },
-                ),
+
               ],
             ),
           ),
