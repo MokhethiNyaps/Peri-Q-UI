@@ -111,7 +111,7 @@ class AdminCategoryManagerScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: const Text('No categories found.'),
@@ -126,7 +126,7 @@ class AdminCategoryManagerScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: Row(

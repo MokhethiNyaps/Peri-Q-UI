@@ -181,165 +181,167 @@ class AdminDashboardScreen extends StatelessWidget {
             icon: const Icon(Icons.add),
             label: const Text('Menu Item'),
           ),
-          body: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: AppTheme.smokeCharcoal,
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            controller.isStoreOpenNow
-                                ? 'Store Open'
-                                : 'Store Closed',
-                            style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(color: Colors.white),
-                          ),
-                          Text(
-                            controller.storeStatusLabel,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.white70),
-                          ),
-                          Text(
-                            '${controller.appSettings.openingTime} - ${controller.appSettings.closingTime}',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(color: Colors.white54),
-                          ),
-                        ],
+          body: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: AppTheme.smokeCharcoal,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              controller.isStoreOpenNow
+                                  ? 'Store Open'
+                                  : 'Store Closed',
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(color: Colors.white),
+                            ),
+                            Text(
+                              controller.storeStatusLabel,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(color: Colors.white70),
+                            ),
+                            Text(
+                              '${controller.appSettings.openingTime} - ${controller.appSettings.closingTime}',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(color: Colors.white54),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Switch(
-                      value: controller.storeOpen,
-                      activeThumbColor: AppTheme.chesaOrange,
-                      onChanged: (value) async {
-                        try {
-                          await controller.toggleStoreOpen(value);
-                        } catch (error) {
-                          if (!context.mounted) {
-                            return;
+                      Switch(
+                        value: controller.storeOpen,
+                        activeThumbColor: AppTheme.chesaOrange,
+                        onChanged: (value) async {
+                          try {
+                            await controller.toggleStoreOpen(value);
+                          } catch (error) {
+                            if (!context.mounted) {
+                              return;
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(error.toString())),
+                            );
                           }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(error.toString())),
-                          );
-                        }
-                      },
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'App Controls',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 14),
+                _AdminActionCard(
+                  icon: Icons.tune_rounded,
+                  title: 'App Settings',
+                  subtitle:
+                      'Store hours, availability, and Today\'s Special content.',
+                  onTap: () => _openAppSettings(context),
+                ),
+                const SizedBox(height: 12),
+                _AdminActionCard(
+                  icon: Icons.category_outlined,
+                  title: 'Food Categories',
+                  subtitle:
+                      '${controller.menuCategories.length} categories available for menu items.',
+                  onTap: () => _openCategoryManager(context),
+                ),
+                const SizedBox(height: 20),
+                _TodaysSpecialAdminCard(
+                  title: controller.todaysSpecialSettings.title,
+                  subtitle: controller.todaysSpecialSettings.subtitle,
+                  enabled: controller.todaysSpecialSettings.enabled,
+                  onEdit: () => _openTodaysSpecialEditor(context),
+                ),
+                const SizedBox(height: 20),
+                Wrap(
+                  spacing: 14,
+                  runSpacing: 14,
+                  children: [
+                    _MetricCard(
+                      title: 'Active Orders',
+                      value: '${controller.activeOrders.length}',
+                    ),
+                    _MetricCard(
+                      title: "Today's Sales",
+                      value:
+                          'R${controller.orders.fold<double>(0, (sum, order) => sum + order.totalPrice).toStringAsFixed(0)}',
+                    ),
+                    _MetricCard(
+                      title: 'Completed',
+                      value: '${controller.completedOrders.length}',
                     ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'App Controls',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 14),
-              _AdminActionCard(
-                icon: Icons.tune_rounded,
-                title: 'App Settings',
-                subtitle:
-                    'Store hours, availability, and Today\'s Special content.',
-                onTap: () => _openAppSettings(context),
-              ),
-              const SizedBox(height: 12),
-              _AdminActionCard(
-                icon: Icons.category_outlined,
-                title: 'Food Categories',
-                subtitle:
-                    '${controller.menuCategories.length} categories available for menu items.',
-                onTap: () => _openCategoryManager(context),
-              ),
-              const SizedBox(height: 20),
-              _TodaysSpecialAdminCard(
-                title: controller.todaysSpecialSettings.title,
-                subtitle: controller.todaysSpecialSettings.subtitle,
-                enabled: controller.todaysSpecialSettings.enabled,
-                onEdit: () => _openTodaysSpecialEditor(context),
-              ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 14,
-                runSpacing: 14,
-                children: [
-                  _MetricCard(
-                    title: 'Active Orders',
-                    value: '${controller.activeOrders.length}',
-                  ),
-                  _MetricCard(
-                    title: "Today's Sales",
-                    value:
-                        'R${controller.orders.fold<double>(0, (sum, order) => sum + order.totalPrice).toStringAsFixed(0)}',
-                  ),
-                  _MetricCard(
-                    title: 'Completed',
-                    value: '${controller.completedOrders.length}',
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Incoming Orders',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 14),
-              if (controller.activeOrders.isEmpty)
-                const _EmptyAdminState(
-                  message: 'No active orders in the queue right now.',
-                )
-              else
-                ...controller.activeOrders.map(
-                  (order) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: _IncomingOrderCard(
-                      order: order,
-                      onReject: () => _rejectOrder(context, order),
-                      onAdvance: () async {
-                        await controller.advanceOrderStatus(order);
-                      },
+                const SizedBox(height: 24),
+                Text(
+                  'Incoming Orders',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 14),
+                if (controller.activeOrders.isEmpty)
+                  const _EmptyAdminState(
+                    message: 'No active orders in the queue right now.',
+                  )
+                else
+                  ...controller.activeOrders.map(
+                    (order) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _IncomingOrderCard(
+                        order: order,
+                        onReject: () => _rejectOrder(context, order),
+                        onAdvance: () async {
+                          await controller.advanceOrderStatus(order);
+                        },
+                      ),
                     ),
                   ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Text(
+                      'Menu Items',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => _openMenuEditor(context),
+                      child: const Text('Add New'),
+                    ),
+                  ],
                 ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Text(
-                    'Menu Items',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  const Spacer(),
-                  TextButton(
-                    onPressed: () => _openMenuEditor(context),
-                    child: const Text('Add New'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              if (controller.menuItems.isEmpty)
-                const _EmptyAdminState(message: 'No menu items found.')
-              else
-                ...controller.menuItems.map(
-                  (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _MenuItemCard(
-                      item: item,
-                      onEdit: () => _openMenuEditor(context, item: item),
-                      onDelete: () => _deleteMenuItem(context, item),
-                      onToggleAvailability: () async {
-                        await controller.updateMenuItem(
-                          item.copyWith(isAvailable: !item.isAvailable),
-                        );
-                      },
+                const SizedBox(height: 14),
+                if (controller.menuItems.isEmpty)
+                  const _EmptyAdminState(message: 'No menu items found.')
+                else
+                  ...controller.menuItems.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _MenuItemCard(
+                        item: item,
+                        onEdit: () => _openMenuEditor(context, item: item),
+                        onDelete: () => _deleteMenuItem(context, item),
+                        onToggleAvailability: () async {
+                          await controller.updateMenuItem(
+                            item.copyWith(isAvailable: !item.isAvailable),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
         );
       },
