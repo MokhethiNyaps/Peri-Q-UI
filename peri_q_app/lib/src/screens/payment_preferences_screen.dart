@@ -22,14 +22,15 @@ class PaymentPreferencesScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.smokeCharcoal,
-                  borderRadius: BorderRadius.circular(16),
+                  color: context.appColors.heroSurface,
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(color: context.appColors.softOutline),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.account_balance_wallet_outlined,
-                      color: Colors.white,
+                      color: context.appColors.heroOnSurface,
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -39,13 +40,17 @@ class PaymentPreferencesScreen extends StatelessWidget {
                           Text(
                             'Preferred Method',
                             style: Theme.of(context).textTheme.labelMedium
-                                ?.copyWith(color: Colors.white70),
+                                ?.copyWith(
+                                  color: context.appColors.heroOnSurface,
+                                ),
                           ),
                           const SizedBox(height: 2),
                           Text(
                             controller.preferredPaymentMethod.label,
                             style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(color: Colors.white),
+                                ?.copyWith(
+                                  color: context.appColors.heroOnSurface,
+                                ),
                           ),
                         ],
                       ),
@@ -110,14 +115,16 @@ class _PaymentPreferenceCard extends StatelessWidget {
       opacity: enabled ? 1 : 0.52,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadii.card),
             border: Border.all(
-              color: selected ? AppTheme.periRed : Colors.transparent,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : context.appColors.softOutline,
               width: 1.5,
             ),
           ),
@@ -128,13 +135,15 @@ class _PaymentPreferenceCard extends StatelessWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   color: selected
-                      ? AppTheme.periRed.withValues(alpha: 0.1)
-                      : AppTheme.mutedSurface,
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : context.appColors.sunkenSurface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
-                  color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+                  color: selected
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: 14),
@@ -158,7 +167,9 @@ class _PaymentPreferenceCard extends StatelessWidget {
                 selected
                     ? Icons.check_circle_rounded
                     : Icons.radio_button_unchecked_rounded,
-                color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+                color: selected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ),

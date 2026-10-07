@@ -21,10 +21,33 @@ void main() {
       expect(config.isConfigured, isFalse);
     });
 
+    test('rejects project URLs containing credentials or query data', () {
+      final credentialUrl = SupabaseConfig.fromSources({
+        'SUPABASE_URL': 'https://user:pass@project.supabase.co',
+        'SUPABASE_PUBLISHABLE_KEY': 'sb_publishable_example',
+      });
+      final queryUrl = SupabaseConfig.fromSources({
+        'SUPABASE_URL': 'https://project.supabase.co?redirect=attacker',
+        'SUPABASE_PUBLISHABLE_KEY': 'sb_publishable_example',
+      });
+
+      expect(credentialUrl.isConfigured, isFalse);
+      expect(queryUrl.isConfigured, isFalse);
+    });
+
     test('rejects new-format secret keys', () {
       final config = SupabaseConfig.fromSources({
         'SUPABASE_URL': 'https://project.supabase.co',
         'SUPABASE_PUBLISHABLE_KEY': 'sb_secret_example',
+      });
+
+      expect(config.isConfigured, isFalse);
+    });
+
+    test('rejects unknown opaque key formats', () {
+      final config = SupabaseConfig.fromSources({
+        'SUPABASE_URL': 'https://project.supabase.co',
+        'SUPABASE_PUBLISHABLE_KEY': 'not-a-real-publishable-key',
       });
 
       expect(config.isConfigured, isFalse);

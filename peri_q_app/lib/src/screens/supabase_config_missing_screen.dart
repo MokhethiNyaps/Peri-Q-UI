@@ -28,7 +28,8 @@ class SupabaseConfigMissingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Add your Supabase URL and anon key to a local .env file or pass them with dart-define values, then rebuild the app.',
+                    'Supply the Supabase project URL and publishable key with '
+                    'compile-time dart-define values, then rebuild the app.',
                     style: Theme.of(context).textTheme.bodyLarge,
                     textAlign: TextAlign.center,
                   ),

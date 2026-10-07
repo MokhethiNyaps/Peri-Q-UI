@@ -205,6 +205,9 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     final isSignIn = mode == _AuthMode.signIn;
     final isCompact = MediaQuery.sizeOf(context).width < 370;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    final colors = Theme.of(context).colorScheme;
+    final appColors = context.appColors;
 
     return Scaffold(
       body: Stack(
@@ -270,7 +273,9 @@ class _AuthScreenState extends State<AuthScreen> {
                             _BrandHeader(),
                             const SizedBox(height: 34),
                             AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 220),
+                              duration: reduceMotion
+                                  ? Duration.zero
+                                  : const Duration(milliseconds: 220),
                               transitionBuilder: (child, animation) =>
                                   FadeTransition(
                                     opacity: animation,
@@ -307,9 +312,7 @@ class _AuthScreenState extends State<AuthScreen> {
                                         : 'Save your details, order faster, and follow every meal from one account.',
                                     style: Theme.of(context).textTheme.bodyLarge
                                         ?.copyWith(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.68,
-                                          ),
+                                          color: appColors.heroOnSurface,
                                           height: 1.5,
                                         ),
                                   ),
@@ -320,16 +323,18 @@ class _AuthScreenState extends State<AuthScreen> {
                             Container(
                               padding: EdgeInsets.all(isCompact ? 18 : 24),
                               decoration: BoxDecoration(
-                                color: AppTheme.lightSurface,
-                                borderRadius: BorderRadius.circular(26),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.7),
+                                color: appColors.elevatedSurface,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadii.panel,
                                 ),
-                                boxShadow: const [
+                                border: Border.all(
+                                  color: appColors.softOutline,
+                                ),
+                                boxShadow: [
                                   BoxShadow(
-                                    color: Color(0x48000000),
+                                    color: appColors.shadow,
                                     blurRadius: 40,
-                                    offset: Offset(0, 20),
+                                    offset: const Offset(0, 20),
                                   ),
                                 ],
                               ),
@@ -347,9 +352,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                       autovalidateMode:
                                           AutovalidateMode.onUserInteraction,
                                       child: AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 220,
-                                        ),
+                                        duration: reduceMotion
+                                            ? Duration.zero
+                                            : const Duration(milliseconds: 220),
                                         child: isSignIn
                                             ? _SignInFields(
                                                 key: const ValueKey(
@@ -400,11 +405,11 @@ class _AuthScreenState extends State<AuthScreen> {
                                           ? null
                                           : _submitEmailAuth,
                                       child: AnimatedSwitcher(
-                                        duration: const Duration(
-                                          milliseconds: 160,
-                                        ),
+                                        duration: reduceMotion
+                                            ? Duration.zero
+                                            : const Duration(milliseconds: 160),
                                         child: isSubmitting
-                                            ? const Row(
+                                            ? Row(
                                                 key: ValueKey(
                                                   'auth-loading-indicator',
                                                 ),
@@ -417,11 +422,12 @@ class _AuthScreenState extends State<AuthScreen> {
                                                     child:
                                                         CircularProgressIndicator(
                                                           strokeWidth: 2,
-                                                          color: Colors.white,
+                                                          color: colors
+                                                              .onSurfaceVariant,
                                                         ),
                                                   ),
-                                                  SizedBox(width: 10),
-                                                  Text('Please wait...'),
+                                                  const SizedBox(width: 10),
+                                                  const Text('Please wait...'),
                                                 ],
                                               )
                                             : Row(
@@ -577,13 +583,14 @@ class _BrandHeader extends StatelessWidget {
           height: 58,
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            color: AppTheme.creamWhite,
+            color: context.appColors.elevatedSurface,
             borderRadius: BorderRadius.circular(18),
-            boxShadow: const [
+            border: Border.all(color: context.appColors.softOutline),
+            boxShadow: [
               BoxShadow(
-                color: Color(0x30000000),
+                color: context.appColors.shadow,
                 blurRadius: 20,
-                offset: Offset(0, 8),
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -596,28 +603,33 @@ class _BrandHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "RastasperiQ",
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.2,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "RastasperiQ",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  color: context.appColors.heroOnSurface,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              'FLAME. FLAVOUR. VIBES.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppTheme.chesaOrange,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.1,
+              const SizedBox(height: 2),
+              Text(
+                'FLAME. FLAVOUR. VIBES.',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: context.appColors.heroOnSurface,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -635,9 +647,9 @@ class _AuthModeSwitch extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppTheme.mutedSurface,
+        color: context.appColors.sunkenSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+        border: Border.all(color: context.appColors.softOutline),
       ),
       child: Row(
         children: [
@@ -647,14 +659,14 @@ class _AuthModeSwitch extends StatelessWidget {
               label: const Text('Sign In'),
               selected: mode == _AuthMode.signIn,
               onSelected: (_) => onChanged(_AuthMode.signIn),
-              selectedColor: AppTheme.periRed,
+              selectedColor: Theme.of(context).colorScheme.primary,
               backgroundColor: Colors.transparent,
               showCheckmark: false,
               padding: const EdgeInsets.symmetric(vertical: 10),
               labelStyle: TextStyle(
                 color: mode == _AuthMode.signIn
-                    ? Colors.white
-                    : AppTheme.ashGrey,
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -666,14 +678,14 @@ class _AuthModeSwitch extends StatelessWidget {
               label: const Text('Create Account'),
               selected: mode == _AuthMode.signUp,
               onSelected: (_) => onChanged(_AuthMode.signUp),
-              selectedColor: AppTheme.periRed,
+              selectedColor: Theme.of(context).colorScheme.primary,
               backgroundColor: Colors.transparent,
               showCheckmark: false,
               padding: const EdgeInsets.symmetric(vertical: 10),
               labelStyle: TextStyle(
                 color: mode == _AuthMode.signUp
-                    ? Colors.white
-                    : AppTheme.ashGrey,
+                    ? Theme.of(context).colorScheme.onPrimary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
             ),

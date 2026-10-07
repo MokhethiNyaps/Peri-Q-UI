@@ -5,6 +5,7 @@
 .packages
 /devtools_options.yaml
 /build/
+/.tooling/
 *.iml
 .env
 supabase/.env*

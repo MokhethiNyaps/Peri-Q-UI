@@ -31,7 +31,7 @@ Scope: Flutter/Dart source, Supabase schema and policies, Android release config
 - **Fixed:** legacy sample customer name/phone defaults were removed and are cleared if present in existing preferences.
 - **Fixed:** responsive home grids fall back to one column on narrow/large-text layouts; menu/home have useful empty and offline states.
 - **Fixed:** remote images are decode-sized, labelled for accessibility, and retain loading/error fallbacks.
-- **Known risk:** saved addresses and customer preferences use app-private SharedPreferences rather than an encrypted database. Android backup is disabled. This is acceptable for this lean release but should be revisited if more sensitive local data is added.
+- **Fixed:** customer name, phone number, saved addresses and delivery notes are stored with platform-backed secure storage. Existing plaintext preference values are migrated once and removed; non-sensitive UI preferences remain in SharedPreferences. Android backup and device-transfer extraction are disabled/excluded for app preferences.
 - **Known risk:** file-picker 11 requires AGP 9 built-in Kotlin while current Supabase `app_links` still applies KGP. File-picker 10.3.10 is intentionally retained; Flutter emits a future-migration warning, not a current build failure.
 
 ## Low priority

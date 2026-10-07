@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/order.dart';
 
 class TrackingScreen extends StatelessWidget {
-  const TrackingScreen({super.key, required this.order});
+  const TrackingScreen({
+    super.key,
+    required this.order,
+    this.controller,
+  });
 
   final OrderModel order;
+  final AppController? controller;
   static const String storeAddress =
       '28 King Edward Rd, Bloemfontein, FS 9301, South Africa';
   static const String branchPhoneDisplay = '+27 73 642 3549';
@@ -44,6 +50,27 @@ class TrackingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appController = controller;
+    if (appController == null) {
+      return _buildContent(context, order);
+    }
+
+    return AnimatedBuilder(
+      animation: appController,
+      builder: (context, _) {
+        var latestOrder = order;
+        for (final candidate in appController.orders) {
+          if (candidate.id == order.id) {
+            latestOrder = candidate;
+            break;
+          }
+        }
+        return _buildContent(context, latestOrder);
+      },
+    );
+  }
+
+  Widget _buildContent(BuildContext context, OrderModel order) {
     final isPreparingOrFurther =
         order.status == OrderStatus.preparing ||
         order.status == OrderStatus.ready ||
@@ -51,6 +78,20 @@ class TrackingScreen extends StatelessWidget {
     final isReadyOrCompleted =
         order.status == OrderStatus.ready ||
         order.status == OrderStatus.completed;
+    final statusHeadline = switch (order.status) {
+      OrderStatus.pending => 'ORDER RECEIVED',
+      OrderStatus.preparing => 'IN THE KITCHEN',
+      OrderStatus.ready => order.orderType == OrderType.delivery
+          ? 'READY FOR DELIVERY'
+          : 'READY FOR PICKUP',
+      OrderStatus.completed => 'ORDER COMPLETED',
+      OrderStatus.cancelled => 'ORDER CANCELLED',
+    };
+    final statusDetail = switch (order.status) {
+      OrderStatus.completed => 'Thanks for ordering with RastasperiQ',
+      OrderStatus.cancelled => 'Contact the branch if you need help',
+      _ => 'Est. ${order.estimatedMinutes} mins remaining',
+    };
 
     return Scaffold(
       appBar: AppBar(title: const Text('Live Tracking')),
@@ -62,21 +103,21 @@ class TrackingScreen extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               gradient: const LinearGradient(
-                colors: [AppTheme.periRed, AppTheme.chesaOrange],
+                colors: [Color(0xFF641407), Color(0xFF4A2107)],
               ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '${order.status.label.toUpperCase()} YOUR ORDER',
+                  statusHeadline,
                   style: Theme.of(
                     context,
                   ).textTheme.labelLarge?.copyWith(letterSpacing: 1.6),
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  'Est. ${order.estimatedMinutes} mins remaining',
+                  statusDetail,
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                     color: Colors.white,
                     fontSize: 28,
@@ -109,8 +150,12 @@ class TrackingScreen extends StatelessWidget {
             active: isPreparingOrFurther,
           ),
           _TrackingStep(
-            title: 'Ready for Pickup',
-            subtitle: 'Your order is packed and ready to go.',
+            title: order.orderType == OrderType.delivery
+                ? 'Ready for Delivery'
+                : 'Ready for Pickup',
+            subtitle: order.orderType == OrderType.delivery
+                ? 'Your order is packed and ready for handoff.'
+                : 'Your order is packed and ready to collect.',
             active: isReadyOrCompleted,
           ),
           _TrackingStep(
@@ -142,7 +187,7 @@ class TrackingScreen extends StatelessWidget {
                 FilledButton.tonalIcon(
                   onPressed: _contactBranch,
                   icon: const Icon(Icons.call_rounded),
-                  label: const Text('Call branch directly'),
+                  label: const Text('Contact branch'),
                 ),
               ],
             ),
@@ -168,6 +213,9 @@ class _TrackingStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final connectorHeight = (42 * MediaQuery.textScalerOf(context).scale(1))
+        .clamp(42, 88)
+        .toDouble();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -176,18 +224,22 @@ class _TrackingStep extends StatelessWidget {
             CircleAvatar(
               radius: 12,
               backgroundColor: active
-                  ? AppTheme.periRed
-                  : AppTheme.mutedSurface,
+                  ? Theme.of(context).colorScheme.primary
+                  : context.appColors.sunkenSurface,
               child: active
-                  ? const Icon(
+                  ? Icon(
                       Icons.check_rounded,
                       size: 16,
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     )
                   : const SizedBox.shrink(),
             ),
             if (!isLast)
-              Container(width: 2, height: 42, color: AppTheme.mutedSurface),
+              Container(
+                width: 2,
+                height: connectorHeight,
+                color: context.appColors.softOutline,
+              ),
           ],
         ),
         const SizedBox(width: 12),

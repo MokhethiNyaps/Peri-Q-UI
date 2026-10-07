@@ -3,9 +3,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SecureAuthLocalStorage extends LocalStorage {
-  SecureAuthLocalStorage({required this.sessionKey});
+  SecureAuthLocalStorage({
+    required this.sessionKey,
+    this.legacySessionKeys = const [],
+  });
 
   final String sessionKey;
+  final List<String> legacySessionKeys;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   @override
@@ -14,11 +18,20 @@ class SecureAuthLocalStorage extends LocalStorage {
     if (existing != null) return;
 
     final preferences = await SharedPreferences.getInstance();
-    final legacySession = preferences.getString(sessionKey);
-    if (legacySession == null) return;
+    final migrationKeys = <String>{sessionKey, ...legacySessionKeys};
+    for (final legacyKey in migrationKeys) {
+      final secureLegacy = await _secureStorage.read(key: legacyKey);
+      final plaintextLegacy = preferences.getString(legacyKey);
+      final legacySession = secureLegacy ?? plaintextLegacy;
+      if (legacySession == null) continue;
 
-    await _secureStorage.write(key: sessionKey, value: legacySession);
-    await preferences.remove(sessionKey);
+      await _secureStorage.write(key: sessionKey, value: legacySession);
+      await preferences.remove(legacyKey);
+      if (legacyKey != sessionKey) {
+        await _secureStorage.delete(key: legacyKey);
+      }
+      return;
+    }
   }
 
   @override
@@ -33,8 +46,15 @@ class SecureAuthLocalStorage extends LocalStorage {
   }
 
   @override
-  Future<void> removePersistedSession() {
-    return _secureStorage.delete(key: sessionKey);
+  Future<void> removePersistedSession() async {
+    final preferences = await SharedPreferences.getInstance();
+    final keys = <String>{sessionKey, ...legacySessionKeys};
+    await Future.wait<void>([
+      for (final key in keys) _secureStorage.delete(key: key),
+    ]);
+    await Future.wait<bool>([
+      for (final key in keys) preferences.remove(key),
+    ]);
   }
 }
 

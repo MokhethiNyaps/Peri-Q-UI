@@ -69,6 +69,15 @@ class AppController extends ChangeNotifier {
   StreamSubscription<void>? _menuCategoryChanges;
   bool _isRefreshingMenuFromRealtime = false;
   bool _hasPendingMenuRealtimeRefresh = false;
+  int _sessionRevision = 0;
+  int _orderWatchRevision = 0;
+  int _orderFetchRevision = 0;
+  int _bootstrapRevision = 0;
+  int _appSettingsMutationRevision = 0;
+  Future<void>? _refreshInFlight;
+  Future<void> _preferenceWriteQueue = Future<void>.value();
+  final Set<String> _ordersBeingUpdated = <String>{};
+  bool _isDisposed = false;
   String? _pendingOrderRequestId;
 
   bool get canAccessAdmin => isAdmin;
@@ -221,6 +230,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _bootstrap() async {
+    final bootstrapRevision = ++_bootstrapRevision;
     try {
       isBootstrapping = true;
       bootstrapError = null;
@@ -236,6 +246,8 @@ class AppController extends ChangeNotifier {
       final fetchedMenuCategories = await _menuRepository.fetchMenuCategories();
       final fetchedMenuItems = await _menuRepository.fetchMenuItems();
 
+      if (_isDisposed || bootstrapRevision != _bootstrapRevision) return;
+
       _applySessionState(authSession, fallbackPreferences: preferences);
 
       List<OrderModel> fetchedOrders;
@@ -247,6 +259,8 @@ class AppController extends ChangeNotifier {
       } catch (_) {
         fetchedOrders = const [];
       }
+
+      if (_isDisposed || bootstrapRevision != _bootstrapRevision) return;
 
       selectedMenuCategory = preferences.selectedMenuCategory;
       savedAddresses = List<SavedAddress>.from(preferences.savedAddresses);
@@ -267,6 +281,7 @@ class AppController extends ChangeNotifier {
         selectedMenuCategory = 'All';
       }
     } catch (error) {
+      if (_isDisposed || bootstrapRevision != _bootstrapRevision) return;
       bootstrapError = error.toString();
       hasReturningSession = false;
       userId = null;
@@ -281,30 +296,52 @@ class AppController extends ChangeNotifier {
       defaultAddressId = null;
       preferredPaymentMethod = PaymentMethod.cashCollection;
     } finally {
-      isBootstrapping = false;
-      notifyListeners();
+      if (!_isDisposed && bootstrapRevision == _bootstrapRevision) {
+        isBootstrapping = false;
+        notifyListeners();
+      }
     }
   }
 
   Future<void> retryBootstrap() => _bootstrap();
 
-  Future<void> refreshData() async {
+  Future<void> refreshData() {
+    final inFlight = _refreshInFlight;
+    if (inFlight != null) return inFlight;
+
+    final operation = _refreshDataOnce();
+    _refreshInFlight = operation;
+    return operation.whenComplete(() {
+      if (identical(_refreshInFlight, operation)) {
+        _refreshInFlight = null;
+      }
+    });
+  }
+
+  Future<void> _refreshDataOnce() async {
+    final sessionRevision = _sessionRevision;
     final results = await Future.wait<dynamic>([
       _storeRepository.fetchAppSettings(),
       _menuRepository.fetchMenuCategories(),
       _menuRepository.fetchMenuItems(),
       _orderRepository.fetchOrders(userId: userId, includeAll: isAdmin),
     ]);
+    if (_isDisposed || sessionRevision != _sessionRevision) return;
     _applyAppSettings(results[0] as AppSettings);
     menuCategories = _orderedCategories(results[1] as List<MenuCategoryModel>);
     menuItems = _orderedMenuItems(results[2] as List<MenuItemModel>);
     isMenuStale = _menuRepository.lastFetchUsedCache;
     orders = results[3] as List<OrderModel>;
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
   Future<void> _savePreferences() {
-    return _preferencesRepository.savePreferences(_currentPreferences);
+    final snapshot = _currentPreferences;
+    final operation = _preferenceWriteQueue.then(
+      (_) => _preferencesRepository.savePreferences(snapshot),
+    );
+    _preferenceWriteQueue = operation.catchError((_) {});
+    return operation;
   }
 
   Future<void> startGuestSession() async {
@@ -355,6 +392,10 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> signOut() async {
+    _sessionRevision += 1;
+    _orderWatchRevision += 1;
+    _refreshInFlight = null;
+    _pendingOrderRequestId = null;
     await _orderChanges?.cancel();
     _orderChanges = null;
     await _unregisterNotificationsBestEffort();
@@ -377,6 +418,10 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> deleteAccount() async {
+    _sessionRevision += 1;
+    _orderWatchRevision += 1;
+    _refreshInFlight = null;
+    _pendingOrderRequestId = null;
     await _unregisterNotificationsBestEffort();
     await _authRepository.deleteAccount();
     await _orderChanges?.cancel();
@@ -393,7 +438,7 @@ class AppController extends ChangeNotifier {
     savedAddresses = [];
     defaultAddressId = null;
     await _savePreferences();
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
   Future<void> updateCustomer({
@@ -416,8 +461,8 @@ class AppController extends ChangeNotifier {
 
   Future<void> setThemeMode(ThemeMode mode) async {
     themeMode = mode;
-    await _savePreferences();
     notifyListeners();
+    await _savePreferences();
   }
 
   Future<void> toggleStoreOpen(bool value) async {
@@ -426,20 +471,26 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> updateAppSettings(AppSettings settings) async {
+    final mutationRevision = ++_appSettingsMutationRevision;
     final previousSettings = appSettings;
     _applyAppSettings(settings);
     notifyListeners();
 
     try {
       final savedSettings = await _storeRepository.updateAppSettings(settings);
+      if (_isDisposed || mutationRevision != _appSettingsMutationRevision) {
+        return;
+      }
       _applyAppSettings(savedSettings);
     } catch (_) {
-      _applyAppSettings(previousSettings);
-      notifyListeners();
+      if (!_isDisposed && mutationRevision == _appSettingsMutationRevision) {
+        _applyAppSettings(previousSettings);
+        notifyListeners();
+      }
       rethrow;
     }
 
-    notifyListeners();
+    if (!_isDisposed) notifyListeners();
   }
 
   Future<void> updateTodaysSpecialSettings(
@@ -450,8 +501,8 @@ class AppController extends ChangeNotifier {
 
   void setSelectedMenuCategory(String category) {
     selectedMenuCategory = category;
-    _savePreferences();
     notifyListeners();
+    unawaited(_savePreferences().catchError((_) {}));
   }
 
   Future<void> addSavedAddress({
@@ -557,6 +608,7 @@ class AppController extends ChangeNotifier {
     required PaymentMethod paymentMethod,
     String? deliveryAddress,
   }) async {
+    final sessionRevision = _sessionRevision;
     if (cart.isEmpty) {
       throw const OrderSubmissionException('Your cart is empty.');
     }
@@ -591,6 +643,9 @@ class AppController extends ChangeNotifier {
       userId: userId,
     );
 
+    if (_isDisposed || sessionRevision != _sessionRevision) {
+      return order;
+    }
     _pendingOrderRequestId = null;
     orders = [order, ...orders];
     cart = [];
@@ -619,6 +674,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> advanceOrderStatus(OrderModel order) async {
+    if (!_ordersBeingUpdated.add(order.id)) return;
     final nextStatus = switch (order.status) {
       OrderStatus.pending => OrderStatus.preparing,
       OrderStatus.preparing => OrderStatus.ready,
@@ -628,24 +684,34 @@ class AppController extends ChangeNotifier {
     };
 
     if (nextStatus == null) {
+      _ordersBeingUpdated.remove(order.id);
       return;
     }
 
-    final updatedOrder = await _orderRepository.updateOrderStatus(
-      orderId: order.id,
-      status: nextStatus,
-    );
-    _replaceOrder(updatedOrder);
-    unawaited(_notifyOrderStatusBestEffort(updatedOrder));
+    try {
+      final updatedOrder = await _orderRepository.updateOrderStatus(
+        orderId: order.id,
+        status: nextStatus,
+      );
+      _replaceOrder(updatedOrder);
+      unawaited(_notifyOrderStatusBestEffort(updatedOrder));
+    } finally {
+      _ordersBeingUpdated.remove(order.id);
+    }
   }
 
   Future<void> rejectOrder(OrderModel order) async {
-    final updatedOrder = await _orderRepository.updateOrderStatus(
-      orderId: order.id,
-      status: OrderStatus.cancelled,
-    );
-    _replaceOrder(updatedOrder);
-    unawaited(_notifyOrderStatusBestEffort(updatedOrder));
+    if (!_ordersBeingUpdated.add(order.id)) return;
+    try {
+      final updatedOrder = await _orderRepository.updateOrderStatus(
+        orderId: order.id,
+        status: OrderStatus.cancelled,
+      );
+      _replaceOrder(updatedOrder);
+      unawaited(_notifyOrderStatusBestEffort(updatedOrder));
+    } finally {
+      _ordersBeingUpdated.remove(order.id);
+    }
   }
 
   void reorder(OrderModel order) {
@@ -756,6 +822,9 @@ class AppController extends ChangeNotifier {
     AppAuthSession session, {
     required bool guest,
   }) async {
+    final sessionRevision = ++_sessionRevision;
+    _refreshInFlight = null;
+    _pendingOrderRequestId = null;
     userId = session.userId;
     userEmail = session.email;
     isAdmin = session.isAdmin;
@@ -763,12 +832,15 @@ class AppController extends ChangeNotifier {
     isGuest = guest;
     customerName = _resolveProfileValue(session.customerName, customerName);
     customerPhone = _resolveProfileValue(session.customerPhone, customerPhone);
-    orders = await _orderRepository.fetchOrders(
+    final fetchedOrders = await _orderRepository.fetchOrders(
       userId: userId,
       includeAll: isAdmin,
     );
+    if (_isDisposed || sessionRevision != _sessionRevision) return;
+    orders = fetchedOrders;
     _startWatchingOrders();
     await _savePreferences();
+    if (_isDisposed || sessionRevision != _sessionRevision) return;
     notifyListeners();
     unawaited(_registerNotificationsForCurrentSession());
   }
@@ -814,18 +886,33 @@ class AppController extends ChangeNotifier {
 
   void _startWatchingOrders() {
     _orderChanges?.cancel();
+    final watchRevision = ++_orderWatchRevision;
+    final watchedUserId = userId;
+    final watchedIsAdmin = isAdmin;
     _orderChanges = _orderRepository
-        .watchOrders(userId: userId, includeAll: isAdmin)
-        .listen((_) async {
-          try {
-            orders = await _orderRepository.fetchOrders(
-              userId: userId,
-              includeAll: isAdmin,
-            );
-            notifyListeners();
-          } catch (_) {
-            // The current data stays visible; resume/refresh provides recovery.
-          }
+        .watchOrders(userId: watchedUserId, includeAll: watchedIsAdmin)
+        .listen((_) {
+          final fetchRevision = ++_orderFetchRevision;
+          unawaited(
+            _orderRepository
+                .fetchOrders(
+                  userId: watchedUserId,
+                  includeAll: watchedIsAdmin,
+                )
+                .then((fetchedOrders) {
+                  if (_isDisposed ||
+                      watchRevision != _orderWatchRevision ||
+                      fetchRevision != _orderFetchRevision) {
+                    return;
+                  }
+                  orders = fetchedOrders;
+                  notifyListeners();
+                })
+                .catchError((_) {
+                  // Keep the last successful orders. A later event or manual
+                  // refresh will recover without regressing newer state.
+                }),
+          );
         });
   }
 
@@ -833,6 +920,7 @@ class AppController extends ChangeNotifier {
     _appSettingsChanges?.cancel();
     _appSettingsChanges = _storeRepository.watchAppSettings().listen(
       (settings) {
+        if (_isDisposed) return;
         _applyAppSettings(settings);
         notifyListeners();
       },
@@ -860,6 +948,7 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> _refreshMenuFromRealtime() async {
+    if (_isDisposed) return;
     if (_isRefreshingMenuFromRealtime) {
       _hasPendingMenuRealtimeRefresh = true;
       return;
@@ -873,6 +962,7 @@ class AppController extends ChangeNotifier {
             _menuRepository.fetchMenuCategories(),
             _menuRepository.fetchMenuItems(),
           ]);
+          if (_isDisposed) return;
           menuCategories = _orderedCategories(
             results[0] as List<MenuCategoryModel>,
           );
@@ -893,6 +983,11 @@ class AppController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
+    _bootstrapRevision += 1;
+    _sessionRevision += 1;
+    _orderWatchRevision += 1;
+    _orderFetchRevision += 1;
     _orderChanges?.cancel();
     _appSettingsChanges?.cancel();
     _menuItemChanges?.cancel();
@@ -924,6 +1019,7 @@ class AppController extends ChangeNotifier {
   }
 
   void _replaceOrder(OrderModel updatedOrder) {
+    if (_isDisposed) return;
     orders = [
       for (final order in orders)
         if (order.id == updatedOrder.id) updatedOrder else order,

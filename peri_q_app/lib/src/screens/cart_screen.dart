@@ -39,32 +39,42 @@ class _CartScreenState extends State<CartScreen> {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, _) {
+        final theme = Theme.of(context);
+        final colors = theme.colorScheme;
+        final appColors = context.appColors;
         return Scaffold(
           appBar: AppBar(title: const Text('Your Cart')),
           body: widget.controller.cart.isEmpty
-              ? Center(
-                  child: Padding(
+              ? LayoutBuilder(
+                  builder: (context, constraints) => SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 72,
-                          color: AppTheme.ashGrey,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Your cart is empty.',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Add a few meals and come back to checkout.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                        ),
-                      ],
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: (constraints.maxHeight - 48)
+                            .clamp(0, double.infinity)
+                            .toDouble(),
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.shopping_cart_outlined,
+                            size: 72,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Your cart is empty.',
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Add a few meals and come back to checkout.',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 )
@@ -77,13 +87,14 @@ class _CartScreenState extends State<CartScreen> {
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: const [
+                            color: appColors.elevatedSurface,
+                            borderRadius: BorderRadius.circular(AppRadii.card),
+                            border: Border.all(color: appColors.softOutline),
+                            boxShadow: [
                               BoxShadow(
-                                color: Color(0x12000000),
+                                color: appColors.shadow,
                                 blurRadius: 14,
-                                offset: Offset(0, 6),
+                                offset: const Offset(0, 6),
                               ),
                             ],
                           ),
@@ -95,6 +106,8 @@ class _CartScreenState extends State<CartScreen> {
                                 children: [
                                   AppImage(
                                     imagePath: cartItem.item.imagePath,
+                                    semanticLabel:
+                                        '${cartItem.item.name} photo',
                                     width: 72,
                                     height: 72,
                                     borderRadius: BorderRadius.circular(12),
@@ -138,6 +151,7 @@ class _CartScreenState extends State<CartScreen> {
                                     ),
                                   ),
                                   IconButton(
+                                    tooltip: 'Remove ${cartItem.item.name}',
                                     onPressed: () => widget.controller
                                         .removeCartItem(cartItem),
                                     icon: const Icon(
@@ -151,12 +165,18 @@ class _CartScreenState extends State<CartScreen> {
                                 children: [
                                   Container(
                                     decoration: BoxDecoration(
-                                      color: AppTheme.mutedSurface,
-                                      borderRadius: BorderRadius.circular(12),
+                                      color: appColors.sunkenSurface,
+                                      borderRadius: BorderRadius.circular(
+                                        AppRadii.input,
+                                      ),
+                                      border: Border.all(
+                                        color: appColors.softOutline,
+                                      ),
                                     ),
                                     child: Row(
                                       children: [
                                         IconButton(
+                                          tooltip: 'Decrease quantity',
                                           onPressed: () => widget.controller
                                               .decrementCartItem(cartItem),
                                           icon: const Icon(
@@ -170,6 +190,7 @@ class _CartScreenState extends State<CartScreen> {
                                           ).textTheme.titleLarge,
                                         ),
                                         IconButton(
+                                          tooltip: 'Increase quantity',
                                           onPressed: () => widget.controller
                                               .incrementCartItem(cartItem),
                                           icon: const Icon(Icons.add_rounded),
@@ -183,7 +204,7 @@ class _CartScreenState extends State<CartScreen> {
                                     style: Theme.of(context)
                                         .textTheme
                                         .headlineMedium
-                                        ?.copyWith(color: AppTheme.periRed),
+                                        ?.copyWith(color: colors.primary),
                                   ),
                                 ],
                               ),
@@ -201,8 +222,9 @@ class _CartScreenState extends State<CartScreen> {
                     Container(
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(18),
+                        color: appColors.elevatedSurface,
+                        borderRadius: BorderRadius.circular(AppRadii.card),
+                        border: Border.all(color: appColors.softOutline),
                       ),
                       child: Column(
                         children: [
@@ -271,6 +293,7 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final style = strong
         ? Theme.of(context).textTheme.titleLarge
         : Theme.of(context).textTheme.bodyLarge;
@@ -281,7 +304,7 @@ class _SummaryRow extends StatelessWidget {
         Text(
           'R${value.toStringAsFixed(0)}',
           style: style?.copyWith(
-            color: strong ? AppTheme.periRed : AppTheme.smokeCharcoal,
+            color: strong ? colors.primary : colors.onSurface,
             fontWeight: strong ? FontWeight.w800 : FontWeight.w600,
           ),
         ),

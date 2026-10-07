@@ -10,38 +10,54 @@ class OrderStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final appColors = context.appColors;
     Color background;
     Color foreground;
 
     switch (status) {
       case OrderStatus.pending:
-        background = AppTheme.warning.withValues(alpha: 0.18);
-        foreground = AppTheme.warning;
+        background = appColors.warningContainer;
+        foreground = appColors.onWarningContainer;
+        break;
       case OrderStatus.preparing:
-        background = AppTheme.chesaOrange.withValues(alpha: 0.18);
-        foreground = AppTheme.chesaOrange;
+        background = appColors.accentContainer;
+        foreground = appColors.onAccentContainer;
+        break;
       case OrderStatus.ready:
-        background = AppTheme.success.withValues(alpha: 0.18);
-        foreground = AppTheme.success;
+        background = appColors.successContainer;
+        foreground = appColors.onSuccessContainer;
+        break;
       case OrderStatus.completed:
-        background = Colors.grey.shade200;
-        foreground = AppTheme.ashGrey;
+        background = appColors.sunkenSurface;
+        foreground = colors.onSurface;
+        break;
       case OrderStatus.cancelled:
-        background = AppTheme.periRed.withValues(alpha: 0.12);
-        foreground = AppTheme.periRed;
+        background = appColors.dangerContainer;
+        foreground = appColors.onDangerContainer;
+        break;
     }
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        status.label.toUpperCase(),
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: foreground,
-          fontWeight: FontWeight.w800,
+    return Semantics(
+      label: 'Order status: ${status.label}',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+            border: Border.all(color: foreground.withValues(alpha: 0.28)),
+          ),
+          child: Text(
+            status.label.toUpperCase(),
+            maxLines: 1,
+            overflow: TextOverflow.fade,
+            softWrap: false,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ),
     );

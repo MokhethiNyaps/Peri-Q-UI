@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
-import '../core/app_theme.dart';
 import 'auth_screen.dart';
 import 'customer_shell.dart';
 
@@ -49,10 +48,10 @@ class _StartupErrorScreenState extends State<StartupErrorScreen> {
             padding: const EdgeInsets.all(28),
             child: Column(
               children: [
-                const Icon(
+                Icon(
                   Icons.cloud_off_rounded,
                   size: 72,
-                  color: AppTheme.ashGrey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   semanticLabel: 'Connection unavailable',
                 ),
                 const SizedBox(height: 18),

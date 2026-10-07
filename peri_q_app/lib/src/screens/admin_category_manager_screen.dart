@@ -100,7 +100,6 @@ class AdminCategoryManagerScreen extends StatelessWidget {
           appBar: AppBar(title: const Text('Categories')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _openEditor(context),
-            backgroundColor: AppTheme.periRed,
             icon: const Icon(Icons.add_rounded),
             label: const Text('Category'),
           ),
@@ -112,7 +111,8 @@ class AdminCategoryManagerScreen extends StatelessWidget {
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(AppRadii.card),
+                    border: Border.all(color: context.appColors.softOutline),
                   ),
                   child: const Text('No categories found.'),
                 )
@@ -127,7 +127,10 @@ class AdminCategoryManagerScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(18),
+                        borderRadius: BorderRadius.circular(AppRadii.card),
+                        border: Border.all(
+                          color: context.appColors.softOutline,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -136,8 +139,8 @@ class AdminCategoryManagerScreen extends StatelessWidget {
                             height: 42,
                             decoration: BoxDecoration(
                               color: category.isActive
-                                  ? AppTheme.success.withValues(alpha: 0.12)
-                                  : AppTheme.ashGrey.withValues(alpha: 0.12),
+                                  ? context.appColors.successContainer
+                                  : context.appColors.sunkenSurface,
                               borderRadius: BorderRadius.circular(12),
                             ),
                             alignment: Alignment.center,
@@ -146,8 +149,10 @@ class AdminCategoryManagerScreen extends StatelessWidget {
                               style: Theme.of(context).textTheme.labelMedium
                                   ?.copyWith(
                                     color: category.isActive
-                                        ? AppTheme.success
-                                        : AppTheme.ashGrey,
+                                        ? context.appColors.onSuccessContainer
+                                        : Theme.of(
+                                            context,
+                                          ).colorScheme.onSurfaceVariant,
                                   ),
                             ),
                           ),
@@ -267,6 +272,7 @@ class _CategoryEditorDialogState extends State<_CategoryEditorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      scrollable: true,
       title: Text(isEditing ? 'Edit Category' : 'Add Category'),
       content: Form(
         key: _formKey,

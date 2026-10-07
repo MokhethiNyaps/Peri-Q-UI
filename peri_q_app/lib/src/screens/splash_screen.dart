@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
+import '../core/app_theme.dart';
 import 'auth_screen.dart';
 import 'customer_shell.dart';
 import 'startup_error_screen.dart';
@@ -51,8 +52,17 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+
+    if (reduceMotion && _animationController.isAnimating) {
+      _animationController.stop();
+    } else if (!reduceMotion && !_animationController.isAnimating) {
+      _animationController.repeat();
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFBF1EC),
+      backgroundColor: theme.colorScheme.surface,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -61,24 +71,40 @@ class _SplashScreenState extends State<SplashScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  width: 240,
-                  height: 240,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x16000000),
-                        blurRadius: 28,
-                        offset: Offset(0, 14),
+                Semantics(
+                  image: true,
+                  label: 'RastasperiQ',
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 240,
+                      maxHeight: 240,
+                    ),
+                    child: AspectRatio(
+                      aspectRatio: 1,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: context.appColors.elevatedSurface,
+                          borderRadius: BorderRadius.circular(AppRadii.panel),
+                          border: Border.all(
+                            color: context.appColors.softOutline,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: context.appColors.shadow,
+                              blurRadius: 32,
+                              offset: const Offset(0, 16),
+                            ),
+                          ],
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(AppRadii.panel),
+                          child: Image.asset(
+                            'assets/images/logo-squere.png',
+                            fit: BoxFit.contain,
+                            excludeFromSemantics: true,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      'assets/images/logo-squere.png',
-                      fit: BoxFit.contain,
                     ),
                   ),
                 ),
@@ -95,10 +121,11 @@ class _SplashScreenState extends State<SplashScreen>
                 animation: _animationController,
                 builder: (context, _) {
                   return LinearProgressIndicator(
-                    value: _animationController.value,
+                    value: reduceMotion ? null : _animationController.value,
                     minHeight: 6,
-                    backgroundColor: const Color(0x1AC8240B),
-                    color: const Color(0xFFC8240B),
+                    backgroundColor: theme.colorScheme.primaryContainer,
+                    color: theme.colorScheme.primary,
+                    semanticsLabel: 'Loading RastasperiQ',
                   );
                 },
               ),

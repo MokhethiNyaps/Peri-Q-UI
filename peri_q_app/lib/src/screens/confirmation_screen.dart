@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
@@ -37,15 +35,15 @@ class ConfirmationScreen extends StatelessWidget {
                     height: 150,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: AppTheme.success.withValues(alpha: 0.12),
+                      color: context.appColors.successContainer,
                     ),
                   ),
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 38,
-                    backgroundColor: AppTheme.success,
+                    backgroundColor: context.appColors.success,
                     child: Icon(
                       Icons.check_rounded,
-                      color: Colors.white,
+                      color: context.appColors.onSuccess,
                       size: 40,
                     ),
                   ),
@@ -72,7 +70,8 @@ class ConfirmationScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(color: context.appColors.softOutline),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,7 +113,9 @@ class ConfirmationScreen extends StatelessWidget {
                         Text(
                           'R${order.totalPrice.toStringAsFixed(0)}',
                           style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(color: AppTheme.periRed),
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
                         ),
                       ],
                     ),
@@ -127,7 +128,8 @@ class ConfirmationScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(color: context.appColors.softOutline),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,10 +150,11 @@ class ConfirmationScreen extends StatelessWidget {
                       subtitle:
                           'The kitchen will start once the owner accepts it.',
                     ),
-                    const _TimelineStep(
+                    _TimelineStep(
                       title: 'Ready / Completed',
-                      subtitle:
-                          'We will notify you when it is ready for collection.',
+                      subtitle: order.orderType == OrderType.delivery
+                          ? 'We will notify you when it is ready for delivery.'
+                          : 'We will notify you when it is ready for collection.',
                     ),
                   ],
                 ),
@@ -161,7 +164,10 @@ class ConfirmationScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => TrackingScreen(order: order),
+                      builder: (_) => TrackingScreen(
+                        order: order,
+                        controller: controller,
+                      ),
                     ),
                   );
                 },
@@ -227,7 +233,7 @@ class _PaymentProofUploaderState extends State<_PaymentProofUploader> {
     try {
       await widget.controller.uploadPaymentProof(
         order: widget.order,
-        bytes: Uint8List.fromList(bytes),
+        bytes: bytes,
         fileName: file.name,
         contentType: _contentType(file.extension ?? file.name),
       );
@@ -268,27 +274,47 @@ class _PaymentProofUploaderState extends State<_PaymentProofUploader> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: uploaded
-            ? AppTheme.success.withValues(alpha: 0.08)
-            : AppTheme.chesaOrange.withValues(alpha: 0.09),
-        borderRadius: BorderRadius.circular(20),
+            ? context.appColors.successContainer
+            : context.appColors.accentContainer,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(
+          color: uploaded
+              ? context.appColors.onSuccessContainer.withValues(alpha: 0.3)
+              : context.appColors.onAccentContainer.withValues(alpha: 0.3),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             uploaded ? 'Payment proof received' : 'EFT payment proof',
-            style: Theme.of(context).textTheme.titleLarge,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: uploaded
+                  ? context.appColors.onSuccessContainer
+                  : context.appColors.onAccentContainer,
+            ),
           ),
           const SizedBox(height: 6),
           Text(
             uploaded
                 ? 'The private proof is linked to this order for staff review.'
                 : 'Upload a clear JPG, PNG, WebP or PDF (maximum 5 MB). Your order remains placed if the upload fails.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: uploaded
+                  ? context.appColors.onSuccessContainer
+                  : context.appColors.onAccentContainer,
+            ),
           ),
           const SizedBox(height: 12),
           if (!uploaded)
             OutlinedButton.icon(
               onPressed: isUploading ? null : _pickAndUpload,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: context.appColors.onAccentContainer,
+                side: BorderSide(
+                  color: context.appColors.onAccentContainer,
+                ),
+              ),
               icon: isUploading
                   ? const SizedBox(
                       width: 18,
@@ -317,6 +343,9 @@ class _TimelineStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final connectorHeight = (38 * MediaQuery.textScalerOf(context).scale(1))
+        .clamp(38, 82)
+        .toDouble();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -325,17 +354,21 @@ class _TimelineStep extends StatelessWidget {
             CircleAvatar(
               radius: 12,
               backgroundColor: active
-                  ? AppTheme.success
-                  : AppTheme.mutedSurface,
+                  ? context.appColors.success
+                  : context.appColors.sunkenSurface,
               child: active
-                  ? const Icon(
+                  ? Icon(
                       Icons.check_rounded,
-                      color: Colors.white,
+                      color: context.appColors.onSuccess,
                       size: 16,
                     )
                   : const SizedBox.shrink(),
             ),
-            Container(width: 2, height: 38, color: AppTheme.mutedSurface),
+            Container(
+              width: 2,
+              height: connectorHeight,
+              color: context.appColors.softOutline,
+            ),
           ],
         ),
         const SizedBox(width: 12),

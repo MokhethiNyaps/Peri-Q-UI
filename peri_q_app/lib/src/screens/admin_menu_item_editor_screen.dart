@@ -4,7 +4,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
-import '../core/app_theme.dart';
 import '../models/menu_item.dart';
 import '../widgets/app_image.dart';
 
@@ -332,7 +331,9 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
               'Images upload to the Supabase menu-images bucket and this item stores the public URL.',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: AppTheme.ashGrey),
+              ).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 12),
             SwitchListTile.adaptive(

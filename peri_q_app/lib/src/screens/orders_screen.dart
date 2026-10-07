@@ -41,14 +41,20 @@ class OrdersScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => TrackingScreen(order: order),
+                            builder: (_) => TrackingScreen(
+                              order: order,
+                              controller: controller,
+                            ),
                           ),
                         );
                       },
                       onAction: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => TrackingScreen(order: order),
+                            builder: (_) => TrackingScreen(
+                              order: order,
+                              controller: controller,
+                            ),
                           ),
                         );
                       },
@@ -70,7 +76,10 @@ class OrdersScreen extends StatelessWidget {
                       onTap: () {
                         Navigator.of(context).push(
                           MaterialPageRoute(
-                            builder: (_) => TrackingScreen(order: order),
+                            builder: (_) => TrackingScreen(
+                              order: order,
+                              controller: controller,
+                            ),
                           ),
                         );
                       },
@@ -116,6 +125,8 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final appColors = context.appColors;
     final isTerminal = order.status == OrderStatus.completed ||
         order.status == OrderStatus.cancelled;
 
@@ -125,8 +136,9 @@ class _OrderCard extends StatelessWidget {
       child: Ink(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(18),
+          color: appColors.elevatedSurface,
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          border: Border.all(color: appColors.softOutline),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +147,7 @@ class _OrderCard extends StatelessWidget {
               children: [
                 Text(
                   '#${order.orderNumber}',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: theme.textTheme.titleLarge,
                 ),
                 const Spacer(),
                 OrderStatusChip(status: order.status),
@@ -146,7 +158,7 @@ class _OrderCard extends StatelessWidget {
               order.items
                   .map((item) => '${item.quantity} x ${item.item.name}')
                   .join(', '),
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 14),
             if (!isTerminal)
@@ -170,17 +182,17 @@ class _OrderCard extends StatelessWidget {
                         ? Icons.check_circle_outline_rounded
                         : Icons.cancel_outlined,
                     color: order.status == OrderStatus.completed
-                        ? AppTheme.success
-                        : AppTheme.ashGrey,
+                        ? appColors.success
+                        : theme.colorScheme.onSurfaceVariant,
                     size: 18,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     order.status.label,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.bodyMedium?.copyWith(
                           color: order.status == OrderStatus.completed
-                              ? AppTheme.success
-                              : AppTheme.ashGrey,
+                              ? appColors.success
+                              : theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w700,
                         ),
                   ),
@@ -191,7 +203,7 @@ class _OrderCard extends StatelessWidget {
               children: [
                 Text(
                   'R${order.totalPrice.toStringAsFixed(0)}',
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: theme.textTheme.titleLarge,
                 ),
                 const Spacer(),
                 TextButton(onPressed: onAction, child: Text(actionLabel)),
@@ -211,12 +223,14 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = context.appColors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(18),
+        color: appColors.elevatedSurface,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: appColors.softOutline),
       ),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
     );

@@ -4,7 +4,8 @@ This app now expects Supabase configuration and no longer uses demo/mock data.
 
 ## 1. Add local configuration
 
-For local convenience you may keep an ignored `.env`, but the app does not load or bundle it. Pass values with `--dart-define`:
+The app does not load or bundle `.env` files. Pass the public client values with
+`--dart-define` (or the documented release configuration script):
 
 ```env
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co
@@ -165,4 +166,4 @@ Optional or future-facing:
   `rastasperiq://reset-password` as an Auth redirect URL before using it in
   production.
 - The app uses the Supabase publishable key on the client, so RLS policies are what protect your data.
-- If you launch the app without Supabase values in `.env` or `--dart-define`, the app will show a configuration screen instead of falling back to mock data.
+- If you launch the app without Supabase `--dart-define` values, the app will show a configuration screen instead of falling back to mock data.

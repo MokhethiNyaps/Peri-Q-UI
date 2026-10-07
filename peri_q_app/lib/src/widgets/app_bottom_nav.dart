@@ -25,34 +25,40 @@ class AppBottomNav extends StatelessWidget {
       (Icons.person_rounded, 'Profile'),
     ];
 
-    return BottomAppBar(
-      height: 84,
-      shape: const CircularNotchedRectangle(),
-      notchMargin: 8,
-      color: Theme.of(context).colorScheme.surface,
-      elevation: 14,
-      child: Row(
-        children: [
-          for (var index = 0; index < 2; index++)
-            Expanded(
-              child: _NavItem(
-                icon: items[index].$1,
-                label: items[index].$2,
-                selected: currentIndex == index,
-                onTap: () => onSelected(index),
+    final appColors = context.appColors;
+
+    return SafeArea(
+      top: false,
+      child: BottomAppBar(
+        height: 84,
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        color: appColors.elevatedSurface,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        child: Row(
+          children: [
+            for (var index = 0; index < 2; index++)
+              Expanded(
+                child: _NavItem(
+                  icon: items[index].$1,
+                  label: items[index].$2,
+                  selected: currentIndex == index,
+                  onTap: () => onSelected(index),
+                ),
               ),
-            ),
-          const SizedBox(width: 56),
-          for (var index = 2; index < items.length; index++)
-            Expanded(
-              child: _NavItem(
-                icon: items[index].$1,
-                label: items[index].$2,
-                selected: currentIndex == index,
-                onTap: () => onSelected(index),
+            const SizedBox(width: 56),
+            for (var index = 2; index < items.length; index++)
+              Expanded(
+                child: _NavItem(
+                  icon: items[index].$1,
+                  label: items[index].$2,
+                  selected: currentIndex == index,
+                  onTap: () => onSelected(index),
+                ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -66,38 +72,55 @@ class CartFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        FloatingActionButton(
-          heroTag: 'cart-fab',
-          onPressed: onTap,
-          backgroundColor: AppTheme.periRed,
-          foregroundColor: Colors.white,
-          child: const Icon(Icons.shopping_cart_rounded),
-        ),
-        if (count > 0)
-          Positioned(
-            right: -2,
-            top: -4,
-            child: Container(
-              width: 22,
-              height: 22,
-              alignment: Alignment.center,
-              decoration: const BoxDecoration(
-                color: AppTheme.chesaOrange,
-                shape: BoxShape.circle,
+    final colors = Theme.of(context).colorScheme;
+    final countLabel = count > 99 ? '99+' : '$count';
+    final semanticLabel = count == 0
+        ? 'Open cart, empty'
+        : 'Open cart, $count item${count == 1 ? '' : 's'}';
+
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: ExcludeSemantics(
+        child: Tooltip(
+          message: semanticLabel,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              FloatingActionButton(
+                heroTag: 'cart-fab',
+                onPressed: onTap,
+                child: const Icon(Icons.shopping_cart_rounded),
               ),
-              child: Text(
-                '$count',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white,
-                  fontSize: 10,
+              if (count > 0)
+                Positioned(
+                  right: -5,
+                  top: -5,
+                  child: Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 24,
+                      minHeight: 24,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: colors.secondaryContainer,
+                      borderRadius: BorderRadius.circular(AppRadii.pill),
+                      border: Border.all(color: colors.onSecondaryContainer),
+                    ),
+                    child: Text(
+                      countLabel,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: colors.onSecondaryContainer,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
+            ],
           ),
-      ],
+        ),
+      ),
     );
   }
 }
@@ -117,24 +140,37 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppTheme.periRed : AppTheme.ashGrey;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.only(top: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: color,
-                fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-              ),
+    final colors = Theme.of(context).colorScheme;
+    final color = selected ? colors.primary : colors.onSurfaceVariant;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: ExcludeSemantics(
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadii.input),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.fade,
+                  softWrap: false,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: color,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

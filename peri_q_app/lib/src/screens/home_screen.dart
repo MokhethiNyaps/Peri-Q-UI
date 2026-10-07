@@ -30,6 +30,18 @@ class HomeScreen extends StatelessWidget {
         builder: (context, _) {
           final heroItem = controller.todaysSpecialItem;
           final specialSettings = controller.todaysSpecialSettings;
+          final availableItems = controller.availableMenuItems;
+          final featuredItems = controller.featuredItems;
+          final todaysSpecials = controller.todaysSpecials;
+          final categories = controller.customerCategories;
+          final theme = Theme.of(context);
+          final colors = theme.colorScheme;
+          final appColors = context.appColors;
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final categoryRailHeight = (46 + ((textScale - 1) * 20)).clamp(
+            46.0,
+            72.0,
+          ).toDouble();
 
           return RefreshIndicator(
             onRefresh: controller.refreshData,
@@ -61,12 +73,12 @@ class HomeScreen extends StatelessWidget {
                         const SectionHeader(title: 'Categories'),
                         const SizedBox(height: 12),
                         SizedBox(
-                          height: 46,
+                          height: categoryRailHeight,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemBuilder: (context, index) {
                               final category =
-                                  controller.customerCategories[index];
+                                  categories[index];
                               final selected =
                                   category == controller.selectedMenuCategory;
                               return AnimatedContainer(
@@ -76,7 +88,7 @@ class HomeScreen extends StatelessWidget {
                                   boxShadow: selected
                                       ? [
                                           BoxShadow(
-                                            color: AppTheme.periRed.withValues(
+                                            color: colors.primary.withValues(
                                               alpha: 0.2,
                                             ),
                                             blurRadius: 16,
@@ -89,12 +101,12 @@ class HomeScreen extends StatelessWidget {
                                   selected: selected,
                                   showCheckmark: false,
                                   onSelected: (_) => onBrowseCategory(category),
-                                  selectedColor: AppTheme.periRed,
-                                  backgroundColor: Colors.white,
+                                  selectedColor: colors.primary,
+                                  backgroundColor: appColors.elevatedSurface,
                                   side: BorderSide(
                                     color: selected
-                                        ? AppTheme.periRed
-                                        : Colors.black.withValues(alpha: 0.05),
+                                        ? colors.primary
+                                        : appColors.softOutline,
                                   ),
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 4,
@@ -107,8 +119,8 @@ class HomeScreen extends StatelessWidget {
                                     category.toUpperCase(),
                                     style: TextStyle(
                                       color: selected
-                                          ? Colors.white
-                                          : AppTheme.ashGrey,
+                                          ? colors.onPrimary
+                                          : colors.onSurfaceVariant,
                                       fontSize: 12,
                                       letterSpacing: 0.3,
                                       fontWeight: FontWeight.w800,
@@ -119,7 +131,7 @@ class HomeScreen extends StatelessWidget {
                             },
                             separatorBuilder: (_, _) =>
                                 const SizedBox(width: 10),
-                            itemCount: controller.customerCategories.length,
+                            itemCount: categories.length,
                           ),
                         ),
                         const SizedBox(height: 26),
@@ -132,23 +144,21 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (controller.availableMenuItems.isEmpty)
+                if (availableItems.isEmpty)
                   SliverToBoxAdapter(
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Container(
                         padding: const EdgeInsets.all(26),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
+                          color: appColors.elevatedSurface,
                           borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05),
-                          ),
-                          boxShadow: const [
+                          border: Border.all(color: appColors.softOutline),
+                          boxShadow: [
                             BoxShadow(
-                              color: Color(0x12000000),
+                              color: appColors.shadow,
                               blurRadius: 24,
-                              offset: Offset(0, 12),
+                              offset: const Offset(0, 12),
                             ),
                           ],
                         ),
@@ -158,13 +168,13 @@ class HomeScreen extends StatelessWidget {
                               width: 64,
                               height: 64,
                               decoration: BoxDecoration(
-                                color: AppTheme.periRed.withValues(alpha: 0.08),
+                                color: colors.primaryContainer,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.restaurant_menu_rounded,
                                 size: 30,
-                                color: AppTheme.periRed,
+                                color: colors.onPrimaryContainer,
                               ),
                             ),
                             const SizedBox(height: 16),
@@ -190,29 +200,46 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
                 SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                  padding: EdgeInsets.fromLTRB(
+                    20,
+                    0,
+                    20,
+                    todaysSpecials.isEmpty ? 120 : 12,
+                  ),
                   sliver: SliverLayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.crossAxisExtent;
-                      final textScale = MediaQuery.textScalerOf(
-                        context,
-                      ).scale(1);
+                      final useListLayout = width < 360 || textScale > 1.25;
                       final crossAxisCount = width > 760
                           ? 4
                           : width > 560
                           ? 3
-                          : width < 360 || textScale > 1.3
-                          ? 1
                           : 2;
+                      if (useListLayout) {
+                        return SliverList.separated(
+                          itemCount: featuredItems.length,
+                          itemBuilder: (context, index) {
+                            final item = featuredItems[index];
+                            return FoodCard(
+                              item: item,
+                              compact: true,
+                              onTap: () => onOpenItem(item),
+                              onAdd: () => controller.addToCart(item),
+                            );
+                          },
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: AppSpacing.md),
+                        );
+                      }
                       return SliverGrid(
                         delegate: SliverChildBuilderDelegate((context, index) {
-                          final item = controller.featuredItems[index];
+                          final item = featuredItems[index];
                           return FoodCard(
                             item: item,
                             onTap: () => onOpenItem(item),
                             onAdd: () => controller.addToCart(item),
                           );
-                        }, childCount: controller.featuredItems.length),
+                        }, childCount: featuredItems.length),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: crossAxisCount,
                           mainAxisSpacing: 16,
@@ -223,28 +250,30 @@ class HomeScreen extends StatelessWidget {
                     },
                   ),
                 ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 28, 20, 10),
-                    child: const SectionHeader(title: "Today's Specials"),
+                if (todaysSpecials.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 18, 20, 10),
+                      child: const SectionHeader(title: "Today's Specials"),
+                    ),
                   ),
-                ),
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
-                  sliver: SliverList.separated(
-                    itemBuilder: (context, index) {
-                      final item = controller.todaysSpecials[index];
-                      return FoodCard(
-                        item: item,
-                        compact: true,
-                        onTap: () => onOpenItem(item),
-                        onAdd: () => controller.addToCart(item),
-                      );
-                    },
-                    separatorBuilder: (_, _) => const SizedBox(height: 14),
-                    itemCount: controller.todaysSpecials.length,
+                if (todaysSpecials.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                    sliver: SliverList.separated(
+                      itemBuilder: (context, index) {
+                        final item = todaysSpecials[index];
+                        return FoodCard(
+                          item: item,
+                          compact: true,
+                          onTap: () => onOpenItem(item),
+                          onAdd: () => controller.addToCart(item),
+                        );
+                      },
+                      separatorBuilder: (_, _) => const SizedBox(height: 14),
+                      itemCount: todaysSpecials.length,
+                    ),
                   ),
-                ),
               ],
             ),
           );
@@ -262,6 +291,9 @@ class _HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstName = controller.customerName.trim().split(' ').firstOrNull;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final appColors = context.appColors;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -274,14 +306,14 @@ class _HomeHeader extends StatelessWidget {
               height: 54,
               padding: const EdgeInsets.all(3),
               decoration: BoxDecoration(
-                color: AppTheme.lightSurface,
+                color: appColors.elevatedSurface,
                 borderRadius: BorderRadius.circular(17),
-                border: Border.all(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.05)),
-                boxShadow: const [
+                border: Border.all(color: appColors.softOutline),
+                boxShadow: [
                   BoxShadow(
-                    color: Color(0x14000000),
+                    color: appColors.shadow,
                     blurRadius: 18,
-                    offset: Offset(0, 8),
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
@@ -304,9 +336,8 @@ class _HomeHeader extends StatelessWidget {
                         : 'WELCOME BACK, ${firstName.toUpperCase()}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.ashGrey,
-                      fontSize: 10,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
                       letterSpacing: 0.8,
                       fontWeight: FontWeight.w800,
                     ),
@@ -316,8 +347,8 @@ class _HomeHeader extends StatelessWidget {
                     "RastasperiQ",
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      color: AppTheme.smokeCharcoal,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: colors.onSurface,
                       fontSize: isNarrow ? 26 : null,
                       fontWeight: FontWeight.w800,
                     ),
@@ -362,22 +393,31 @@ class _OfflineMenuBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appColors = context.appColors;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
       decoration: BoxDecoration(
-        color: AppTheme.warning.withValues(alpha: 0.11),
+        color: appColors.warningContainer,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppTheme.warning.withValues(alpha: 0.2)),
+        border: Border.all(
+          color: appColors.onWarningContainer.withValues(alpha: 0.3),
+        ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.offline_bolt_rounded, color: AppTheme.warning),
+          Icon(
+            Icons.offline_bolt_rounded,
+            color: appColors.onWarningContainer,
+          ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Text(
               'Showing the last saved menu. Reconnect to see updates.',
-              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: appColors.onWarningContainer,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
           TextButton(onPressed: onRetry, child: const Text('Retry')),
@@ -395,36 +435,53 @@ class _StoreStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isOpen = controller.isStoreOpenNow;
-    final color = isOpen ? AppTheme.success : AppTheme.periRed;
+    final colors = Theme.of(context).colorScheme;
+    final appColors = context.appColors;
+    final background = isOpen
+        ? appColors.successContainer
+        : appColors.dangerContainer;
+    final foreground = isOpen
+        ? appColors.onSuccessContainer
+        : appColors.onDangerContainer;
+    final indicator = isOpen ? appColors.success : colors.error;
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 8,
-            height: 8,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return Semantics(
+      liveRegion: true,
+      label: 'Store status: ${controller.storeStatusLabel}',
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(AppRadii.pill),
+            border: Border.all(color: foreground.withValues(alpha: 0.28)),
           ),
-          const SizedBox(width: 8),
-          Flexible(
-            child: Text(
-              controller.storeStatusLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: indicator,
+                  shape: BoxShape.circle,
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Text(
+                  controller.storeStatusLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -438,33 +495,49 @@ class _HeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final appColors = context.appColors;
     return LayoutBuilder(
       builder: (context, constraints) {
         final viewport = MediaQuery.sizeOf(context);
+        final textScale = MediaQuery.textScalerOf(context).scale(1);
         final isLandscape = viewport.width > viewport.height;
         final compact = constraints.maxWidth < 360;
-        final imageWidth = constraints.maxWidth * (compact ? 0.55 : 0.58);
-        final bannerHeight = isLandscape
+        final accessibleText = textScale > 1.25;
+        final imageWidth = constraints.maxWidth *
+            (accessibleText ? 0.42 : (compact ? 0.55 : 0.58));
+        final baseBannerHeight = isLandscape
             ? (compact ? 156.0 : 150.0)
             : (compact ? 226.0 : 214.0);
+        final bannerHeight =
+            (baseBannerHeight + ((textScale - 1) * 100)).clamp(
+              baseBannerHeight,
+              340.0,
+            ).toDouble();
         final contentPadding = isLandscape
             ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
             : EdgeInsets.all(compact ? 18 : 22);
-        final maxContentWidth = isLandscape ? 210.0 : (compact ? 205.0 : 235.0);
+        final maxContentWidth = accessibleText
+            ? constraints.maxWidth * 0.78
+            : isLandscape
+            ? 210.0
+            : (compact ? 205.0 : 235.0);
         final titleFontSize = isLandscape ? 22.0 : (compact ? 27.0 : 30.0);
 
         return Container(
           height: bannerHeight,
           clipBehavior: Clip.antiAlias,
           decoration: BoxDecoration(
-            color: AppTheme.smokeCharcoal,
+            color: appColors.heroSurface,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            boxShadow: const [
+            border: Border.all(
+              color: appColors.heroOnSurface.withValues(alpha: 0.16),
+            ),
+            boxShadow: [
               BoxShadow(
-                color: Color(0x33000000),
+                color: appColors.shadow,
                 blurRadius: 30,
-                offset: Offset(0, 16),
+                offset: const Offset(0, 16),
               ),
             ],
           ),
@@ -524,10 +597,12 @@ class _HeroBanner extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.chesaOrange.withValues(alpha: 0.14),
+                          color: appColors.heroOnSurface.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
-                            color: AppTheme.chesaOrange.withValues(alpha: 0.3),
+                            color: appColors.heroOnSurface.withValues(
+                              alpha: 0.32,
+                            ),
                           ),
                         ),
                         child: Text(
@@ -536,8 +611,7 @@ class _HeroBanner extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(
-                                color: AppTheme.chesaOrange,
-                                fontSize: 10,
+                                color: appColors.heroOnSurface,
                                 letterSpacing: 1.4,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -546,24 +620,30 @@ class _HeroBanner extends StatelessWidget {
                       SizedBox(height: isLandscape ? 6 : 9),
                       Text(
                         settings.title,
-                        maxLines: isLandscape ? 1 : 2,
+                        maxLines: accessibleText
+                            ? 3
+                            : isLandscape
+                            ? 1
+                            : 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.displayLarge
                             ?.copyWith(
-                              color: Colors.white,
+                              color: appColors.heroOnSurface,
                               fontSize: titleFontSize,
                               fontWeight: FontWeight.w800,
                               height: 0.98,
                             ),
                       ),
                       SizedBox(height: isLandscape ? 4 : 8),
-                      if (!isLandscape)
+                      if (!isLandscape && !accessibleText)
                         Text(
                           settings.subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7),
+                            color: appColors.heroOnSurface.withValues(
+                              alpha: 0.78,
+                            ),
                             height: 1.35,
                           ),
                         ),
@@ -573,14 +653,15 @@ class _HeroBanner extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           minimumSize: Size(
                             isLandscape ? 120 : 138,
-                            isLandscape ? 36 : 42,
-                          ),
-                          maximumSize: Size(
-                            isLandscape ? 150 : 164,
-                            isLandscape ? 38 : 44,
+                            accessibleText
+                                ? 52
+                                : isLandscape
+                                ? 40
+                                : 44,
                           ),
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          backgroundColor: AppTheme.periRed,
+                          backgroundColor: colors.primary,
+                          foregroundColor: colors.onPrimary,
                         ),
                         icon: Icon(
                           Icons.local_fire_department_rounded,

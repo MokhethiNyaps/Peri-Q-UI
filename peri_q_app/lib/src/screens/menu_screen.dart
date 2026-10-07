@@ -45,6 +45,16 @@ class _MenuScreenState extends State<MenuScreen> {
       child: AnimatedBuilder(
         animation: widget.controller,
         builder: (context, _) {
+          final items = filteredItems;
+          final categories = widget.controller.customerCategories;
+          final theme = Theme.of(context);
+          final colors = theme.colorScheme;
+          final appColors = context.appColors;
+          final textScale = MediaQuery.textScalerOf(context).scale(1);
+          final categoryRailHeight = (46 + ((textScale - 1) * 20)).clamp(
+            46.0,
+            72.0,
+          ).toDouble();
           return Stack(
             children: [
               Column(
@@ -69,16 +79,14 @@ class _MenuScreenState extends State<MenuScreen> {
                         ),
                         const SizedBox(height: 14),
                         SizedBox(
-                          height: 46,
+                          height: categoryRailHeight,
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
-                            itemCount:
-                                widget.controller.customerCategories.length,
+                            itemCount: categories.length,
                             separatorBuilder: (_, _) =>
                                 const SizedBox(width: 10),
                             itemBuilder: (context, index) {
-                              final category =
-                                  widget.controller.customerCategories[index];
+                              final category = categories[index];
                               final selected =
                                   category ==
                                   widget.controller.selectedMenuCategory;
@@ -86,9 +94,9 @@ class _MenuScreenState extends State<MenuScreen> {
                                 selected: selected,
                                 onSelected: (_) => widget.controller
                                     .setSelectedMenuCategory(category),
-                                selectedColor: AppTheme.periRed,
-                                backgroundColor: Theme.of(context).cardColor,
-                                side: BorderSide.none,
+                                selectedColor: colors.primary,
+                                backgroundColor: appColors.elevatedSurface,
+                                side: BorderSide(color: appColors.softOutline),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(999),
                                 ),
@@ -96,8 +104,8 @@ class _MenuScreenState extends State<MenuScreen> {
                                   category.toUpperCase(),
                                   style: TextStyle(
                                     color: selected
-                                        ? Colors.white
-                                        : AppTheme.ashGrey,
+                                        ? colors.onPrimary
+                                        : colors.onSurfaceVariant,
                                     fontWeight: FontWeight.w700,
                                   ),
                                 ),
@@ -109,17 +117,17 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                   ),
                   Expanded(
-                    child: filteredItems.isEmpty
+                    child: items.isEmpty
                         ? RefreshIndicator(
                             onRefresh: widget.controller.refreshData,
                             child: ListView(
                               padding: const EdgeInsets.all(32),
                               children: [
                                 const SizedBox(height: 80),
-                                const Icon(
+                                Icon(
                                   Icons.search_off_rounded,
                                   size: 54,
-                                  color: AppTheme.ashGrey,
+                                  color: colors.onSurfaceVariant,
                                 ),
                                 const SizedBox(height: 14),
                                 Text(
@@ -139,11 +147,11 @@ class _MenuScreenState extends State<MenuScreen> {
                           )
                         : ListView.separated(
                             padding: const EdgeInsets.fromLTRB(20, 8, 20, 160),
-                            itemCount: filteredItems.length,
+                            itemCount: items.length,
                             separatorBuilder: (_, _) =>
                                 const SizedBox(height: 14),
                             itemBuilder: (context, index) {
-                              final item = filteredItems[index];
+                              final item = items[index];
                               return FoodCard(
                                 item: item,
                                 compact: true,
@@ -179,13 +187,16 @@ class _MenuScreenState extends State<MenuScreen> {
                         vertical: 14,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.periRed,
-                        borderRadius: BorderRadius.circular(18),
-                        boxShadow: const [
+                        color: colors.primary,
+                        borderRadius: BorderRadius.circular(AppRadii.card),
+                        border: Border.all(
+                          color: colors.onPrimary.withValues(alpha: 0.22),
+                        ),
+                        boxShadow: [
                           BoxShadow(
-                            color: Color(0x33C8240B),
+                            color: appColors.shadow,
                             blurRadius: 20,
-                            offset: Offset(0, 8),
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
@@ -195,18 +206,19 @@ class _MenuScreenState extends State<MenuScreen> {
                             child: Text(
                               '${widget.controller.cartCount} item${widget.controller.cartCount == 1 ? '' : 's'} in cart',
                               style: Theme.of(context).textTheme.labelLarge
-                                  ?.copyWith(color: Colors.white),
+                                  ?.copyWith(color: colors.onPrimary),
                             ),
                           ),
                           Text(
                             'R${widget.controller.subtotal.toStringAsFixed(0)}',
                             style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(color: Colors.white),
+                                ?.copyWith(color: colors.onPrimary),
                           ),
                           const SizedBox(width: 10),
-                          const Icon(
+                          Icon(
                             Icons.shopping_bag_rounded,
-                            color: Colors.white,
+                            color: colors.onPrimary,
+                            semanticLabel: 'View cart',
                           ),
                         ],
                       ),

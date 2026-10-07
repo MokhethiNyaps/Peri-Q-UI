@@ -110,10 +110,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.lock_reset_rounded,
                         size: 72,
-                        color: AppTheme.periRed,
+                        color: Theme.of(context).colorScheme.primary,
                         semanticLabel: 'Password recovery',
                       ),
                       const SizedBox(height: AppSpacing.xl),

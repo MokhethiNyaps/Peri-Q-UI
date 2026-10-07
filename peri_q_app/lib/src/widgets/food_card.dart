@@ -20,8 +20,10 @@ class FoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(AppRadii.card);
     final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final appColors = context.appColors;
 
     if (compact) {
       return InkWell(
@@ -30,13 +32,14 @@ class FoodCard extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: appColors.elevatedSurface,
             borderRadius: radius,
-            boxShadow: const [
+            border: Border.all(color: appColors.softOutline),
+            boxShadow: [
               BoxShadow(
-                color: Color(0x14000000),
+                color: appColors.shadow,
                 blurRadius: 12,
-                offset: Offset(0, 2),
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -54,7 +57,12 @@ class FoodCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.name, style: theme.textTheme.titleLarge),
+                    Text(
+                      item.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge,
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       item.description,
@@ -70,8 +78,8 @@ class FoodCard extends StatelessWidget {
                           height: 9,
                           decoration: BoxDecoration(
                             color: item.isAvailable
-                                ? AppTheme.success
-                                : AppTheme.periRed,
+                                ? appColors.success
+                                : colors.error,
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -92,7 +100,7 @@ class FoodCard extends StatelessWidget {
                   Text(
                     'R${item.price.toStringAsFixed(0)}',
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: AppTheme.periRed,
+                      color: colors.primary,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -102,9 +110,9 @@ class FoodCard extends StatelessWidget {
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Add'),
                     style: FilledButton.styleFrom(
-                      backgroundColor: AppTheme.periRed.withValues(alpha: 0.1),
-                      foregroundColor: AppTheme.periRed,
-                      minimumSize: const Size(64, 40),
+                      backgroundColor: colors.primaryContainer,
+                      foregroundColor: colors.onPrimaryContainer,
+                      minimumSize: const Size(72, 48),
                     ),
                   ),
                 ],
@@ -120,13 +128,14 @@ class FoodCard extends StatelessWidget {
       borderRadius: radius,
       child: Ink(
         decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
+          color: appColors.elevatedSurface,
           borderRadius: radius,
-          boxShadow: const [
+          border: Border.all(color: appColors.softOutline),
+          boxShadow: [
             BoxShadow(
-              color: Color(0x14000000),
+              color: appColors.shadow,
               blurRadius: 18,
-              offset: Offset(0, 8),
+              offset: const Offset(0, 8),
             ),
           ],
         ),
@@ -145,7 +154,12 @@ class FoodCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              Text(item.name, style: theme.textTheme.titleLarge),
+              Text(
+                item.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge,
+              ),
               const SizedBox(height: 4),
               Text(
                 item.description,
@@ -159,22 +173,37 @@ class FoodCard extends StatelessWidget {
                   Text(
                     'R${item.price.toStringAsFixed(0)}',
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: AppTheme.periRed,
+                      color: colors.primary,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                   const Spacer(),
-                  InkWell(
-                    onTap: item.isAvailable ? onAdd : null,
-                    borderRadius: BorderRadius.circular(999),
-                    child: Ink(
-                      width: 38,
-                      height: 38,
-                      decoration: const BoxDecoration(
-                        color: AppTheme.periRed,
-                        shape: BoxShape.circle,
+                  Semantics(
+                    button: true,
+                    enabled: item.isAvailable,
+                    label: 'Add ${item.name} to cart',
+                    child: Tooltip(
+                      message: 'Add ${item.name}',
+                      child: InkWell(
+                        onTap: item.isAvailable ? onAdd : null,
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
+                        child: Ink(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: item.isAvailable
+                                ? colors.primary
+                                : appColors.sunkenSurface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.add,
+                            color: item.isAvailable
+                                ? colors.onPrimary
+                                : colors.onSurfaceVariant,
+                          ),
+                        ),
                       ),
-                      child: const Icon(Icons.add, color: Colors.white),
                     ),
                   ),
                 ],

@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-
 import 'src/app.dart';
 import 'src/core/supabase_config.dart';
 import 'src/data/local/secure_auth_storage.dart';
@@ -15,23 +13,10 @@ import 'src/repositories/notification_repository.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.dark,
-      systemNavigationBarContrastEnforced: false,
-    ),
-  );
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (_) {
-    // Proceed without .env if not found
-  }
 
-  final supabaseConfig = SupabaseConfig.fromSources(dotenv.env);
+  // Client configuration is supplied at compile time. In particular, never
+  // package a general-purpose .env file as a readable application asset.
+  final supabaseConfig = SupabaseConfig.fromSources();
   var firebaseIsReady = false;
 
   try {
@@ -43,15 +28,23 @@ Future<void> main() async {
   }
 
   if (supabaseConfig.isConfigured) {
-    final sessionKey =
-        'sb-${Uri.parse(supabaseConfig.url).host.split('.').first}-auth-token';
+    final projectUri = Uri.parse(supabaseConfig.url);
+    final sessionNamespace = projectUri.authority
+        .toLowerCase()
+        .replaceAll(RegExp('[^a-z0-9_-]'), '_');
+    final sessionKey = 'sb-$sessionNamespace-auth-token';
+    final legacySessionKey =
+        'sb-${projectUri.host.split('.').first}-auth-token';
     await Supabase.initialize(
       url: supabaseConfig.url,
       publishableKey: supabaseConfig.publishableKey,
       debug: false,
       authOptions: FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
-        localStorage: SecureAuthLocalStorage(sessionKey: sessionKey),
+        localStorage: SecureAuthLocalStorage(
+          sessionKey: sessionKey,
+          legacySessionKeys: [legacySessionKey],
+        ),
         pkceAsyncStorage: SecurePkceStorage(),
       ),
     );

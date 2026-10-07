@@ -205,24 +205,37 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                     ),
                   ],
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _TimeField(
-                          controller: openingTimeController,
-                          label: 'Opening Time',
-                          onPickTime: () => _pickTime(openingTimeController),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _TimeField(
-                          controller: closingTimeController,
-                          label: 'Closing Time',
-                          onPickTime: () => _pickTime(closingTimeController),
-                        ),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final opening = _TimeField(
+                        controller: openingTimeController,
+                        label: 'Opening Time',
+                        onPickTime: () => _pickTime(openingTimeController),
+                      );
+                      final closing = _TimeField(
+                        controller: closingTimeController,
+                        label: 'Closing Time',
+                        onPickTime: () => _pickTime(closingTimeController),
+                      );
+                      final stackFields = constraints.maxWidth < 420 ||
+                          MediaQuery.textScalerOf(context).scale(1) > 1.2;
+                      if (stackFields) {
+                        return Column(
+                          children: [
+                            opening,
+                            const SizedBox(height: 12),
+                            closing,
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(child: opening),
+                          const SizedBox(width: 12),
+                          Expanded(child: closing),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 14),
                   Container(
@@ -231,8 +244,9 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: (isOpenNow ? AppTheme.success : AppTheme.periRed)
-                          .withValues(alpha: 0.1),
+                      color: isOpenNow
+                          ? context.appColors.successContainer
+                          : context.appColors.dangerContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -240,7 +254,9 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                           ? 'Preview: Open now'
                           : 'Preview: Closed right now',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: isOpenNow ? AppTheme.success : AppTheme.periRed,
+                        color: isOpenNow
+                            ? context.appColors.onSuccessContainer
+                            : context.appColors.onDangerContainer,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -297,6 +313,7 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
                     initialValue: selectedMenuItemId ?? '',
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Linked Menu Item',
                     ),
@@ -319,6 +336,7 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
                     initialValue: selectedPreset,
+                    isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'Image Preset',
                     ),
@@ -450,8 +468,9 @@ class _SectionPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        color: context.appColors.elevatedSurface,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: context.appColors.softOutline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

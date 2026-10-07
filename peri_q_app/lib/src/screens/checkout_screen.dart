@@ -155,12 +155,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: const [
-                  _StepBadge(number: 1, label: 'Details', active: true),
-                  _StepBadge(number: 2, label: 'Fulfilment', active: true),
-                  _StepBadge(number: 3, label: 'Payment', active: true),
+              const Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                spacing: 16,
+                runSpacing: 12,
+                children: [
+                  _StepBadge(number: 1, label: 'Details'),
+                  _StepBadge(number: 2, label: 'Fulfilment'),
+                  _StepBadge(number: 3, label: 'Payment'),
                 ],
               ),
               const SizedBox(height: 26),
@@ -173,7 +175,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(color: context.appColors.softOutline),
                 ),
                 child: Column(
                   children: [
@@ -234,7 +237,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(AppRadii.card),
+                      border: Border.all(
+                        color: context.appColors.softOutline,
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,14 +259,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             final selected = address.id == selectedAddressId;
                             return ChoiceChip(
                               selected: selected,
-                              selectedColor: AppTheme.periRed,
-                              backgroundColor: AppTheme.mutedSurface,
+                              selectedColor: Theme.of(
+                                context,
+                              ).colorScheme.primary,
+                              backgroundColor: context.appColors.sunkenSurface,
                               label: Text(
                                 address.label,
                                 style: TextStyle(
                                   color: selected
-                                      ? Colors.white
-                                      : AppTheme.smokeCharcoal,
+                                      ? Theme.of(context).colorScheme.onPrimary
+                                      : Theme.of(context).colorScheme.onSurface,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -333,29 +341,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 24),
               Container(
-                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
+                  border: Border.all(color: context.appColors.softOutline),
                 ),
-                child: Row(
+                child: ExpansionTile(
+                  shape: const Border(),
+                  collapsedShape: const Border(),
+                  tilePadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  leading: Icon(
+                    Icons.receipt_long_rounded,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  title: Text(
+                    'Order Summary',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  subtitle: Text(
+                    '${widget.controller.cartCount} items • R${total.toStringAsFixed(0)} total',
+                  ),
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Order Summary',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${widget.controller.cartCount} items • R${total.toStringAsFixed(0)} total',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
+                    _SummaryRow(
+                      label: 'Subtotal',
+                      amount: widget.controller.subtotal,
                     ),
-                    const Spacer(),
-                    const Icon(Icons.expand_more_rounded),
+                    if (orderType == OrderType.delivery)
+                      _SummaryRow(
+                        label: 'Delivery',
+                        amount: widget.controller.deliveryFeeFor(orderType),
+                      ),
+                    const Divider(height: 20),
+                    _SummaryRow(label: 'Total', amount: total, strong: true),
                   ],
                 ),
               ),
@@ -372,7 +393,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 160),
               child: isSubmitting
-                  ? const Row(
+                  ? Row(
                       key: ValueKey('checkout-placing'),
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -381,11 +402,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
                           ),
                         ),
-                        SizedBox(width: 10),
-                        Text('Placing order…'),
+                        const SizedBox(width: 10),
+                        const Text('Placing order…'),
                       ],
                     )
                   : Text(
@@ -401,40 +424,37 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 }
 
 class _StepBadge extends StatelessWidget {
-  const _StepBadge({
-    required this.number,
-    required this.label,
-    this.active = false,
-  });
+  const _StepBadge({required this.number, required this.label});
 
   final int number;
   final String label;
-  final bool active;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        CircleAvatar(
-          radius: 16,
-          backgroundColor: active ? AppTheme.periRed : Colors.white,
-          child: Text(
-            '$number',
-            style: TextStyle(
-              color: active ? Colors.white : AppTheme.ashGrey,
-              fontWeight: FontWeight.w800,
+    return Semantics(
+      label: 'Checkout section $number of 3: $label',
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              child: Text(
+                '$number',
+                style: TextStyle(
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 7),
+            Text(label, style: Theme.of(context).textTheme.labelLarge),
+          ],
         ),
-        const SizedBox(height: 6),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: active ? AppTheme.periRed : AppTheme.ashGrey,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -462,14 +482,16 @@ class _ChoiceCard extends StatelessWidget {
       opacity: enabled ? 1 : 0.55,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         child: Ink(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppRadii.card),
             border: Border.all(
-              color: selected ? AppTheme.periRed : Colors.transparent,
+              color: selected
+                  ? Theme.of(context).colorScheme.primary
+                  : context.appColors.softOutline,
               width: 2,
             ),
           ),
@@ -478,11 +500,13 @@ class _ChoiceCard extends StatelessWidget {
               CircleAvatar(
                 radius: 22,
                 backgroundColor: selected
-                    ? AppTheme.periRed.withValues(alpha: 0.1)
-                    : AppTheme.mutedSurface,
+                    ? Theme.of(context).colorScheme.primaryContainer
+                    : context.appColors.sunkenSurface,
                 child: Icon(
                   icon,
-                  color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+                  color: selected
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: 14),
@@ -504,7 +528,6 @@ class _ChoiceCard extends StatelessWidget {
                   onChanged: (_) {},
                   child: Radio<bool>(
                     value: true,
-                    activeColor: AppTheme.periRed,
                   ),
                 ),
               ),
@@ -543,7 +566,9 @@ class _PaymentTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-            border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+            border: Border(
+              bottom: BorderSide(color: context.appColors.softOutline),
+            ),
           ),
           child: Row(
             children: [
@@ -552,13 +577,15 @@ class _PaymentTile extends StatelessWidget {
                 height: 42,
                 decoration: BoxDecoration(
                   color: selected
-                      ? AppTheme.periRed.withValues(alpha: 0.1)
-                      : AppTheme.mutedSurface,
+                      ? Theme.of(context).colorScheme.primaryContainer
+                      : context.appColors.sunkenSurface,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   icon,
-                  color: selected ? AppTheme.periRed : AppTheme.ashGrey,
+                  color: selected
+                      ? Theme.of(context).colorScheme.onPrimaryContainer
+                      : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(width: 14),
@@ -581,13 +608,40 @@ class _PaymentTile extends StatelessWidget {
                   onChanged: (_) {},
                   child: Radio<bool>(
                     value: true,
-                    activeColor: AppTheme.periRed,
                   ),
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.amount,
+    this.strong = false,
+  });
+
+  final String label;
+  final double amount;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = strong
+        ? Theme.of(context).textTheme.titleMedium
+        : Theme.of(context).textTheme.bodyMedium;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: style)),
+          Text('R${amount.toStringAsFixed(0)}', style: style),
+        ],
       ),
     );
   }

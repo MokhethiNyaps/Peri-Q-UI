@@ -26,14 +26,17 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppTheme.smokeCharcoal,
-                  borderRadius: BorderRadius.circular(24),
+                  color: context.appColors.heroSurface,
+                  borderRadius: BorderRadius.circular(AppRadii.panel),
+                  border: Border.all(color: context.appColors.softOutline),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: Colors.white24,
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primaryContainer,
                       child: Text(
                         controller.customerName.isNotEmpty
                             ? controller.customerName
@@ -41,7 +44,11 @@ class ProfileScreen extends StatelessWidget {
                                   .toUpperCase()
                             : 'U',
                         style: Theme.of(context).textTheme.headlineMedium
-                            ?.copyWith(color: Colors.white),
+                            ?.copyWith(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
+                            ),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -54,14 +61,18 @@ class ProfileScreen extends StatelessWidget {
                                 ? controller.customerName
                                 : 'Guest Customer',
                             style: Theme.of(context).textTheme.headlineMedium
-                                ?.copyWith(color: Colors.white),
+                                ?.copyWith(
+                                  color: context.appColors.heroOnSurface,
+                                ),
                           ),
                           Text(
                             controller.customerPhone.isNotEmpty
                                 ? controller.customerPhone
                                 : 'No phone number yet',
                             style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(color: Colors.white70),
+                                ?.copyWith(
+                                  color: context.appColors.heroOnSurface,
+                                ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -70,7 +81,7 @@ class ProfileScreen extends StatelessWidget {
                                 : 'Signed in',
                             style: Theme.of(context).textTheme.bodySmall
                                 ?.copyWith(
-                                  color: AppTheme.chesaOrange,
+                                  color: context.appColors.heroOnSurface,
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),
@@ -150,14 +161,14 @@ class ProfileScreen extends StatelessWidget {
                       ),
                     );
                   },
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(AppRadii.card),
                   child: Ink(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.periRed.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(18),
+                      color: Theme.of(context).colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppRadii.card),
                       border: Border.all(
-                        color: AppTheme.periRed.withValues(alpha: 0.18),
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     child: Row(
@@ -165,9 +176,11 @@ class ProfileScreen extends StatelessWidget {
                         CircleAvatar(
                           radius: 22,
                           backgroundColor: Theme.of(context).cardColor,
-                          child: const Icon(
+                          child: Icon(
                             Icons.admin_panel_settings_outlined,
-                            color: AppTheme.periRed,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onPrimaryContainer,
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -175,12 +188,18 @@ class ProfileScreen extends StatelessWidget {
                           child: Text(
                             'Open Owner Dashboard',
                             style: Theme.of(context).textTheme.titleLarge
-                                ?.copyWith(color: AppTheme.periRed),
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                                ),
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
-                          color: AppTheme.periRed,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onPrimaryContainer,
                         ),
                       ],
                     ),
@@ -193,7 +212,10 @@ class ProfileScreen extends StatelessWidget {
                   icon: const Icon(Icons.delete_forever_outlined),
                   label: const Text('Delete Account'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppTheme.periRed,
+                    foregroundColor: Theme.of(context).colorScheme.error,
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -246,9 +268,10 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 RadioGroup<ThemeMode>(
                   groupValue: controller.themeMode,
-                  onChanged: (val) {
+                  onChanged: (val) async {
                     if (val != null) {
-                      controller.setThemeMode(val);
+                      await controller.setThemeMode(val);
+                      if (!context.mounted) return;
                       Navigator.pop(context);
                     }
                   },
@@ -313,6 +336,7 @@ class ProfileScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: const Text('Delete account permanently?'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -383,19 +407,23 @@ class _ProfileTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadii.card),
       child: Ink(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          border: Border.all(color: context.appColors.softOutline),
         ),
         child: Row(
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: AppTheme.mutedSurface,
-              child: Icon(icon, color: AppTheme.ashGrey),
+              backgroundColor: context.appColors.sunkenSurface,
+              child: Icon(
+                icon,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(

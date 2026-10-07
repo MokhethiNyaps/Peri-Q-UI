@@ -13,21 +13,21 @@ class AdminOrderFulfilmentPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDelivery = order.orderType == OrderType.delivery;
     final deliveryAddress = order.deliveryAddress?.trim() ?? '';
+    final panelColor = isDelivery
+        ? context.appColors.accentContainer
+        : context.appColors.sunkenSurface;
+    final panelForeground = isDelivery
+        ? context.appColors.onAccentContainer
+        : Theme.of(context).colorScheme.onSurface;
 
     return Container(
       key: ValueKey('admin-order-fulfilment-${order.id}'),
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDelivery
-            ? AppTheme.chesaOrange.withValues(alpha: 0.08)
-            : AppTheme.mutedSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDelivery
-              ? AppTheme.chesaOrange.withValues(alpha: 0.35)
-              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.06),
-        ),
+        color: panelColor,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: panelForeground.withValues(alpha: 0.32)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,13 +38,14 @@ class AdminOrderFulfilmentPanel extends StatelessWidget {
                 isDelivery
                     ? Icons.delivery_dining_rounded
                     : Icons.storefront_rounded,
-                color: isDelivery ? AppTheme.chesaOrange : AppTheme.periRed,
+                color: panelForeground,
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   order.orderType.label,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: panelForeground,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -120,7 +121,11 @@ class _AdminOrderDetailRow extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.only(top: 2),
-          child: Icon(icon, size: 19, color: AppTheme.ashGrey),
+          child: Icon(
+            icon,
+            size: 19,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
         ),
         const SizedBox(width: 10),
         Expanded(
@@ -130,7 +135,7 @@ class _AdminOrderDetailRow extends StatelessWidget {
               Text(
                 label,
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.ashGrey,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -139,7 +144,9 @@ class _AdminOrderDetailRow extends StatelessWidget {
                 value,
                 key: valueKey,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isWarning ? AppTheme.periRed : AppTheme.smokeCharcoal,
+                  color: isWarning
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.onSurface,
                   fontWeight: isWarning ? FontWeight.w800 : FontWeight.w600,
                   height: 1.35,
                 ),

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/app_controller.dart';
@@ -165,6 +166,11 @@ class _PeriQAppState extends State<PeriQApp> {
         debugShowCheckedModeBanner: false,
         title: 'RastasperiQ',
         theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.system,
+        themeAnimationDuration: const Duration(milliseconds: 280),
+        themeAnimationCurve: Curves.easeOutCubic,
+        builder: _buildThemedSystemChrome,
         home: const SupabaseConfigMissingScreen(),
       );
     }
@@ -179,9 +185,29 @@ class _PeriQAppState extends State<PeriQApp> {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: controller!.themeMode,
+          themeAnimationDuration: const Duration(milliseconds: 280),
+          themeAnimationCurve: Curves.easeOutCubic,
+          builder: _buildThemedSystemChrome,
           home: SplashScreen(controller: controller!),
         );
       },
+    );
+  }
+
+  Widget _buildThemedSystemChrome(BuildContext context, Widget? child) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconBrightness = isDark ? Brightness.light : Brightness.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: iconBrightness,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: iconBrightness,
+        systemNavigationBarContrastEnforced: false,
+      ),
+      child: child ?? const SizedBox.shrink(),
     );
   }
 }

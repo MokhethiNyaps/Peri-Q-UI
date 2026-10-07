@@ -177,7 +177,6 @@ class AdminDashboardScreen extends StatelessWidget {
           appBar: AppBar(title: const Text('Owner Dashboard')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _openMenuEditor(context),
-            backgroundColor: AppTheme.periRed,
             icon: const Icon(Icons.add),
             label: const Text('Menu Item'),
           ),
@@ -188,8 +187,9 @@ class AdminDashboardScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppTheme.smokeCharcoal,
-                    borderRadius: BorderRadius.circular(24),
+                    color: context.appColors.heroSurface,
+                    borderRadius: BorderRadius.circular(AppRadii.panel),
+                    border: Border.all(color: context.appColors.softOutline),
                   ),
                   child: Row(
                     children: [
@@ -202,24 +202,29 @@ class AdminDashboardScreen extends StatelessWidget {
                                   ? 'Store Open'
                                   : 'Store Closed',
                               style: Theme.of(context).textTheme.headlineMedium
-                                  ?.copyWith(color: Colors.white),
+                                  ?.copyWith(
+                                    color: context.appColors.heroOnSurface,
+                                  ),
                             ),
                             Text(
                               controller.storeStatusLabel,
                               style: Theme.of(context).textTheme.bodyMedium
-                                  ?.copyWith(color: Colors.white70),
+                                  ?.copyWith(
+                                    color: context.appColors.heroOnSurface,
+                                  ),
                             ),
                             Text(
                               '${controller.appSettings.openingTime} - ${controller.appSettings.closingTime}',
                               style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: Colors.white54),
+                                  ?.copyWith(
+                                    color: context.appColors.heroOnSurface,
+                                  ),
                             ),
                           ],
                         ),
                       ),
                       Switch(
                         value: controller.storeOpen,
-                        activeThumbColor: AppTheme.chesaOrange,
                         onChanged: (value) async {
                           try {
                             await controller.toggleStoreOpen(value);
@@ -368,16 +373,17 @@ class _TodaysSpecialAdminCard extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: context.appColors.softOutline),
       ),
       child: Row(
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: AppTheme.periRed.withValues(alpha: 0.1),
-            child: const Icon(
+            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+            child: Icon(
               Icons.local_fire_department_rounded,
-              color: AppTheme.periRed,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
           const SizedBox(width: 14),
@@ -434,12 +440,13 @@ class _AdminActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(AppRadii.card),
       child: Ink(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          border: Border.all(color: context.appColors.softOutline),
         ),
         child: Row(
           children: [
@@ -447,10 +454,13 @@ class _AdminActionCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: AppTheme.periRed.withValues(alpha: 0.1),
+                color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: AppTheme.periRed),
+              child: Icon(
+                icon,
+                color: Theme.of(context).colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(
@@ -469,7 +479,10 @@ class _AdminActionCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.chevron_right_rounded, color: AppTheme.ashGrey),
+            Icon(
+              Icons.chevron_right_rounded,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ],
         ),
       ),
@@ -491,7 +504,8 @@ class _MetricCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadii.card),
+          border: Border.all(color: context.appColors.softOutline),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -523,7 +537,8 @@ class _IncomingOrderCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: context.appColors.softOutline),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -558,28 +573,42 @@ class _IncomingOrderCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onReject,
-                  child: const Text('Reject'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: onAdvance,
-                  child: Text(switch (order.status) {
-                    OrderStatus.pending => 'Accept & Start Cooking',
-                    OrderStatus.preparing => 'Mark Ready',
-                    OrderStatus.ready => 'Mark Completed',
-                    OrderStatus.completed => 'Completed',
-                    OrderStatus.cancelled => 'Cancelled',
-                  }),
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final rejectButton = OutlinedButton(
+                onPressed: onReject,
+                child: const Text('Reject'),
+              );
+              final advanceButton = ElevatedButton(
+                onPressed: onAdvance,
+                child: Text(switch (order.status) {
+                  OrderStatus.pending => 'Accept & Start Cooking',
+                  OrderStatus.preparing => 'Mark Ready',
+                  OrderStatus.ready => 'Mark Completed',
+                  OrderStatus.completed => 'Completed',
+                  OrderStatus.cancelled => 'Cancelled',
+                }),
+              );
+              final stackButtons = constraints.maxWidth < 410 ||
+                  MediaQuery.textScalerOf(context).scale(1) > 1.2;
+              if (stackButtons) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    advanceButton,
+                    const SizedBox(height: 10),
+                    rejectButton,
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: rejectButton),
+                  const SizedBox(width: 12),
+                  Expanded(child: advanceButton),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -608,83 +637,85 @@ class _MenuItemCard extends StatelessWidget {
       elevation: 0,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        side: BorderSide(color: context.appColors.softOutline),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+        child: Column(
           children: [
-            // Item image – fixed size, square with rounded corners
-            AppImage(
-              imagePath: item.imagePath,
-              width: 64,
-              height: 64,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            const SizedBox(width: 12),
-
-            // Name + category – takes remaining space
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    item.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                AppImage(
+                  imagePath: item.imagePath,
+                  semanticLabel: '${item.name} photo',
+                  width: 64,
+                  height: 64,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        item.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _CategoryChip(label: item.category),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  _CategoryChip(label: item.category),
-                ],
-              ),
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'Menu item actions',
+                  onSelected: (value) {
+                    switch (value) {
+                      case 'edit':
+                        onEdit();
+                        break;
+                      case 'delete':
+                        onDelete();
+                        break;
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 'edit', child: Text('Edit item')),
+                    PopupMenuItem(value: 'delete', child: Text('Delete item')),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-
-            // Price
-            Text(
-              priceLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(width: 8),
-
-            // Availability pill
-            GestureDetector(
-              onTap: onToggleAvailability,
-              child: _AvailabilityPill(isAvailable: item.isAvailable),
-            ),
-            const SizedBox(width: 4),
-
-            // Edit action
-            IconButton(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined, size: 20),
-              tooltip: 'Edit',
-              color: Colors.grey[700],
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-              padding: EdgeInsets.zero,
-            ),
-
-            // Delete action
-            IconButton(
-              onPressed: onDelete,
-              icon: const Icon(Icons.delete_outline_rounded, size: 20),
-              tooltip: 'Delete',
-              color: AppTheme.periRed,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
-              padding: EdgeInsets.zero,
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Text(
+                  priceLabel,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Semantics(
+                  button: true,
+                  toggled: item.isAvailable,
+                  label: item.isAvailable
+                      ? 'Mark ${item.name} unavailable'
+                      : 'Mark ${item.name} available',
+                  child: InkWell(
+                    onTap: onToggleAvailability,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                    child: _AvailabilityPill(isAvailable: item.isAvailable),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -703,15 +734,15 @@ class _CategoryChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppTheme.mutedSurface,
-        borderRadius: BorderRadius.circular(999),
+        color: context.appColors.sunkenSurface,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppTheme.ashGrey,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -726,17 +757,23 @@ class _AvailabilityPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isAvailable ? AppTheme.success : AppTheme.periRed;
+    final background = isAvailable
+        ? context.appColors.successContainer
+        : context.appColors.dangerContainer;
+    final foreground = isAvailable
+        ? context.appColors.onSuccessContainer
+        : context.appColors.onDangerContainer;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      constraints: const BoxConstraints(minHeight: 48),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        color: background,
+        borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
       child: Text(
         isAvailable ? 'Available' : 'Unavailable',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: color,
+          color: foreground,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -756,7 +793,8 @@ class _EmptyAdminState extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: context.appColors.softOutline),
       ),
       child: Text(message, style: Theme.of(context).textTheme.bodyMedium),
     );

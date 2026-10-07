@@ -113,17 +113,24 @@ class PrivacyAndSupportScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppTheme.mutedSurface,
-              borderRadius: BorderRadius.circular(16),
+              color: context.appColors.successContainer,
+              borderRadius: BorderRadius.circular(AppRadii.card),
+              border: Border.all(color: context.appColors.success),
             ),
-            child: const Row(
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.verified_user_outlined, color: AppTheme.success),
-                SizedBox(width: 10),
+                Icon(
+                  Icons.verified_user_outlined,
+                  color: context.appColors.onSuccessContainer,
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     'Privacy and data requests can be sent to contact@rastasperiq.co.za or submitted through the public account-deletion page.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: context.appColors.onSuccessContainer,
+                    ),
                   ),
                 ),
               ],
@@ -154,13 +161,13 @@ class _ExternalLinkTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         child: Ink(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppTheme.lightSurface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.black.withValues(alpha: 0.05)),
+            color: context.appColors.elevatedSurface,
+            borderRadius: BorderRadius.circular(AppRadii.card),
+            border: Border.all(color: context.appColors.softOutline),
           ),
           child: Row(
             children: [
@@ -168,10 +175,14 @@ class _ExternalLinkTile extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppTheme.periRed.withValues(alpha: 0.08),
+                  color: Theme.of(context).colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(13),
                 ),
-                child: Icon(icon, color: AppTheme.periRed, size: 21),
+                child: Icon(
+                  icon,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  size: 21,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -187,10 +198,10 @@ class _ExternalLinkTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.open_in_new_rounded,
                 size: 18,
-                color: AppTheme.ashGrey,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ],
           ),

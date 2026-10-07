@@ -55,29 +55,31 @@ class SupabaseConfig {
 
   static bool _isSecureUrl(String value) {
     final uri = Uri.tryParse(value);
-    return uri != null && uri.scheme == 'https' && uri.host.isNotEmpty;
+    return uri != null &&
+        uri.scheme == 'https' &&
+        uri.host.isNotEmpty &&
+        uri.userInfo.isEmpty &&
+        !uri.hasQuery &&
+        !uri.hasFragment;
   }
 
   static bool _isSafePublishableKey(String value) {
     final key = value.trim();
-    if (key.isEmpty || key.startsWith('sb_secret_')) {
-      return false;
-    }
     if (key.startsWith('sb_publishable_')) {
-      return true;
+      return RegExp(r'^sb_publishable_[A-Za-z0-9_-]+$').hasMatch(key);
     }
 
     final segments = key.split('.');
     if (segments.length != 3) {
-      return true;
+      return false;
     }
 
     try {
       final payload = jsonDecode(
         utf8.decode(base64Url.decode(base64Url.normalize(segments[1]))),
       );
-      return payload is! Map<String, dynamic> ||
-          payload['role']?.toString() != 'service_role';
+      return payload is Map<String, dynamic> &&
+          payload['role']?.toString() == 'anon';
     } catch (_) {
       return false;
     }

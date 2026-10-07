@@ -22,33 +22,62 @@ class AppImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final image = _buildImage(context);
-    if (borderRadius == null) {
-      return image;
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final layoutWidth = _finiteDimension(width) ??
+            (constraints.hasBoundedWidth ? constraints.maxWidth : null);
+        final layoutHeight = _finiteDimension(height) ??
+            (constraints.hasBoundedHeight ? constraints.maxHeight : null);
+        final image = _buildImage(
+          context,
+          layoutWidth: layoutWidth,
+          layoutHeight: layoutHeight,
+        );
+        if (borderRadius == null) {
+          return image;
+        }
 
-    return ClipRRect(borderRadius: borderRadius!, child: image);
+        return ClipRRect(borderRadius: borderRadius!, child: image);
+      },
+    );
   }
 
-  Widget _buildImage(BuildContext context) {
+  double? _finiteDimension(double? value) {
+    return value != null && value.isFinite && value > 0 ? value : null;
+  }
+
+  Widget _buildImage(
+    BuildContext context, {
+    required double? layoutWidth,
+    required double? layoutHeight,
+  }) {
     final path = imagePath.trim();
-    final isRemote = path.startsWith('http://') || path.startsWith('https://');
+    // Android rejects cleartext transport and remote menu artwork should never
+    // downgrade to an unencrypted connection.
+    final isRemote = path.startsWith('https://');
+    final isBlockedRemote = path.startsWith('http://');
+    final colors = Theme.of(context).colorScheme;
+    final appColors = context.appColors;
     final fallback = Container(
       width: width,
       height: height,
-      color: AppTheme.mutedSurface,
+      color: appColors.sunkenSurface,
       alignment: Alignment.center,
-      child: const Icon(
+      child: Icon(
         Icons.image_not_supported_outlined,
-        color: AppTheme.ashGrey,
+        color: colors.onSurfaceVariant,
+        semanticLabel: '$semanticLabel unavailable',
       ),
     );
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
-    final targetWidth = width != null && width!.isFinite
-        ? (width! * pixelRatio).round().clamp(1, 1200)
+    final targetWidth = layoutWidth != null
+        ? (layoutWidth * pixelRatio).round().clamp(1, 1600).toInt()
+        : null;
+    final targetHeight = layoutHeight != null
+        ? (layoutHeight * pixelRatio).round().clamp(1, 1600).toInt()
         : null;
 
-    if (path.isEmpty) {
+    if (path.isEmpty || isBlockedRemote) {
       return fallback;
     }
 
@@ -59,7 +88,10 @@ class AppImage extends StatelessWidget {
         height: height,
         fit: fit,
         cacheWidth: targetWidth,
+        cacheHeight: targetHeight,
         semanticLabel: semanticLabel,
+        filterQuality: FilterQuality.medium,
+        gaplessPlayback: true,
         errorBuilder: (_, _, _) => fallback,
         loadingBuilder: (context, child, progress) {
           if (progress == null) {
@@ -68,12 +100,15 @@ class AppImage extends StatelessWidget {
           return Container(
             width: width,
             height: height,
-            color: AppTheme.mutedSurface,
+            color: appColors.sunkenSurface,
             alignment: Alignment.center,
-            child: const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
+            child: Semantics(
+              label: 'Loading $semanticLabel',
+              child: const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
             ),
           );
         },
@@ -86,7 +121,9 @@ class AppImage extends StatelessWidget {
       height: height,
       fit: fit,
       cacheWidth: targetWidth,
+      cacheHeight: targetHeight,
       semanticLabel: semanticLabel,
+      filterQuality: FilterQuality.medium,
       errorBuilder: (_, _, _) => fallback,
     );
   }

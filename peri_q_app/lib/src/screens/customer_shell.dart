@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
@@ -26,17 +28,22 @@ class CustomerShell extends StatefulWidget {
 class _CustomerShellState extends State<CustomerShell>
     with WidgetsBindingObserver {
   late int currentIndex;
+  Timer? _storeClockTimer;
 
   @override
   void initState() {
     super.initState();
-    currentIndex = widget.initialIndex;
+    currentIndex = widget.initialIndex.clamp(0, 3).toInt();
     WidgetsBinding.instance.addObserver(this);
+    _storeClockTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _storeClockTimer?.cancel();
     super.dispose();
   }
 
@@ -71,14 +78,13 @@ class _CustomerShellState extends State<CustomerShell>
       ProfileScreen(controller: widget.controller),
     ];
 
-    return AnimatedBuilder(
-      animation: widget.controller,
-      builder: (context, _) {
-        return Scaffold(
-          body: IndexedStack(index: currentIndex, children: pages),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          floatingActionButton: CartFab(
+    return Scaffold(
+      body: IndexedStack(index: currentIndex, children: pages),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: AnimatedBuilder(
+        animation: widget.controller,
+        builder: (context, _) {
+          return CartFab(
             count: widget.controller.cartCount,
             onTap: () {
               Navigator.of(context).push(
@@ -87,15 +93,20 @@ class _CustomerShellState extends State<CustomerShell>
                 ),
               );
             },
-          ),
-          bottomNavigationBar: AppBottomNav(
+          );
+        },
+      ),
+      bottomNavigationBar: AnimatedBuilder(
+        animation: widget.controller,
+        builder: (context, _) {
+          return AppBottomNav(
             currentIndex: currentIndex,
             cartCount: widget.controller.cartCount,
             onSelected: (index) => setState(() => currentIndex = index),
             onCartTap: () {},
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

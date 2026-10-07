@@ -157,7 +157,9 @@ class _AdminTodaysSpecialEditorScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppTheme.periRed : AppTheme.smokeCharcoal,
+        backgroundColor: isError
+            ? Theme.of(context).colorScheme.error
+            : null,
       ),
     );
   }
@@ -231,9 +233,9 @@ class _AdminTodaysSpecialEditorScreenState
               height: 224,
               clipBehavior: Clip.antiAlias,
               decoration: BoxDecoration(
-                color: AppTheme.mutedSurface,
-                borderRadius: BorderRadius.circular(22),
-                border: Border.all(color: Colors.black.withValues(alpha: 0.06)),
+                color: context.appColors.sunkenSurface,
+                borderRadius: BorderRadius.circular(AppRadii.card),
+                border: Border.all(color: context.appColors.softOutline),
               ),
               child: Stack(
                 fit: StackFit.expand,
@@ -260,8 +262,10 @@ class _AdminTodaysSpecialEditorScreenState
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.smokeCharcoal.withValues(alpha: 0.86),
-                        borderRadius: BorderRadius.circular(999),
+                        color: context.appColors.heroSurface.withValues(
+                          alpha: 0.94,
+                        ),
+                        borderRadius: BorderRadius.circular(AppRadii.pill),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -333,6 +337,7 @@ class _AdminTodaysSpecialEditorScreenState
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: selectedMenuItemId ?? '',
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'Linked Menu Item'),
               items: [
                 const DropdownMenuItem<String>(
@@ -353,6 +358,7 @@ class _AdminTodaysSpecialEditorScreenState
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: selectedPreset,
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'Image Preset'),
               items: imageOptions.map((imagePath) {
                 return DropdownMenuItem<String>(
@@ -411,7 +417,9 @@ class _AdminTodaysSpecialEditorScreenState
               'JPG, PNG or WebP, up to 5 MB. Images upload securely to the same Supabase Storage bucket used by menu items.',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: AppTheme.ashGrey),
+              ).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),
@@ -422,7 +430,7 @@ class _AdminTodaysSpecialEditorScreenState
           child: ElevatedButton(
             onPressed: isSaving || isUploadingImage ? null : _save,
             child: isSaving
-                ? const Row(
+                ? Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       SizedBox(
@@ -430,11 +438,13 @@ class _AdminTodaysSpecialEditorScreenState
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      SizedBox(width: 10),
-                      Text('Saving...'),
+                      const SizedBox(width: 10),
+                      const Text('Saving...'),
                     ],
                   )
                 : const Text('Save Today\'s Special'),

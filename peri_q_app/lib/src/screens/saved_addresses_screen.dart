@@ -81,8 +81,6 @@ class SavedAddressesScreen extends StatelessWidget {
           appBar: AppBar(title: const Text('Saved Addresses')),
           floatingActionButton: FloatingActionButton.extended(
             onPressed: () => _openEditor(context),
-            backgroundColor: AppTheme.periRed,
-            foregroundColor: Colors.white,
             icon: const Icon(Icons.add_location_alt_outlined),
             label: const Text('Address'),
           ),
@@ -118,38 +116,47 @@ class _EmptyAddresses extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.location_on_outlined,
-              color: AppTheme.ashGrey,
-              size: 72,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(28),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: (constraints.maxHeight - 56)
+                  .clamp(0, double.infinity)
+                  .toDouble(),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No saved addresses yet',
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 72,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No saved addresses yet',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Save a delivery address once and reuse it at checkout.',
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  onPressed: onAdd,
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Add Address'),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Save a delivery address once and reuse it at checkout.',
-              style: Theme.of(context).textTheme.bodyLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: onAdd,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Add Address'),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -175,17 +182,17 @@ class _AddressCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.card),
         border: Border.all(
           color: isDefault
-              ? AppTheme.periRed.withValues(alpha: 0.28)
-              : Colors.transparent,
+              ? Theme.of(context).colorScheme.primary
+              : context.appColors.softOutline,
         ),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x10000000),
+            color: context.appColors.shadow,
             blurRadius: 16,
-            offset: Offset(0, 6),
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -198,12 +205,12 @@ class _AddressCard extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: AppTheme.periRed.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.primaryContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on_outlined,
-                  color: AppTheme.periRed,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                 ),
               ),
               const SizedBox(width: 12),
@@ -220,14 +227,16 @@ class _AddressCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
+                    color: context.appColors.successContainer,
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
                   ),
                   child: Text(
                     'Default',
                     style: Theme.of(
                       context,
-                    ).textTheme.labelMedium?.copyWith(color: AppTheme.success),
+                    ).textTheme.labelMedium?.copyWith(
+                      color: context.appColors.onSuccessContainer,
+                    ),
                   ),
                 ),
             ],
@@ -304,38 +313,47 @@ class _AddressEditorState extends State<_AddressEditor> {
     }
 
     setState(() => isSaving = true);
-    final existingAddress = widget.address;
-    if (existingAddress == null) {
-      await widget.controller.addSavedAddress(
-        label: labelController.text.trim(),
-        address: addressController.text.trim(),
-        notes: notesController.text.trim(),
-      );
-    } else {
-      await widget.controller.updateSavedAddress(
-        existingAddress.copyWith(
+    try {
+      final existingAddress = widget.address;
+      if (existingAddress == null) {
+        await widget.controller.addSavedAddress(
           label: labelController.text.trim(),
           address: addressController.text.trim(),
           notes: notesController.text.trim(),
+        );
+      } else {
+        await widget.controller.updateSavedAddress(
+          existingAddress.copyWith(
+            label: labelController.text.trim(),
+            address: addressController.text.trim(),
+            notes: notesController.text.trim(),
+          ),
+        );
+      }
+
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('The address could not be saved. Please try again.'),
         ),
       );
     }
-
-    if (!mounted) {
-      return;
-    }
-    Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     final viewInsets = MediaQuery.viewInsetsOf(context);
     final viewPadding = MediaQuery.viewPaddingOf(context);
-    return Padding(
+    return SingleChildScrollView(
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
-        top: 20,
+        top: 8,
         bottom: viewInsets.bottom + viewPadding.bottom + 20,
       ),
       child: Form(
