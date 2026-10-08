@@ -21,13 +21,15 @@ WhatsApp, Facebook) frequently open it as a web page instead.
 
 ## Files
 
-| File | Use |
-| --- | --- |
-| `play-store-qr.svg` | Plain QR, vector. Best for large print (A3, signage, stickers). |
-| `play-store-qr.png` | Plain QR, 1025 × 1025, white background. Web, menus, screen use. |
-| `play-store-qr-transparent.png` | Plain QR, transparent background. Drops onto any layout. |
-| `rastasperiq-play-store-qr-square.png` | Branded square, 1200 × 1200. Social posts, stories, screen. |
-| `rastasperiq-play-store-qr-poster.png` | Branded A5 poster, 1748 × 2480 at 300 dpi. Table tents, flyers, counter cards. |
+| File | Encodes | Use |
+| --- | --- | --- |
+| `play-store-qr.svg` | `market://` | Plain QR, vector. Best for large print (A3, signage, stickers). |
+| `play-store-qr.png` | `market://` | Plain QR, 1025 × 1025, white background. Web, menus, screen use. |
+| `play-store-qr-transparent.png` | `market://` | Plain QR, transparent background. Drops onto any layout. |
+| `rastasperiq-play-store-qr-square.png` | `market://` | Branded square, 1200 × 1200. Social posts, stories, screen. |
+| `rastasperiq-play-store-qr-poster.png` | `market://` | Branded A5 poster, 1748 × 2480 at 300 dpi. Table tents, flyers, counter cards. |
+| `get-app-qr.svg` | `/get-app/` | Vector QR for printing the redirect link. |
+| `rastasperiq-get-app-qr-square.png` | `/get-app/` | Branded square, 1200 × 1200. Shown on the website's `/get-app/` page. |
 
 The two branded files carry the app icon in the middle of the code and use
 error-correction level **H (30%)**, which is what makes the centre badge safe.
@@ -48,23 +50,29 @@ The plain files use level **Q (25%)**.
 - Place it where people can actually lift their phone to it — table height, not
   the floor, and flat rather than curved around a bottle or cup.
 
-## Known limitation
+## Two payloads, and when to use each
 
-`market://` is Android-only. An iPhone or a desktop scanner has no handler for
-it and will show nothing or "no usable data". Both branded files therefore print
-`rastasperiq.co.za` as a fallback, and the site's footer is the right place to
-put a Play Store link for those visitors.
+**`market://` (the default files).** The most direct route into the Play Store
+app, and what you want when the printed piece is squarely aimed at Android
+phones. An iPhone or desktop scanner has no handler for it and will show
+nothing or "no usable data", which is why both branded files print
+`rastasperiq.co.za` as a fallback.
 
-Web fallback link, if you need it on a poster or in a caption:
+**`https://rastasperiq.co.za/get-app/` (the `get-app-*` files).** The website's
+`/get-app/` page sends Android phones to the `market://` deep link and shows
+everyone else the Play listing, so one printed code works on any phone. It can
+also be repointed later — change where `/get-app/` sends people and the codes
+already in the wild follow, no reprint. The trade-off is a browser hop before
+Play Store opens.
+
+Pick `market://` for an Android-first audience, `/get-app/` for mixed audiences
+or anything you might want to change later.
+
+Web listing, for captions and footers:
 
 ```
 https://play.google.com/store/apps/details?id=za.co.rastasperiq.ordering
 ```
-
-If you later want one QR that works on both platforms, encode a short URL on
-`rastasperiq.co.za` (for example `/get-app/`) that redirects to `market://` on
-Android and to the https listing everywhere else. That also lets you repoint
-the QR after printing. Say the word and it can be added to the website.
 
 ## Regenerate
 
@@ -75,6 +83,9 @@ python3 generate_play_store_qr.py
 ```
 
 The script re-renders every file and then decodes each one back with
-`zxing-cpp`, failing loudly if any code does not read back as
-`market://details?id=za.co.rastasperiq.ordering`. Change `PACKAGE_ID` or
-`PLAY_STORE_DEEP_LINK` at the top of the script to repoint it.
+`zxing-cpp`, failing loudly if any code does not read back as the payload it was
+generated from. Change `PACKAGE_ID`, `PLAY_STORE_DEEP_LINK`, or `GET_APP_LINK`
+at the top of the script to repoint it.
+
+The website serves the `/get-app/` square and SVG from `website/public/qr/`, so
+after regenerating run `pnpm sync-qr` inside `website/` to copy them across.

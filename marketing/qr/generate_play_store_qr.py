@@ -9,12 +9,23 @@ Usage:
     python3 -m venv .venv && ./.venv/bin/pip install segno pillow zxing-cpp numpy
     python3 generate_play_store_qr.py
 
+Two payloads are produced:
+
+1. ``market://details?id=...`` — the Play Store deep link. Android hands this
+   straight to the Play Store app.
+2. ``https://rastasperiq.co.za/get-app/`` — the website redirect page, which
+   sends Android phones to the deep link and everyone else to the Play listing.
+   Use this one when the printed piece has to survive an iPhone scan, or when
+   you want to repoint the code later without reprinting it.
+
 Outputs (written next to this script):
-    play-store-qr.svg                        plain QR, vector (best for print)
-    play-store-qr.png                        plain QR, white background
-    play-store-qr-transparent.png            plain QR, transparent background
-    rastasperiq-play-store-qr-square.png     branded square (social / screen)
-    rastasperiq-play-store-qr-poster.png     branded A5 poster at 300 dpi
+    play-store-qr.svg                        market:// QR, vector (best for print)
+    play-store-qr.png                        market:// QR, white background
+    play-store-qr-transparent.png            market:// QR, transparent background
+    rastasperiq-play-store-qr-square.png     market:// QR, branded square
+    rastasperiq-play-store-qr-poster.png     market:// QR, branded A5 poster, 300 dpi
+    get-app-qr.svg                           /get-app/ QR, vector
+    rastasperiq-get-app-qr-square.png        /get-app/ QR, branded square
 """
 
 from __future__ import annotations
@@ -38,6 +49,11 @@ PLAY_STORE_DEEP_LINK = f"market://details?id={PACKAGE_ID}"
 
 # Kept only for the printed fallback line and the README; the QR does not use it.
 PLAY_STORE_WEB_LINK = f"https://play.google.com/store/apps/details?id={PACKAGE_ID}"
+
+# The website's /get-app/ page redirects Android to the deep link above and
+# everyone else to the web listing, so one printed code can serve both.
+SITE_URL = "https://rastasperiq.co.za"
+GET_APP_LINK = f"{SITE_URL}/get-app/"
 
 APP_TITLE = "Rasta's Peri Q Chesanyama"
 BRAND = "RastasperiQ"
@@ -127,13 +143,13 @@ def paste_center(canvas: Image.Image, layer: Image.Image, center: tuple[float, f
 # --------------------------------------------------------------------------- #
 
 
-def plain_qr_image(scale: int, border: int) -> Image.Image:
+def plain_qr_image(payload: str, scale: int, border: int) -> Image.Image:
     """Plain QR on a white background.
 
     Error correction Q (~25%) keeps it readable on printed material that picks
     up scuffs or creases.
     """
-    qr = segno.make(PLAY_STORE_DEEP_LINK, error="q", mode="byte")
+    qr = segno.make(payload, error="q", mode="byte")
     path = HERE / ".tmp-plain.png"
     qr.save(str(path), scale=scale, border=border, dark="#1A1A1A", light="#FFFFFF")
     image = Image.open(path).convert("RGB")
@@ -141,13 +157,13 @@ def plain_qr_image(scale: int, border: int) -> Image.Image:
     return image
 
 
-def branded_qr_image(target: int, logo_ratio: float = 0.22) -> Image.Image:
+def branded_qr_image(payload: str, target: int, logo_ratio: float = 0.22) -> Image.Image:
     """QR with the app icon badge in the middle.
 
     Error correction H (~30%) is what makes the centre overlay safe: the badge
     covers roughly 5% of the symbol, well inside what H can reconstruct.
     """
-    qr = segno.make(PLAY_STORE_DEEP_LINK, error="h", mode="byte")
+    qr = segno.make(payload, error="h", mode="byte")
     path = HERE / ".tmp-branded.png"
     # Render large, then downsample so the module grid stays crisp after scaling.
     qr.save(str(path), scale=40, border=4, dark="#1A1A1A", light="#FFFFFF")
@@ -179,7 +195,13 @@ def app_icon(size: int) -> Image.Image:
 # --------------------------------------------------------------------------- #
 
 
-def build_square(output: Path, size: int = 1200) -> Image.Image:
+def build_square(
+    output: Path,
+    payload: str,
+    caption: str,
+    note: str,
+    size: int = 1200,
+) -> Image.Image:
     canvas = Image.new("RGB", (size, size), CREAM)
     draw = ImageDraw.Draw(canvas)
     cx = size / 2
@@ -198,8 +220,8 @@ def build_square(output: Path, size: int = 1200) -> Image.Image:
 
     h_title = text_size(draw, BRAND, title_font)[1]
     h_eyebrow = text_size(draw, "CHESANYAMA", eyebrow_font)[1]
-    h_caption = text_size(draw, "Scan to install", caption_font)[1]
-    h_note = text_size(draw, "Opens the Google Play Store app", note_font)[1]
+    h_caption = text_size(draw, caption, caption_font)[1]
+    h_note = text_size(draw, note, note_font)[1]
 
     gaps = [30, 16, 40, 40, 14]  # after badge, title, eyebrow, QR, caption
     fixed_h = badge + h_title + h_eyebrow + h_caption + h_note + sum(gaps)
@@ -226,22 +248,22 @@ def build_square(output: Path, size: int = 1200) -> Image.Image:
     centred_text(draw, (cx, cursor + h_eyebrow / 2), "CHESANYAMA", eyebrow_font, RED)
     cursor += h_eyebrow + gaps[2]
 
-    qr = branded_qr_image(qr_size)
+    qr = branded_qr_image(payload, qr_size)
     canvas.paste(qr, (round(cx - qr_size / 2), round(cursor)))
     cursor += qr_size + gaps[3]
 
-    centred_text(draw, (cx, cursor + h_caption / 2), "Scan to install", caption_font, CHARCOAL)
+    centred_text(draw, (cx, cursor + h_caption / 2), caption, caption_font, CHARCOAL)
     cursor += h_caption + gaps[4]
 
-    centred_text(
-        draw, (cx, cursor + h_note / 2), "Opens the Google Play Store app", note_font, ASH
-    )
+    centred_text(draw, (cx, cursor + h_note / 2), note, note_font, ASH)
 
     canvas.save(output)
     return canvas
 
 
-def build_poster(output: Path, width: int = 1748, height: int = 2480) -> Image.Image:
+def build_poster(
+    output: Path, payload: str = PLAY_STORE_DEEP_LINK, width: int = 1748, height: int = 2480
+) -> Image.Image:
     """A5 portrait poster at 300 dpi (1748 x 2480 px)."""
     canvas = Image.new("RGB", (width, height), CREAM)
     draw = ImageDraw.Draw(canvas)
@@ -325,7 +347,7 @@ def build_poster(output: Path, width: int = 1748, height: int = 2480) -> Image.I
     )
     cursor += h_sub + gaps[1]
 
-    qr = branded_qr_image(qr_size)
+    qr = branded_qr_image(payload, qr_size)
     canvas.paste(qr, (round(content_cx - qr_size / 2), round(cursor)))
     cursor += qr_size + gaps[2]
 
@@ -354,57 +376,84 @@ def to_transparent(path: Path) -> None:
     image.save(path)
 
 
-def verify(path: Path) -> bool:
+def verify(path: Path, payload: str) -> bool:
     """Decode the QR back out of a rendered file and compare the payload."""
     import zxingcpp  # imported lazily so generation works without the decoder
 
     results = zxingcpp.read_barcodes(Image.open(path))
     texts = [r.text for r in results]
-    ok = PLAY_STORE_DEEP_LINK in texts
+    ok = payload in texts
     print(f"  {'PASS' if ok else 'FAIL'}  {path.name} -> {texts or 'no QR found'}")
     return ok
 
 
-def main() -> None:
-    print(f"Payload: {PLAY_STORE_DEEP_LINK}\n")
+def write_plain_svg(payload: str, path: Path) -> None:
+    segno.make(payload, error="q", mode="byte").save(
+        str(path), scale=12, border=4, dark="#1A1A1A", light="#FFFFFF"
+    )
 
-    print("Plain QR:")
-    qr = segno.make(PLAY_STORE_DEEP_LINK, error="q", mode="byte")
+
+def main() -> None:
+    print(f"Play Store deep link : {PLAY_STORE_DEEP_LINK}")
+    print(f"Website redirect link: {GET_APP_LINK}\n")
+
+    checks: list[tuple[Path, str]] = []
+
+    print("market:// QR (Play Store app):")
     svg_path = HERE / "play-store-qr.svg"
-    qr.save(str(svg_path), scale=12, border=4, dark="#1A1A1A", light="#FFFFFF")
+    write_plain_svg(PLAY_STORE_DEEP_LINK, svg_path)
     print(f"  wrote {svg_path.name}")
 
     png_path = HERE / "play-store-qr.png"
-    plain_qr_image(scale=25, border=4).save(png_path)
+    plain_qr_image(PLAY_STORE_DEEP_LINK, scale=25, border=4).save(png_path)
     print(f"  wrote {png_path.name}")
+    checks.append((png_path, PLAY_STORE_DEEP_LINK))
 
     transparent_path = HERE / "play-store-qr-transparent.png"
-    plain_qr_image(scale=25, border=4).save(transparent_path)
+    plain_qr_image(PLAY_STORE_DEEP_LINK, scale=25, border=4).save(transparent_path)
     to_transparent(transparent_path)
     print(f"  wrote {transparent_path.name}")
+    checks.append((transparent_path, PLAY_STORE_DEEP_LINK))
 
-    print("\nBranded artwork:")
     square_path = HERE / "rastasperiq-play-store-qr-square.png"
-    build_square(square_path)
+    build_square(
+        square_path,
+        PLAY_STORE_DEEP_LINK,
+        caption="Scan to install",
+        note="Opens the Google Play Store app",
+    )
     print(f"  wrote {square_path.name}")
+    checks.append((square_path, PLAY_STORE_DEEP_LINK))
 
     poster_path = HERE / "rastasperiq-play-store-qr-poster.png"
-    build_poster(poster_path)
+    build_poster(poster_path, PLAY_STORE_DEEP_LINK)
     print(f"  wrote {poster_path.name}")
+    checks.append((poster_path, PLAY_STORE_DEEP_LINK))
+
+    print("\n/get-app/ QR (works on every phone, repointable):")
+    get_app_svg = HERE / "get-app-qr.svg"
+    write_plain_svg(GET_APP_LINK, get_app_svg)
+    print(f"  wrote {get_app_svg.name}")
+
+    get_app_square = HERE / "rastasperiq-get-app-qr-square.png"
+    build_square(
+        get_app_square,
+        GET_APP_LINK,
+        caption="Scan to get the app",
+        note="Android opens the Play Store",
+    )
+    print(f"  wrote {get_app_square.name}")
+    checks.append((get_app_square, GET_APP_LINK))
 
     print("\nScan verification:")
-    results = [
-        verify(png_path),
-        verify(transparent_path),
-        verify(square_path),
-        verify(poster_path),
-    ]
+    results = [verify(path, expected) for path, expected in checks]
 
     if not all(results):
-        raise SystemExit("One or more QR codes failed to decode back to the payload.")
+        raise SystemExit("One or more QR codes failed to decode back to its payload.")
 
-    print("\nAll QR codes decode to the Play Store deep link.")
-    print(f"Web fallback (for iPhone/desktop): {PLAY_STORE_WEB_LINK}")
+    print("\nEvery QR decodes back to the payload it was generated from.")
+    print(f"Play Store web listing: {PLAY_STORE_WEB_LINK}")
+    print(f"Redirect page:          {GET_APP_LINK}")
 
 
 if __name__ == "__main__":
