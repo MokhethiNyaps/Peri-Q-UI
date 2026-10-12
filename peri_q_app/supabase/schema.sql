@@ -637,7 +637,7 @@ create table if not exists public.orders (
   customer_phone text not null,
   order_type text not null check (order_type in ('pickup', 'delivery')),
   payment_method text not null check (
-    payment_method in ('cash_collection', 'cash_delivery', 'eft', 'card')
+    payment_method in ('cash_collection', 'cash_delivery', 'eft', 'card', 'yoco')
   ),
   total_price numeric(10, 2) not null,
   status text not null default 'pending' check (
@@ -647,13 +647,25 @@ create table if not exists public.orders (
   delivery_address text,
   client_request_id text not null,
   payment_proof_path text,
+  yoco_checkout_id text,
+  payment_status text not null default 'unpaid' check (payment_status in ('unpaid','pending','paid','failed','cancelled','expired','refunded')),
+  paid_at timestamptz,
+  payment_amount_cents integer check (payment_amount_cents is null or payment_amount_cents >= 0),
+  yoco_payment_id text,
+  yoco_mode text check (yoco_mode is null or yoco_mode in ('test','live')),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
 
 alter table public.orders
   add column if not exists client_request_id text,
-  add column if not exists payment_proof_path text;
+  add column if not exists payment_proof_path text,
+  add column if not exists yoco_checkout_id text,
+  add column if not exists payment_status text,
+  add column if not exists paid_at timestamptz,
+  add column if not exists payment_amount_cents integer,
+  add column if not exists yoco_payment_id text,
+  add column if not exists yoco_mode text;
 
 update public.orders
 set client_request_id = 'legacy-' || id::text
@@ -671,6 +683,84 @@ for each row execute procedure public.touch_updated_at();
 
 create index if not exists orders_user_id_created_at_idx
 on public.orders (user_id, created_at desc);
+
+-- Yoco extension indexes (idempotent)
+do $$ begin
+  if not exists (select 1 from pg_indexes where indexname = 'orders_yoco_checkout_id_idx') then
+    create unique index orders_yoco_checkout_id_idx on public.orders (yoco_checkout_id) where yoco_checkout_id is not null;
+  end if;
+end $$;
+create index if not exists orders_payment_status_idx on public.orders (payment_status);
+create index if not exists orders_paid_at_idx on public.orders (paid_at) where paid_at is not null;
+alter table public.orders drop constraint if exists orders_payment_method_check;
+alter table public.orders
+  add constraint orders_payment_method_check
+  check (payment_method in ('cash_collection','cash_delivery','eft','card','yoco'));
+
+-- Payments audit + webhook idempotency (shared by website + mobile)
+create table if not exists public.payments (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null unique references public.orders (id) on delete cascade,
+  yoco_checkout_id text unique,
+  amount_cents integer not null check (amount_cents > 0),
+  currency text not null default 'ZAR' check (currency = 'ZAR'),
+  status text not null check (status in ('pending','succeeded','failed','cancelled','expired')),
+  yoco_payment_id text,
+  webhook_event_id text unique,
+  raw_payload jsonb,
+  mode text check (mode in ('test','live')),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+create index if not exists payments_order_id_idx on public.payments (order_id);
+create index if not exists payments_yoco_checkout_id_idx on public.payments (yoco_checkout_id) where yoco_checkout_id is not null;
+create index if not exists payments_status_idx on public.payments (status);
+create index if not exists payments_created_at_idx on public.payments (created_at desc);
+drop trigger if exists payments_touch_updated_at on public.payments;
+create trigger payments_touch_updated_at
+before update on public.payments
+for each row execute procedure public.touch_updated_at();
+
+create table if not exists public.yoco_webhook_events (
+  id text primary key,
+  type text not null check (type in ('payment.succeeded','payment.failed','refund.succeeded','checkout.expired','checkout.cancelled')),
+  payload jsonb not null,
+  order_id uuid references public.orders (id) on delete set null,
+  yoco_checkout_id text,
+  processed boolean not null default false,
+  processed_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now())
+);
+create index if not exists yoco_webhook_events_type_idx on public.yoco_webhook_events (type);
+create index if not exists yoco_webhook_events_order_id_idx on public.yoco_webhook_events (order_id) where order_id is not null;
+create index if not exists yoco_webhook_events_created_at_idx on public.yoco_webhook_events (created_at desc);
+
+alter table public.payments enable row level security;
+alter table public.yoco_webhook_events enable row level security;
+revoke all on table public.payments from anon, authenticated;
+revoke all on table public.yoco_webhook_events from anon, authenticated;
+drop policy if exists "payments_admin_all" on public.payments;
+create policy "payments_admin_all" on public.payments for all to authenticated using (public.is_admin()) with check (public.is_admin());
+drop policy if exists "payments_owner_read" on public.payments;
+create policy "payments_owner_read" on public.payments for select to authenticated using (
+  exists (select 1 from public.orders where orders.id = payments.order_id and orders.user_id = (select auth.uid()))
+);
+drop policy if exists "yoco_webhook_admin_read" on public.yoco_webhook_events;
+create policy "yoco_webhook_admin_read" on public.yoco_webhook_events for select to authenticated using (public.is_admin());
+
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='payments') then
+    alter publication supabase_realtime add table public.payments;
+  end if;
+  if not exists (select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='yoco_webhook_events') then
+    alter publication supabase_realtime add table public.yoco_webhook_events;
+  end if;
+end $$;
+
+-- ensure legacy orders have correct payment_status
+update public.orders set payment_status='unpaid' where payment_status is null;
+alter table public.orders alter column payment_status set not null;
+alter table public.orders alter column payment_status set default 'unpaid';
 
 create table if not exists public.push_notification_dispatches (
   id uuid primary key default gen_random_uuid(),
@@ -782,19 +872,21 @@ begin
   if p_order_type = 'delivery' and length(trim(coalesce(p_delivery_address, ''))) < 8 then
     raise exception 'A delivery address is required.' using errcode = '22023';
   end if;
-  if p_payment_method not in ('cash_collection', 'cash_delivery', 'eft')
+  if p_payment_method not in ('cash_collection', 'cash_delivery', 'eft', 'yoco', 'card')
      or (p_order_type = 'pickup' and p_payment_method = 'cash_delivery') then
     raise exception 'Invalid payment method.' using errcode = '22023';
   end if;
 
   insert into public.orders (
     user_id, customer_name, customer_phone, order_type, payment_method,
-    total_price, status, estimated_minutes, delivery_address, client_request_id
+    total_price, status, estimated_minutes, delivery_address, client_request_id,
+    payment_status
   ) values (
     auth.uid(), trim(p_customer_name), trim(p_customer_phone), p_order_type,
     p_payment_method, 0, 'pending', 0,
     case when p_order_type = 'delivery' then trim(p_delivery_address) else null end,
-    p_client_request_id
+    p_client_request_id,
+    case when p_payment_method in ('yoco','card') then 'pending' else 'unpaid' end
   ) returning id into created_order_id;
 
   for item_json in select value from jsonb_array_elements(p_items)
@@ -861,7 +953,8 @@ begin
 
   update public.orders
   set total_price = trusted_total,
-      estimated_minutes = greatest(calculated_estimate, 5)
+      estimated_minutes = greatest(calculated_estimate, 5),
+      payment_amount_cents = (trusted_total * 100)::integer
   where id = created_order_id;
   return jsonb_build_object('id', created_order_id);
 end;

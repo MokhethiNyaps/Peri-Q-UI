@@ -90,11 +90,15 @@ export default function HomePage() {
             </p>
 
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link href="/menu/" className="button button-primary">
+                <UtensilsCrossed size={19} aria-hidden="true" />
+                Order on website
+              </Link>
               <a
                 href={siteConfig.whatsappUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="button button-primary"
+                className="button button-ghost"
               >
                 <MessageCircle size={19} aria-hidden="true" />
                 Chat on WhatsApp

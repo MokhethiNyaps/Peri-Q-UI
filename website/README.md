@@ -1,14 +1,20 @@
-# RastasperiQ website
+# RastasperiQ website — Ordering + Yoco
 
-A static Next.js website for `rastasperiq.co.za`, designed for deployment on Vercel.
+Next.js **server** site for `rastasperiq.co.za` on Vercel (`website/` root). Shares the same Supabase Postgres as the Android app. Website and app both call `place_order` RPC — one authoritative `orders` table, kitchen sees website orders instantly.
 
 ## Pages
 
-- `/` — landing page
+- `/` — landing (hero with **Order on website** CTA, TodaysSpecialLive)
+- `/menu/` — browse live `menu_items` + `menu_categories` (RLS public read), add to cart, server price re-validated at checkout
+- `/cart/` — quantities ±, remove, subtotal, delivery fee preview
+- `/checkout/` — name/phone, pickup/delivery + address, payment choice (cash/eft/Yoco), creates order via `place_order`
+- `/order/[id]/` — order confirmation, fulfilment vs payment status separate, Yoco retry
 - `/get-app/` — sends Android visitors into the Play Store app and shows a scannable QR to everyone else
 - `/privacy-policy/` — public privacy policy for the Android app
 - `/terms-and-conditions/` — customer ordering terms
 - `/delete-account/` — public account-deletion instructions for users and Google Play
+- `/api/yoco/checkout` — server creates Yoco hosted checkout (amount = trusted server total, `Idempotency-Key: client_request_id`)
+- `/api/yoco/webhook` — server verifies Yoco Standard Webhooks signature (`whsec_...`), amount match, idempotent handling
 
 ## Get the app page
 
@@ -59,21 +65,39 @@ The verified WhatsApp contact is already enabled. To show Instagram, Facebook, o
 
 Only social links with a configured URL are displayed, so the site never sends visitors to a guessed or placeholder account.
 
-## Connect Today's Special
+## Shared ordering (single authoritative backend)
 
-Add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in Vercel using the same production Supabase project as the Android app. Enter only the value in each Vercel value field: the URL must look like `https://your-project-ref.supabase.co`, without `NEXT_PUBLIC_SUPABASE_URL=` or quotation marks. The public landing page then reads the `app_settings` row and subscribes to realtime updates. Use only a Supabase publishable key; never place a secret or service-role key in a `NEXT_PUBLIC` variable. Redeploy after changing either value because Next.js includes public variables in the browser bundle during the build.
+- Uses **same Supabase project** as the Android app (`NEXT_PUBLIC_SUPABASE_URL/_PUBLISHABLE_KEY`). Menu, `app_settings`, `orders`, `order_items`, `payments` and `yoco_webhook_events` are single source; no duplicate customer or menu tables.
+- Website signs in anonymously (Supabase Auth → Anonymous enabled) like the app, then calls `place_order` RPC which server-calculates trusted totals and enforces store hours, availability, delivery fee.
+- Never trust client total — Yoco amount is `orders.total_price * 100` verified server-side before creating checkout; webhook re-validates amount matches order before marking `paid`.
+- `payment_status` (`unpaid/pending/paid/failed/...`) is separate from fulfilment `status` (`pending/preparing/ready/...`). Yoco webhook only flips `payment_status`, never auto-completes preparation.
+
+## Connect Supabase + Yoco (Vercel env)
+
+In **Vercel → Project Settings → Environment Variables** (Production + Preview as needed), add values only (no `NAME=` prefix, no quotes):
+
+- `NEXT_PUBLIC_SUPABASE_URL` → `https://<ref>.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` → `sb_publishable_...` (or anon JWT)
+- `NEXT_PUBLIC_SITE_URL` → `https://rastasperiq.co.za` (used for Yoco redirects)
+- `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` → same URL + **service_role** secret (server only, never `NEXT_PUBLIC_`)
+- `YOCO_SECRET_KEY` → `sk_test_...` for testing, later `sk_live_...` for live (after domain verified)
+- `YOCO_WEBHOOK_SECRET` → `whsec_...` matching the same Test/Live tab
+
+`NEXT_PUBLIC_*` changes require a **Redeploy** (Next.js embeds them at build). Keep only `supabase publishable` in `NEXT_PUBLIC_*`; secrets live only in server env.
+
+Yoco webhook URL to register (dashboard or API): `https://rastasperiq.co.za/api/yoco/webhook` — select events `payment.succeeded` + `payment.failed`. Use `https`; live requires domain verified in **Yoco App → Sales → Payment Gateway → Verified Domains**.
 
 ## Deploy to Vercel
 
 1. Push the repository to GitHub, GitLab, or Bitbucket.
 2. In Vercel, choose **Add New → Project** and import the repository.
 3. Set the **Root Directory** to `website`.
-4. Keep the detected framework as **Next.js** and deploy.
+4. Keep the detected framework as **Next.js** and deploy (server mode — no `output:"export"`).
 5. In the Vercel project, open **Settings → Domains** and add `rastasperiq.co.za`.
 6. Add the DNS records Vercel displays at the company where the domain is registered.
 7. Add `www.rastasperiq.co.za` too and redirect it to the primary domain if desired.
 
-The project uses Next.js static export. `pnpm build` generates the deployment files in `out/`.
+Build is `pnpm build` → `.next/` (serverless functions `ƒ /api/yoco/*` visible in logs). There is no `out/` folder anymore. Check `https://rastasperiq.co.za/api/yoco/webhook` GET returns `{ ok:true }` after deploy.
 
 ## Before publishing
 
