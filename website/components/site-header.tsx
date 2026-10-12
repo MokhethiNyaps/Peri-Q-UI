@@ -1,8 +1,10 @@
 import { Menu } from "lucide-react";
 import Link from "next/link";
 import { Brand } from "@/components/brand";
+import { CartBadge, MobileCartLink } from "@/components/cart-badge";
 
 const navigation = [
+  { href: "/menu/", label: "Menu & Order" },
   { href: "/#how-it-works", label: "How it works" },
   { href: "/#visit", label: "Visit us" },
   { href: "/privacy-policy/", label: "Privacy" },
@@ -20,6 +22,7 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
+          <CartBadge />
           <Link href="/#contact" className="button button-sm button-dark">
             Contact us
           </Link>
@@ -41,6 +44,7 @@ export function SiteHeader() {
                 {item.label}
               </Link>
             ))}
+            <MobileCartLink />
             <Link href="/#contact" className="button button-dark mt-2 w-full">
               Contact us
             </Link>

@@ -24,6 +24,11 @@ created_at,
 estimated_minutes,
 delivery_address,
 payment_proof_path,
+payment_status,
+yoco_checkout_id,
+paid_at,
+yoco_payment_id,
+yoco_mode,
 order_items (
   id,
   menu_item_id,
@@ -151,6 +156,11 @@ order_items (
       estimatedMinutes: (row['estimated_minutes'] as num?)?.toInt() ?? 0,
       deliveryAddress: row['delivery_address'] as String?,
       paymentProofPath: row['payment_proof_path'] as String?,
+      paymentStatus: paymentStatusFromCode(row['payment_status'] as String? ?? 'unpaid'),
+      yocoCheckoutId: row['yoco_checkout_id'] as String?,
+      paidAt: row['paid_at'] != null ? DateTime.tryParse(row['paid_at'] as String) : null,
+      yocoPaymentId: row['yoco_payment_id'] as String?,
+      yocoMode: row['yoco_mode'] as String?,
     );
   }
 

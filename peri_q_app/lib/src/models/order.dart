@@ -4,7 +4,9 @@ enum OrderStatus { pending, preparing, ready, completed, cancelled }
 
 enum OrderType { pickup, delivery }
 
-enum PaymentMethod { cashCollection, cashDelivery, eft, card }
+enum PaymentMethod { cashCollection, cashDelivery, eft, card, yoco }
+
+enum PaymentStatus { unpaid, pending, paid, failed, cancelled, expired, refunded }
 
 extension OrderStatusX on OrderStatus {
   String get code {
@@ -56,6 +58,8 @@ extension PaymentMethodX on PaymentMethod {
         return 'eft';
       case PaymentMethod.card:
         return 'card';
+      case PaymentMethod.yoco:
+        return 'yoco';
     }
   }
 
@@ -69,6 +73,29 @@ extension PaymentMethodX on PaymentMethod {
         return 'EFT';
       case PaymentMethod.card:
         return 'Card';
+      case PaymentMethod.yoco:
+        return 'Yoco';
+    }
+  }
+}
+
+extension PaymentStatusX on PaymentStatus {
+  String get code {
+    switch (this) {
+      case PaymentStatus.unpaid:
+        return 'unpaid';
+      case PaymentStatus.pending:
+        return 'pending';
+      case PaymentStatus.paid:
+        return 'paid';
+      case PaymentStatus.failed:
+        return 'failed';
+      case PaymentStatus.cancelled:
+        return 'cancelled';
+      case PaymentStatus.expired:
+        return 'expired';
+      case PaymentStatus.refunded:
+        return 'refunded';
     }
   }
 }
@@ -91,6 +118,13 @@ PaymentMethod paymentMethodFromCode(String code) {
   return PaymentMethod.values.firstWhere(
     (method) => method.code == code,
     orElse: () => PaymentMethod.cashCollection,
+  );
+}
+
+PaymentStatus paymentStatusFromCode(String code) {
+  return PaymentStatus.values.firstWhere(
+    (status) => status.code == code,
+    orElse: () => PaymentStatus.unpaid,
   );
 }
 
@@ -147,6 +181,11 @@ class OrderModel {
     required this.estimatedMinutes,
     this.paymentProofPath,
     this.deliveryAddress,
+    this.paymentStatus = PaymentStatus.unpaid,
+    this.yocoCheckoutId,
+    this.paidAt,
+    this.yocoPaymentId,
+    this.yocoMode,
   });
 
   final String id;
@@ -162,6 +201,11 @@ class OrderModel {
   final int estimatedMinutes;
   final String? paymentProofPath;
   final String? deliveryAddress;
+  final PaymentStatus paymentStatus;
+  final String? yocoCheckoutId;
+  final DateTime? paidAt;
+  final String? yocoPaymentId;
+  final String? yocoMode;
 
   bool get isActive =>
       status == OrderStatus.pending ||
@@ -193,6 +237,11 @@ class OrderModel {
       estimatedMinutes: json['estimatedMinutes'] as int? ?? 0,
       paymentProofPath: json['paymentProofPath'] as String?,
       deliveryAddress: json['deliveryAddress'] as String?,
+      paymentStatus: paymentStatusFromCode(json['paymentStatus'] as String? ?? json['payment_status'] as String? ?? 'unpaid'),
+      yocoCheckoutId: json['yocoCheckoutId'] as String? ?? json['yoco_checkout_id'] as String?,
+      paidAt: json['paidAt'] != null ? DateTime.tryParse(json['paidAt'] as String) : json['paid_at'] != null ? DateTime.tryParse(json['paid_at'] as String) : null,
+      yocoPaymentId: json['yocoPaymentId'] as String? ?? json['yoco_payment_id'] as String?,
+      yocoMode: json['yocoMode'] as String? ?? json['yoco_mode'] as String?,
     );
   }
 
@@ -211,6 +260,11 @@ class OrderModel {
       'estimatedMinutes': estimatedMinutes,
       'paymentProofPath': paymentProofPath,
       'deliveryAddress': deliveryAddress,
+      'paymentStatus': paymentStatus.code,
+      'yocoCheckoutId': yocoCheckoutId,
+      'paidAt': paidAt?.toIso8601String(),
+      'yocoPaymentId': yocoPaymentId,
+      'yocoMode': yocoMode,
     };
   }
 }
