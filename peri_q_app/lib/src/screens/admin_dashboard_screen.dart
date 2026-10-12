@@ -589,7 +589,8 @@ class _IncomingOrderCard extends StatelessWidget {
                   OrderStatus.cancelled => 'Cancelled',
                 }),
               );
-              final stackButtons = constraints.maxWidth < 410 ||
+              final stackButtons =
+                  constraints.maxWidth < 410 ||
                   MediaQuery.textScalerOf(context).scale(1) > 1.2;
               if (stackButtons) {
                 return Column(
@@ -665,9 +666,8 @@ class _MenuItemCard extends StatelessWidget {
                         item.name,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(height: 4),
                       _CategoryChip(label: item.category),

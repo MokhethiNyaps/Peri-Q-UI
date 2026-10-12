@@ -232,9 +232,7 @@ class _AddressCard extends StatelessWidget {
                   ),
                   child: Text(
                     'Default',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.labelMedium?.copyWith(
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: context.appColors.onSuccessContainer,
                     ),
                   ),

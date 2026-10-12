@@ -107,12 +107,14 @@ class AppPreferences {
 
   factory AppPreferences.fromJson(Map<String, dynamic> json) {
     final savedAddressValues = json['savedAddresses'] as List<dynamic>? ?? [];
-    
+
     ThemeMode mode = ThemeMode.system;
     final themeStr = json['themeMode'] as String?;
-    if (themeStr == 'light') { mode = ThemeMode.light; }
-    else if (themeStr == 'dark') { mode = ThemeMode.dark; }
-
+    if (themeStr == 'light') {
+      mode = ThemeMode.light;
+    } else if (themeStr == 'dark') {
+      mode = ThemeMode.dark;
+    }
 
     return AppPreferences(
       hasReturningSession: json['hasReturningSession'] as bool? ?? false,

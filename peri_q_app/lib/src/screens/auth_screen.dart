@@ -749,9 +749,12 @@ class _SignInFieldsState extends State<_SignInFields> {
             prefixIcon: const Icon(Icons.lock_outline_rounded),
             suffixIcon: IconButton(
               tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
               icon: Icon(
-                _obscurePassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                _obscurePassword
+                    ? Icons.visibility_rounded
+                    : Icons.visibility_off_rounded,
               ),
             ),
           ),
@@ -854,9 +857,12 @@ class _SignUpFieldsState extends State<_SignUpFields> {
             prefixIcon: const Icon(Icons.lock_outline_rounded),
             suffixIcon: IconButton(
               tooltip: _obscurePassword ? 'Show password' : 'Hide password',
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
               icon: Icon(
-                _obscurePassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                _obscurePassword
+                    ? Icons.visibility_rounded
+                    : Icons.visibility_off_rounded,
               ),
             ),
           ),
@@ -874,10 +880,16 @@ class _SignUpFieldsState extends State<_SignUpFields> {
             hintText: 'Repeat your password',
             prefixIcon: const Icon(Icons.lock_reset_rounded),
             suffixIcon: IconButton(
-              tooltip: _obscureConfirmPassword ? 'Show password' : 'Hide password',
-              onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+              tooltip: _obscureConfirmPassword
+                  ? 'Show password'
+                  : 'Hide password',
+              onPressed: () => setState(
+                () => _obscureConfirmPassword = !_obscureConfirmPassword,
+              ),
               icon: Icon(
-                _obscureConfirmPassword ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                _obscureConfirmPassword
+                    ? Icons.visibility_rounded
+                    : Icons.visibility_off_rounded,
               ),
             ),
           ),

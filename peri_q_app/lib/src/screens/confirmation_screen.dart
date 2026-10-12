@@ -164,10 +164,8 @@ class ConfirmationScreen extends StatelessWidget {
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => TrackingScreen(
-                        order: order,
-                        controller: controller,
-                      ),
+                      builder: (_) =>
+                          TrackingScreen(order: order, controller: controller),
                     ),
                   );
                 },
@@ -311,9 +309,7 @@ class _PaymentProofUploaderState extends State<_PaymentProofUploader> {
               onPressed: isUploading ? null : _pickAndUpload,
               style: OutlinedButton.styleFrom(
                 foregroundColor: context.appColors.onAccentContainer,
-                side: BorderSide(
-                  color: context.appColors.onAccentContainer,
-                ),
+                side: BorderSide(color: context.appColors.onAccentContainer),
               ),
               icon: isUploading
                   ? const SizedBox(

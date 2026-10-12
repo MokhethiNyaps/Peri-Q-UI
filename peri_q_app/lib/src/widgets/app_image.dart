@@ -24,9 +24,11 @@ class AppImage extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final layoutWidth = _finiteDimension(width) ??
+        final layoutWidth =
+            _finiteDimension(width) ??
             (constraints.hasBoundedWidth ? constraints.maxWidth : null);
-        final layoutHeight = _finiteDimension(height) ??
+        final layoutHeight =
+            _finiteDimension(height) ??
             (constraints.hasBoundedHeight ? constraints.maxHeight : null);
         final image = _buildImage(
           context,

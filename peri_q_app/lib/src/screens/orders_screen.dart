@@ -127,7 +127,8 @@ class _OrderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final appColors = context.appColors;
-    final isTerminal = order.status == OrderStatus.completed ||
+    final isTerminal =
+        order.status == OrderStatus.completed ||
         order.status == OrderStatus.cancelled;
 
     return InkWell(
@@ -190,11 +191,11 @@ class _OrderCard extends StatelessWidget {
                   Text(
                     order.status.label,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                          color: order.status == OrderStatus.completed
-                              ? appColors.success
-                              : theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                        ),
+                      color: order.status == OrderStatus.completed
+                          ? appColors.success
+                          : theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ],
               ),

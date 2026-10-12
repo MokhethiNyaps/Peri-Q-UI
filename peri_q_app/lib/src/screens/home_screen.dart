@@ -38,10 +38,9 @@ class HomeScreen extends StatelessWidget {
           final colors = theme.colorScheme;
           final appColors = context.appColors;
           final textScale = MediaQuery.textScalerOf(context).scale(1);
-          final categoryRailHeight = (46 + ((textScale - 1) * 20)).clamp(
-            46.0,
-            72.0,
-          ).toDouble();
+          final categoryRailHeight = (46 + ((textScale - 1) * 20))
+              .clamp(46.0, 72.0)
+              .toDouble();
 
           return RefreshIndicator(
             onRefresh: controller.refreshData,
@@ -77,8 +76,7 @@ class HomeScreen extends StatelessWidget {
                           child: ListView.separated(
                             scrollDirection: Axis.horizontal,
                             itemBuilder: (context, index) {
-                              final category =
-                                  categories[index];
+                              final category = categories[index];
                               final selected =
                                   category == controller.selectedMenuCategory;
                               return AnimatedContainer(
@@ -406,10 +404,7 @@ class _OfflineMenuBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.offline_bolt_rounded,
-            color: appColors.onWarningContainer,
-          ),
+          Icon(Icons.offline_bolt_rounded, color: appColors.onWarningContainer),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -504,16 +499,15 @@ class _HeroBanner extends StatelessWidget {
         final isLandscape = viewport.width > viewport.height;
         final compact = constraints.maxWidth < 360;
         final accessibleText = textScale > 1.25;
-        final imageWidth = constraints.maxWidth *
+        final imageWidth =
+            constraints.maxWidth *
             (accessibleText ? 0.42 : (compact ? 0.55 : 0.58));
         final baseBannerHeight = isLandscape
             ? (compact ? 156.0 : 150.0)
             : (compact ? 226.0 : 214.0);
-        final bannerHeight =
-            (baseBannerHeight + ((textScale - 1) * 100)).clamp(
-              baseBannerHeight,
-              340.0,
-            ).toDouble();
+        final bannerHeight = (baseBannerHeight + ((textScale - 1) * 100))
+            .clamp(baseBannerHeight, 340.0)
+            .toDouble();
         final contentPadding = isLandscape
             ? const EdgeInsets.symmetric(horizontal: 16, vertical: 12)
             : EdgeInsets.all(compact ? 18 : 22);
@@ -597,7 +591,9 @@ class _HeroBanner extends StatelessWidget {
                           vertical: 5,
                         ),
                         decoration: BoxDecoration(
-                          color: appColors.heroOnSurface.withValues(alpha: 0.12),
+                          color: appColors.heroOnSurface.withValues(
+                            alpha: 0.12,
+                          ),
                           borderRadius: BorderRadius.circular(999),
                           border: Border.all(
                             color: appColors.heroOnSurface.withValues(
@@ -640,12 +636,13 @@ class _HeroBanner extends StatelessWidget {
                           settings.subtitle,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: appColors.heroOnSurface.withValues(
-                              alpha: 0.78,
-                            ),
-                            height: 1.35,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: appColors.heroOnSurface.withValues(
+                                  alpha: 0.78,
+                                ),
+                                height: 1.35,
+                              ),
                         ),
                       SizedBox(height: isLandscape ? 8 : 13),
                       ElevatedButton.icon(
@@ -669,9 +666,7 @@ class _HeroBanner extends StatelessWidget {
                         ),
                         label: Text(
                           'Order Now',
-                          style: TextStyle(
-                            fontSize: isLandscape ? 13 : null,
-                          ),
+                          style: TextStyle(fontSize: isLandscape ? 13 : null),
                         ),
                       ),
                     ],

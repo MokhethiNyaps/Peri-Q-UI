@@ -329,9 +329,7 @@ class _AdminMenuItemEditorScreenState extends State<AdminMenuItemEditorScreen> {
             const SizedBox(height: 6),
             Text(
               'Images upload to the Supabase menu-images bucket and this item stores the public URL.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),

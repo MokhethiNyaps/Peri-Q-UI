@@ -217,7 +217,8 @@ class _AdminAppSettingsScreenState extends State<AdminAppSettingsScreen> {
                         label: 'Closing Time',
                         onPickTime: () => _pickTime(closingTimeController),
                       );
-                      final stackFields = constraints.maxWidth < 420 ||
+                      final stackFields =
+                          constraints.maxWidth < 420 ||
                           MediaQuery.textScalerOf(context).scale(1) > 1.2;
                       if (stackFields) {
                         return Column(

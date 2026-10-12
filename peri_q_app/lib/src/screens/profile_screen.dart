@@ -293,7 +293,6 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-
               ],
             ),
           ),

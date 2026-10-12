@@ -6,11 +6,7 @@ import '../core/app_theme.dart';
 import '../models/order.dart';
 
 class TrackingScreen extends StatelessWidget {
-  const TrackingScreen({
-    super.key,
-    required this.order,
-    this.controller,
-  });
+  const TrackingScreen({super.key, required this.order, this.controller});
 
   final OrderModel order;
   final AppController? controller;
@@ -81,9 +77,10 @@ class TrackingScreen extends StatelessWidget {
     final statusHeadline = switch (order.status) {
       OrderStatus.pending => 'ORDER RECEIVED',
       OrderStatus.preparing => 'IN THE KITCHEN',
-      OrderStatus.ready => order.orderType == OrderType.delivery
-          ? 'READY FOR DELIVERY'
-          : 'READY FOR PICKUP',
+      OrderStatus.ready =>
+        order.orderType == OrderType.delivery
+            ? 'READY FOR DELIVERY'
+            : 'READY FOR PICKUP',
       OrderStatus.completed => 'ORDER COMPLETED',
       OrderStatus.cancelled => 'ORDER CANCELLED',
     };

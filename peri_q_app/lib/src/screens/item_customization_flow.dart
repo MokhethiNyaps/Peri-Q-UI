@@ -77,7 +77,8 @@ class _CustomizerSheetState extends State<_CustomizerSheet> {
     final colors = theme.colorScheme;
     final appColors = context.appColors;
     final textScale = MediaQuery.textScalerOf(context).scale(1);
-    final stackActions = MediaQuery.sizeOf(context).width < 360 || textScale > 1.3;
+    final stackActions =
+        MediaQuery.sizeOf(context).width < 360 || textScale > 1.3;
 
     Widget quantityControl() {
       return Semantics(
@@ -133,12 +134,15 @@ class _CustomizerSheetState extends State<_CustomizerSheet> {
     return FractionallySizedBox(
       heightFactor: 0.92,
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: Column(
           children: [
             Expanded(
               child: SingleChildScrollView(
-                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +196,9 @@ class _CustomizerSheetState extends State<_CustomizerSheet> {
                           contentPadding: EdgeInsets.zero,
                           value: selected,
                           title: Text(option.name),
-                          subtitle: Text('+R${option.price.toStringAsFixed(0)}'),
+                          subtitle: Text(
+                            '+R${option.price.toStringAsFixed(0)}',
+                          ),
                           onChanged: (_) {
                             setState(() {
                               if (selected) {

@@ -45,8 +45,7 @@ class SharedPreferencesRepository implements PreferencesRepository {
   static const _secureDefaultAddressKey = 'peri_q_default_address_id_v1';
 
   SharedPreferencesRepository({SecurePreferencesStorage? secureStorage})
-    : _secureStorage =
-          secureStorage ?? const FlutterSecurePreferencesStorage();
+    : _secureStorage = secureStorage ?? const FlutterSecurePreferencesStorage();
 
   final SecurePreferencesStorage _secureStorage;
   SharedPreferences? _preferences;
@@ -82,9 +81,7 @@ class SharedPreferencesRepository implements PreferencesRepository {
       legacyKey: _defaultAddressKey,
       fallback: '',
     );
-    final savedAddresses = _decodeSavedAddresses(
-      savedAddressesValue,
-    );
+    final savedAddresses = _decodeSavedAddresses(savedAddressesValue);
     final defaultAddressId = defaultAddressIdValue.trim().isEmpty
         ? null
         : defaultAddressIdValue;
@@ -92,10 +89,7 @@ class SharedPreferencesRepository implements PreferencesRepository {
       hasReturningSession: preferences.getBool(_sessionKey) ?? false,
       isGuest: preferences.getBool(_guestKey) ?? true,
       customerName: _withoutLegacySample(customerName, 'Thabo Mokhethi'),
-      customerPhone: _withoutLegacySample(
-        customerPhone,
-        '+27 71 234 5678',
-      ),
+      customerPhone: _withoutLegacySample(customerPhone, '+27 71 234 5678'),
       storeOpen: preferences.getBool(_storeOpenKey) ?? true,
       selectedMenuCategory: preferences.getString(_menuCategoryKey) ?? 'All',
       savedAddresses: savedAddresses,
@@ -122,18 +116,14 @@ class SharedPreferencesRepository implements PreferencesRepository {
     // secure storage is unavailable, the operation fails without losing the
     // previous data or silently falling back to plaintext storage.
     await Future.wait<void>([
-      _secureStorage.write(
-        _secureCustomerNameKey,
-        preferences.customerName,
-      ),
-      _secureStorage.write(
-        _secureCustomerPhoneKey,
-        preferences.customerPhone,
-      ),
+      _secureStorage.write(_secureCustomerNameKey, preferences.customerName),
+      _secureStorage.write(_secureCustomerPhoneKey, preferences.customerPhone),
       _secureStorage.write(
         _secureSavedAddressesKey,
         jsonEncode(
-          preferences.savedAddresses.map((address) => address.toJson()).toList(),
+          preferences.savedAddresses
+              .map((address) => address.toJson())
+              .toList(),
         ),
       ),
       _secureStorage.write(

@@ -238,9 +238,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(AppRadii.card),
-                      border: Border.all(
-                        color: context.appColors.softOutline,
-                      ),
+                      border: Border.all(color: context.appColors.softOutline),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -443,9 +441,7 @@ class _StepBadge extends StatelessWidget {
               child: Text(
                 '$number',
                 style: TextStyle(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.onPrimaryContainer,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -526,9 +522,7 @@ class _ChoiceCard extends StatelessWidget {
                 child: RadioGroup<bool>(
                   groupValue: selected,
                   onChanged: (_) {},
-                  child: Radio<bool>(
-                    value: true,
-                  ),
+                  child: Radio<bool>(value: true),
                 ),
               ),
             ],
@@ -606,9 +600,7 @@ class _PaymentTile extends StatelessWidget {
                 child: RadioGroup<bool>(
                   groupValue: selected,
                   onChanged: (_) {},
-                  child: Radio<bool>(
-                    value: true,
-                  ),
+                  child: Radio<bool>(value: true),
                 ),
               ),
             ],

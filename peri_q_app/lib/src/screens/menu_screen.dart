@@ -51,10 +51,9 @@ class _MenuScreenState extends State<MenuScreen> {
           final colors = theme.colorScheme;
           final appColors = context.appColors;
           final textScale = MediaQuery.textScalerOf(context).scale(1);
-          final categoryRailHeight = (46 + ((textScale - 1) * 20)).clamp(
-            46.0,
-            72.0,
-          ).toDouble();
+          final categoryRailHeight = (46 + ((textScale - 1) * 20))
+              .clamp(46.0, 72.0)
+              .toDouble();
           return Stack(
             children: [
               Column(

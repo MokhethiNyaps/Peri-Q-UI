@@ -36,8 +36,7 @@ void main() {
           expect(
             _contrastRatio(pair.$1, pair.$2),
             greaterThanOrEqualTo(7),
-            reason:
-                '${entry.key} pair ${pair.$1} on ${pair.$2} must meet AAA',
+            reason: '${entry.key} pair ${pair.$1} on ${pair.$2} must meet AAA',
           );
         }
       });

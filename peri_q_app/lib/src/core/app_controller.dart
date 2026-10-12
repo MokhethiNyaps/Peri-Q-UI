@@ -895,10 +895,7 @@ class AppController extends ChangeNotifier {
           final fetchRevision = ++_orderFetchRevision;
           unawaited(
             _orderRepository
-                .fetchOrders(
-                  userId: watchedUserId,
-                  includeAll: watchedIsAdmin,
-                )
+                .fetchOrders(userId: watchedUserId, includeAll: watchedIsAdmin)
                 .then((fetchedOrders) {
                   if (_isDisposed ||
                       watchRevision != _orderWatchRevision ||

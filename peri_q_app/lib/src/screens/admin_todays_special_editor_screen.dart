@@ -157,9 +157,7 @@ class _AdminTodaysSpecialEditorScreenState
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError
-            ? Theme.of(context).colorScheme.error
-            : null,
+        backgroundColor: isError ? Theme.of(context).colorScheme.error : null,
       ),
     );
   }
@@ -415,9 +413,7 @@ class _AdminTodaysSpecialEditorScreenState
             const SizedBox(height: 10),
             Text(
               'JPG, PNG or WebP, up to 5 MB. Images upload securely to the same Supabase Storage bucket used by menu items.',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
@@ -438,9 +434,7 @@ class _AdminTodaysSpecialEditorScreenState
                         height: 18,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(width: 10),

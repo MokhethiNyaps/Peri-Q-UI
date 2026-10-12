@@ -52,9 +52,7 @@ class SecureAuthLocalStorage extends LocalStorage {
     await Future.wait<void>([
       for (final key in keys) _secureStorage.delete(key: key),
     ]);
-    await Future.wait<bool>([
-      for (final key in keys) preferences.remove(key),
-    ]);
+    await Future.wait<bool>([for (final key in keys) preferences.remove(key)]);
   }
 }
 

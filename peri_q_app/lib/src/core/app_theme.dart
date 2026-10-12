@@ -138,10 +138,7 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
   }
 
   @override
-  AppSemanticColors lerp(
-    covariant AppSemanticColors? other,
-    double t,
-  ) {
+  AppSemanticColors lerp(covariant AppSemanticColors? other, double t) {
     if (other is! AppSemanticColors) return this;
     return AppSemanticColors(
       accent: Color.lerp(accent, other.accent, t)!,
@@ -179,16 +176,8 @@ class AppSemanticColors extends ThemeExtension<AppSemanticColors> {
       info: Color.lerp(info, other.info, t)!,
       onInfo: Color.lerp(onInfo, other.onInfo, t)!,
       infoContainer: Color.lerp(infoContainer, other.infoContainer, t)!,
-      onInfoContainer: Color.lerp(
-        onInfoContainer,
-        other.onInfoContainer,
-        t,
-      )!,
-      dangerContainer: Color.lerp(
-        dangerContainer,
-        other.dangerContainer,
-        t,
-      )!,
+      onInfoContainer: Color.lerp(onInfoContainer, other.onInfoContainer, t)!,
+      dangerContainer: Color.lerp(dangerContainer, other.dangerContainer, t)!,
       onDangerContainer: Color.lerp(
         onDangerContainer,
         other.onDangerContainer,
@@ -567,9 +556,7 @@ class AppTheme {
         focusElevation: 6,
         hoverElevation: 6,
         highlightElevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(19),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(19)),
       ),
       checkboxTheme: CheckboxThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
@@ -627,9 +614,7 @@ class AppTheme {
         backgroundColor: semanticColors.elevatedSurface,
         modalBackgroundColor: semanticColors.elevatedSurface,
         surfaceTintColor: Colors.transparent,
-        modalBarrierColor: scheme.scrim.withValues(
-          alpha: isDark ? 0.72 : 0.54,
-        ),
+        modalBarrierColor: scheme.scrim.withValues(alpha: isDark ? 0.72 : 0.54),
         showDragHandle: true,
         dragHandleColor: scheme.outline,
         dragHandleSize: const Size(44, 4),

@@ -29,9 +29,10 @@ Future<void> main() async {
 
   if (supabaseConfig.isConfigured) {
     final projectUri = Uri.parse(supabaseConfig.url);
-    final sessionNamespace = projectUri.authority
-        .toLowerCase()
-        .replaceAll(RegExp('[^a-z0-9_-]'), '_');
+    final sessionNamespace = projectUri.authority.toLowerCase().replaceAll(
+      RegExp('[^a-z0-9_-]'),
+      '_',
+    );
     final sessionKey = 'sb-$sessionNamespace-auth-token';
     final legacySessionKey =
         'sb-${projectUri.host.split('.').first}-auth-token';
