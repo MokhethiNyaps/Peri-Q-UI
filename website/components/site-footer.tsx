@@ -24,6 +24,7 @@ export function SiteFooter() {
           <div className="mt-4 grid gap-3 text-sm text-white/65">
             <Link href="/#how-it-works">How it works</Link>
             <Link href="/#visit">Visit us</Link>
+            <Link href="/get-app/">Get the app</Link>
             <Link href="/privacy-policy/">Privacy policy</Link>
             <Link href="/terms-and-conditions/">Terms and conditions</Link>
             <Link href="/delete-account/">Delete account</Link>

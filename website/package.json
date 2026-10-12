@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "sync-qr": "cp ../marketing/qr/get-app-qr.svg ../marketing/qr/rastasperiq-get-app-qr-square.png public/qr/"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.110.9",
