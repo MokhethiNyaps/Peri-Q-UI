@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart";
 import { useEffect, useState } from "react";
@@ -44,7 +45,7 @@ export default function CartClient() {
                   const line = (e.item.price + addOnTotal) * e.quantity;
                   return (
                     <article key={e.id} className="flex gap-4 rounded-[1.5rem] border border-black/8 bg-white p-4 shadow-sm">
-                      <img src={e.item.imagePath} alt={e.item.name} className="size-20 shrink-0 rounded-2xl object-cover" />
+                      <Image src={e.item.imagePath} alt={e.item.name} width={80} height={80} className="size-20 shrink-0 rounded-2xl object-cover" />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-3">
                           <div>

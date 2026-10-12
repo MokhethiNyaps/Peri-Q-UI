@@ -60,7 +60,9 @@ class PaymentPreferencesScreen extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               ...PaymentMethod.values.map((method) {
-                final isCard = method == PaymentMethod.card;
+                final isCard =
+                    method == PaymentMethod.card ||
+                    method == PaymentMethod.yoco;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: _PaymentPreferenceCard(
@@ -109,6 +111,7 @@ class _PaymentPreferenceCard extends StatelessWidget {
       PaymentMethod.cashDelivery => Icons.two_wheeler_rounded,
       PaymentMethod.eft => Icons.account_balance_rounded,
       PaymentMethod.card => Icons.credit_card_rounded,
+      PaymentMethod.yoco => Icons.credit_card_rounded,
     };
 
     return Opacity(

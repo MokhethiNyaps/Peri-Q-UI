@@ -1,4 +1,4 @@
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Public client — safe for browser. Uses publishable key only.
 export function readPublicSupabaseConfig(): { url: string; publishableKey: string } | null {
@@ -18,18 +18,21 @@ export function isSupabaseConfigured() {
   return readPublicSupabaseConfig() !== null;
 }
 
-// Browser-side client (anon/email). Each call creates a fresh client without persisted session handling —
-// caller is responsible for sign-in. For SSR helper, see createServerClient in server file.
+let browserClient: SupabaseClient | undefined;
+
+// Share one auth session and refresh loop across menu, checkout, and order screens.
 export function createBrowserClient() {
+  if (browserClient) return browserClient;
   const config = readPublicSupabaseConfig();
   if (!config) throw new Error("Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY.");
-  return createSupabaseClient(config.url, config.publishableKey, {
+  browserClient = createSupabaseClient(config.url, config.publishableKey, {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: false,
     },
   });
+  return browserClient;
 }
 
 // Server-side: webhooks & checkout verification using service_role (never expose to browser)

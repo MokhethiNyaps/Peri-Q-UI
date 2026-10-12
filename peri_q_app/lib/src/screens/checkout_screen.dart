@@ -72,7 +72,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   PaymentMethod _availablePaymentFor(PaymentMethod method, OrderType type) {
-    if (method == PaymentMethod.card) {
+    if (method == PaymentMethod.card || method == PaymentMethod.yoco) {
       return PaymentMethod.cashCollection;
     }
     if (type == OrderType.pickup && method == PaymentMethod.cashDelivery) {

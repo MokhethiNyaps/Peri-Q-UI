@@ -44,7 +44,7 @@ function imageUrlFor(path: unknown, supabaseUrl?: string): string {
   return value;
 }
 
-export async function fetchMenu(settings?: { supabaseUrl?: string }): Promise<{ items: MenuItem[]; categories: MenuCategory[]; appSettings: AppSettings }> {
+export async function fetchMenu(): Promise<{ items: MenuItem[]; categories: MenuCategory[]; appSettings: AppSettings }> {
   const cfg = readPublicSupabaseConfig();
   if (!cfg) {
     return { items: [], categories: [], appSettings: { storeOpen: true, pickupAvailable: true, deliveryAvailable: true, deliveryFee: 30, openingTime: "10:00", closingTime: "21:00" } };
@@ -55,6 +55,10 @@ export async function fetchMenu(settings?: { supabaseUrl?: string }): Promise<{ 
     supa.from("menu_categories").select("*").order("sort_order").order("name"),
     supa.from("app_settings").select("store_open,pickup_available,delivery_available,delivery_fee,opening_time,closing_time").eq("id", "default").maybeSingle(),
   ]);
+  for (const result of [itemsRes, catsRes, settingsRes]) {
+    if (result.error) throw result.error;
+  }
+  if (!settingsRes.data) throw new Error("Store settings are unavailable. Please try again later.");
 
   const items: MenuItem[] = ((itemsRes.data as unknown[]) ?? []).map((row: unknown) => mapMenuRow(row as Record<string, unknown>, cfg.url));
   const categories: MenuCategory[] = ((catsRes.data as unknown[]) ?? []).map((row: unknown) => mapCategoryRow(row as Record<string, unknown>));
@@ -110,7 +114,10 @@ export function isStoreOpenNow(settings: AppSettings, now = new Date()): boolean
   };
   const open = minutes(settings.openingTime);
   const close = minutes(settings.closingTime);
-  const cur = now.getHours() * 60 + now.getMinutes();
+  const local = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Africa/Johannesburg", hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).format(now);
+  const cur = minutes(local);
   if (open === close) return true;
   if (open < close) return cur >= open && cur < close;
   return cur >= open || cur < close;

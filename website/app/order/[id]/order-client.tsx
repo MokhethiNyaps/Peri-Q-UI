@@ -55,7 +55,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
       const { data, error: err } = await supa
         .from("orders")
         .select(
-          "id,order_number,customer_name,customer_phone,order_type,payment_method,total_price,status,estimated_minutes,delivery_address,created_at,yoco_checkout_id,payment_status,paid_at,yoco_mode,order_items(item_name,unit_price,quantity,item_category,selected_add_ons,notes,spice_level)",
+          "*,order_items(item_name,unit_price,quantity,item_category,selected_add_ons,notes,spice_level)",
         )
         .eq("id", orderId)
         .maybeSingle();
@@ -67,7 +67,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
         return;
       }
       const row = data as unknown as OrderRow & { order_items: OrderItemRow[] };
-      setOrder(row);
+      setOrder({ ...row, payment_status: row.payment_status ?? "unpaid" });
       setItems(row.order_items ?? []);
       setError(null);
     } catch (e) {

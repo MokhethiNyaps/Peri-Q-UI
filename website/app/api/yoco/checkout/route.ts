@@ -37,17 +37,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Missing orderId (UUID). Create the order first via place_order, then call this endpoint.", code: "missing_order_id" }, { status: 400 });
   }
 
-  // Optional Authorization verification: if caller sends Bearer token, we could verify ownership.
-  // For now we use service_role to fetch order and enforce payment_status checks; orderId is unguessable enough.
-  // If you want stricter check, send Authorization: Bearer <supabase access_token> and we compare order.user_id.
+  const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) {
+    return NextResponse.json({ error: "Sign in before paying for an order.", code: "unauthorized" }, { status: 401 });
+  }
 
   let order: Record<string, unknown> | null = null;
   try {
     const svc = createServiceClient();
+    const { data: auth, error: authError } = await svc.auth.getUser(token);
+    if (authError || !auth.user) {
+      return NextResponse.json({ error: "Your session has expired. Please try again.", code: "unauthorized" }, { status: 401 });
+    }
     const { data, error } = await svc.from("orders").select("id,order_number,user_id,total_price,payment_method,payment_status,paid_at,yoco_checkout_id,yoco_mode,client_request_id,created_at").eq("id", orderId.trim()).maybeSingle();
     if (error) throw error;
     order = (data as Record<string, unknown> | null) ?? null;
-    if (!order) {
+    if (!order || order.user_id !== auth.user.id) {
       return NextResponse.json({ error: "Order not found. Ensure the order was created with the same Supabase project that the website uses.", code: "order_not_found" }, { status: 404 });
     }
     const paymentStatus = String(order["payment_status"] ?? "unpaid");
@@ -142,7 +147,7 @@ export async function POST(req: Request) {
     try {
       const svc2 = createServiceClient();
       // Update orders with checkout id + ensure payment_status pending
-      await svc2
+      const { error: orderError } = await svc2
         .from("orders")
         .update({
           yoco_checkout_id: checkoutId,
@@ -151,10 +156,14 @@ export async function POST(req: Request) {
           payment_amount_cents: amountCents,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", order["id"] as string);
+        .eq("id", order["id"] as string)
+        .is("paid_at", null)
+        .not("payment_status", "in", "(paid,refunded)");
+      if (orderError) throw orderError;
 
-      // Upsert payments audit row (unique order_id)
-      const { error: payErr } = await svc2.from("payments").upsert(
+      // Insert once, then update only unpaid attempts. A retry must not reset
+      // an audit row that a concurrent webhook has already marked succeeded.
+      const paymentRow =
         {
           order_id: String(order["id"]),
           yoco_checkout_id: checkoutId,
@@ -164,15 +173,21 @@ export async function POST(req: Request) {
           raw_payload: json,
           mode,
           updated_at: new Date().toISOString(),
-        },
-        { onConflict: "order_id" },
+        };
+      const { error: payErr } = await svc2.from("payments").upsert(
+        paymentRow,
+        { onConflict: "order_id", ignoreDuplicates: true },
       );
       if (payErr) {
-        // Non-fatal; log but still return redirect so user can pay. Webhook will correct.
-        console.warn("payments upsert failed", payErr);
+        throw payErr;
       }
+      const { error: updateError } = await svc2.from("payments")
+        .update(paymentRow).eq("order_id", String(order["id"]))
+        .neq("status", "succeeded");
+      if (updateError) throw updateError;
     } catch (e) {
-      console.warn("orders update after Yoco checkout failed (non-fatal)", e);
+      console.error("Could not persist Yoco checkout", e);
+      return NextResponse.json({ error: "Could not save payment details. Please retry from your order page.", code: "payment_save_failed" }, { status: 503 });
     }
 
     return NextResponse.json({ checkoutId, redirectUrl, amountCents, mode, orderId: String(order["id"]) });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Clock3, ShieldCheck, Store, Truck } from "lucide-react";
 import { useCart } from "@/lib/cart";
@@ -23,6 +23,8 @@ export default function CheckoutClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const submittingRef = useRef(false);
+  const requestIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -33,7 +35,7 @@ export default function CheckoutClient() {
       setSettings(appSettings);
       // default order type to available one
       if (!appSettings.pickupAvailable && appSettings.deliveryAvailable) setOrderType("delivery");
-    }).catch(() => {}).finally(() => setLoadingSettings(false));
+    }).catch(() => setError("Could not load store settings. Please refresh and try again.")).finally(() => setLoadingSettings(false));
 
     // Load saved customer details from localStorage (mirrors mobile SharedPreferences)
     try {
@@ -64,10 +66,11 @@ export default function CheckoutClient() {
 
   const validate = (): boolean => {
     const fe: Record<string, string> = {};
+    if (!settings) fe.store = "Store settings are unavailable. Please refresh and try again.";
     if (!name.trim() || name.trim().length < 2) fe.name = "Enter your full name (2–100 chars).";
     if (!phone.trim() || phone.trim().length < 7) fe.phone = "Enter a valid phone (7–30 chars).";
     if (entries.length === 0) fe.cart = "Your cart is empty. Add items from the menu.";
-    if (!globalStoreOpen) fe.store = "Ordering is paused by the restaurant right now.";
+    if (settings && !globalStoreOpen) fe.store = "Ordering is paused by the restaurant right now.";
     else if (!storeOpen) fe.store = `Store is closed. Hours ${settings?.openingTime}–${settings?.closingTime} (Africa/Johannesburg).`;
     if (orderType === "delivery" && address.trim().length < 8) fe.address = "Enter a full delivery address (at least 8 chars, house + street).";
     if (orderType === "pickup" && paymentMethod === "cash_delivery") fe.payment = "Cash on Delivery is only for delivery orders.";
@@ -84,6 +87,7 @@ export default function CheckoutClient() {
   };
 
   const handleSubmit = async () => {
+    if (submittingRef.current) return;
     setError(null);
     if (!validate()) return;
     if (!isSupabaseConfigured()) {
@@ -91,6 +95,7 @@ export default function CheckoutClient() {
       return;
     }
     setSubmitting(true);
+    submittingRef.current = true;
     try {
       const anon = await ensureAnonSession();
       if (!anon) throw new Error("Could not create a guest session. In Supabase Dashboard → Auth → enable Anonymous sign-ins and retry.");
@@ -99,7 +104,8 @@ export default function CheckoutClient() {
       const { data: sessData } = await supa.auth.getSession();
       const accessToken = sessData.session?.access_token ?? anon.accessToken;
 
-      const clientRequestId = `web-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+      requestIdRef.current ??= `web-${crypto.randomUUID()}`;
+      const clientRequestId = requestIdRef.current;
       const payloadItems = entries.map((e) => ({
         menu_item_id: e.item.id,
         quantity: e.quantity,
@@ -133,6 +139,7 @@ export default function CheckoutClient() {
 
       const orderId = (data as { id?: string })?.id;
       if (!orderId) throw new Error("Store did not return an order confirmation. Please try again.");
+      clear();
 
       // If Yoco, initiate checkout session server-side (trusted amount)
       if (paymentMethod === "yoco") {
@@ -147,21 +154,21 @@ export default function CheckoutClient() {
         const json = (await res.json().catch(() => ({}))) as { redirectUrl?: string; error?: string; code?: string };
         if (!res.ok || !json.redirectUrl) {
           // Order already exists as pending/awaiting payment; show order page with retry
-          throw new Error(json.error || "Order created but Yoco checkout could not be started. Your order is saved — open it to retry payment. (No card was charged.)");
+          window.location.href = `/order/${orderId}/?checkout=failure`;
+          return;
         }
-        // Do not clear cart until payment succeeds — but order is at least created.
-        // Keep cart for now; order page will allow clearing after paid.
+        // The order is saved; payment retries continue from its order page.
         window.location.href = json.redirectUrl;
         return;
       }
 
       // Cash/EFT: success
-      clear();
       window.location.href = `/order/${orderId}/?new=1`;
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not place order. Check your connection and try again.");
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -178,7 +185,7 @@ export default function CheckoutClient() {
       <section className="bg-charcoal py-10 text-white">
         <div className="site-shell">
           <h1 className="font-display text-5xl font-black uppercase tracking-[-0.05em]">Checkout</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/60">Enter your details. Orders go into the same Supabase table the restaurant app uses — kitchen sees website orders instantly. Prices and totals are calculated on the server.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-white/60">Enter your details to place an order with the restaurant. Confirm your items and choose collection or delivery below.</p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
             <span className={`rounded-full px-3 py-1.5 ${!globalStoreOpen ? "bg-amber-500 text-charcoal" : storeOpen ? "bg-leaf text-white" : "bg-white/15 text-white"}`}>
               {!globalStoreOpen ? "Ordering paused" : storeOpen ? `Open now • Closes ${settings?.closingTime}` : `Closed • Opens ${settings?.openingTime}`}

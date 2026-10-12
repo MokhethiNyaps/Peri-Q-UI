@@ -73,10 +73,11 @@ export function verifyYocoWebhook({
 
   // header format: "v1,abc123 v1,def456 v2,..." — we only verify v1
   const candidates = webhookSignature
-    .split(" ")
+    .split(/\s+/)
     .map((s) => s.trim())
     .filter(Boolean)
-    .map((s) => (s.startsWith("v1,") ? s.slice(3) : s))
+    .filter((s) => s.startsWith("v1,"))
+    .map((s) => s.slice(3))
     .filter(Boolean);
 
   let matched = false;
