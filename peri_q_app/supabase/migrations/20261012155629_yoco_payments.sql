@@ -78,6 +78,8 @@ alter table public.yoco_webhook_events enable row level security;
 
 revoke all on table public.payments from anon, authenticated;
 revoke all on table public.yoco_webhook_events from anon, authenticated;
+grant select on table public.payments, public.yoco_webhook_events to authenticated;
+grant select, insert, update on table public.payments, public.yoco_webhook_events to service_role;
 
 drop policy if exists "payments_admin_all" on public.payments;
 create policy "payments_admin_all"

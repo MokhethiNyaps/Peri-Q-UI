@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import crypto from "node:crypto";
 import { verifyYocoWebhook } from "../lib/yoco";
 import { POST as webhook } from "../app/api/yoco/webhook/route";
-import { POST as checkout } from "../app/api/yoco/checkout/route";
+import { POST as checkout, GET as paymentReadiness } from "../app/api/yoco/checkout/route";
 
 const db = vi.hoisted(() => ({ results: [] as { data: unknown; error: unknown }[], calls: [] as { table: string; method: string; args: unknown[] }[], userId: "user-a" }));
 vi.mock("@/lib/supabase", () => ({
@@ -12,7 +12,7 @@ vi.mock("@/lib/supabase", () => ({
     auth: { getUser: async () => ({ data: { user: { id: db.userId } }, error: null }) },
     from: (table: string) => {
       const chain: Record<string, unknown> = {};
-      for (const method of ["select", "eq", "maybeSingle", "single", "update", "upsert", "is", "not", "neq"]) {
+      for (const method of ["select", "eq", "maybeSingle", "single", "update", "upsert", "is", "not", "neq", "limit"]) {
         chain[method] = (...args: unknown[]) => { db.calls.push({ table, method, args }); return chain; };
       }
       chain.then = (resolve: (result: unknown) => unknown) => Promise.resolve(db.results.shift() ?? { data: null, error: null }).then(resolve);
@@ -83,6 +83,17 @@ describe("Production webhook verification", () => {
 });
 
 describe("Checkout ownership", () => {
+  it("keeps card payments unavailable without Yoco credentials", async () => {
+    vi.stubEnv("YOCO_SECRET_KEY", "");
+    expect(await (await paymentReadiness()).json()).toEqual({ available: false });
+    expect(db.calls).toHaveLength(0);
+  });
+  it("enables payments only when the payment schema is accessible", async () => {
+    db.results = [ok([]), ok([])];
+    expect(await (await paymentReadiness()).json()).toEqual({ available: true });
+    db.results = [ok([]), { data: null, error: { message: "missing table" } }];
+    expect(await (await paymentReadiness()).json()).toEqual({ available: false });
+  });
   it("requires a session token", async () => {
     const req = new Request("https://example.com/api/yoco/checkout", { method: "POST", body: JSON.stringify({ orderId: "order-1" }) });
     expect((await checkout(req)).status).toBe(401);

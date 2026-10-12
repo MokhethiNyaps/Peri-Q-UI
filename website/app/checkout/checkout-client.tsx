@@ -23,10 +23,15 @@ export default function CheckoutClient() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [yocoAvailable, setYocoAvailable] = useState(false);
   const submittingRef = useRef(false);
   const requestIdRef = useRef<string | null>(null);
 
   useEffect(() => {
+    void fetch("/api/yoco/checkout/")
+      .then((res) => res.ok ? res.json() : { available: false })
+      .then((data: { available?: boolean }) => setYocoAvailable(data.available === true))
+      .catch(() => setYocoAvailable(false));
     if (!isSupabaseConfigured()) {
       setLoadingSettings(false);
       return;
@@ -74,6 +79,7 @@ export default function CheckoutClient() {
     else if (!storeOpen) fe.store = `Store is closed. Hours ${settings?.openingTime}–${settings?.closingTime} (Africa/Johannesburg).`;
     if (orderType === "delivery" && address.trim().length < 8) fe.address = "Enter a full delivery address (at least 8 chars, house + street).";
     if (orderType === "pickup" && paymentMethod === "cash_delivery") fe.payment = "Cash on Delivery is only for delivery orders.";
+    if (paymentMethod === "yoco" && !yocoAvailable) fe.payment = "Online card payments are unavailable. Please choose another payment method.";
     if (!canPickup && orderType === "pickup") fe.orderType = "Pickup is unavailable right now.";
     if (!canDelivery && orderType === "delivery") fe.orderType = "Delivery is unavailable right now.";
     setFieldErrors(fe);
@@ -264,11 +270,11 @@ export default function CheckoutClient() {
                 {[
                   { id: "cash_collection" as const, label: "Cash on Collection (pickup)", hint: "Pay in store when you collect", show: true },
                   { id: "cash_delivery" as const, label: "Cash on Delivery", hint: "Pay the driver on arrival", show: orderType === "delivery" },
-                  { id: "eft" as const, label: "EFT + proof upload", hint: "Upload proof after confirming — staff verifies manually", show: true },
-                  { id: "yoco" as const, label: "Pay online with Card (Yoco)", hint: "Secure Yoco hosted checkout — Visa, Mastercard, etc.", show: true },
+                  { id: "eft" as const, label: "EFT", hint: "Contact the restaurant for bank details and send payment proof", show: true },
+                  { id: "yoco" as const, label: "Pay online with Card (Yoco)", hint: yocoAvailable ? "Secure Yoco hosted checkout — Visa, Mastercard, etc." : "Online card payments are not available yet. Please choose cash or EFT.", show: true },
                 ].filter((m) => m.show).map((m) => (
                   <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 ${paymentMethod === m.id ? "border-charcoal bg-charcoal text-white" : "border-black/10 bg-white"}`}>
-                    <input type="radio" name="payment" checked={paymentMethod === m.id} onChange={() => setPaymentMethod(m.id)} className="size-5 accent-peri-red" />
+                    <input type="radio" name="payment" disabled={m.id === "yoco" && !yocoAvailable} checked={paymentMethod === m.id} onChange={() => setPaymentMethod(m.id)} className="size-5 accent-peri-red" />
                     <span className="flex-1">
                       <span className={`block text-sm font-extrabold ${paymentMethod === m.id ? "text-white" : "text-charcoal"}`}>{m.label}</span>
                       <span className={`block text-xs ${paymentMethod === m.id ? "text-white/60" : "text-ash"}`}>{m.hint}</span>
@@ -284,7 +290,7 @@ export default function CheckoutClient() {
                 </div>
               )}
               {paymentMethod === "eft" && (
-                <p className="mt-3 text-xs leading-6 text-ash">After confirming, you can upload EFT proof from the order page. Order stays <em>pending</em> until staff verifies.</p>
+                <p className="mt-3 text-xs leading-6 text-ash">Contact the restaurant for bank details and send your payment proof with your order number. Staff will confirm the payment.</p>
               )}
             </div>
           </div>

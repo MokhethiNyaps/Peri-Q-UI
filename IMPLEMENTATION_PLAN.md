@@ -58,7 +58,7 @@
 ## 3. Implementation Plan (safe, minimal-rebuild)
 
 ### A. Database — one shared authoritative Postgres (no duplicate system)
-1. **Additive migration** `supabase/migrations/20261012_yoco_payments.sql` (also patch `schema.sql`):
+1. **Additive migration** `supabase/migrations/20261012155629_yoco_payments.sql` (also patch `schema.sql`):
    - Extend `orders`: `yoco_checkout_id text unique`, `payment_status text not null default 'unpaid' check in ('unpaid','pending','paid','failed','cancelled','expired')`, `paid_at timestamptz`, `payment_amount_cents integer check >=0`, `yoco_payment_id text`, `yoco_mode text check in ('test','live')`.
    - Update `place_order` allowed methods: add `'yoco','card'` to check and branching.
    - New tables:
@@ -149,4 +149,3 @@ Server trust:
 - Website full ordering flow (browse → cart → checkout → confirmation) + cash/eft preserved + Yoco card.
 - Secure server checkout + webhook verification, amount validation, idempotency, separated payment vs fulfilment status.
 - Example env files, docs, automated tests, MANUAL_SETUP_AND_LAUNCH_CHECKLIST.md sections A–F.
-

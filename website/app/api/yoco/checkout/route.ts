@@ -5,6 +5,25 @@ import { getSiteUrl, readYocoEnv } from "@/lib/yoco";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+// Expose readiness, never credentials. Checkout stays unavailable until the
+// server keys and payment schema are present.
+export async function GET() {
+  let available = false;
+  if (readYocoEnv() && readServerSupabaseConfig()) {
+    try {
+      const svc = createServiceClient();
+      const [orders, payments] = await Promise.all([
+        svc.from("orders").select("yoco_checkout_id,payment_status").limit(0),
+        svc.from("payments").select("id").limit(0),
+      ]);
+      available = !orders.error && !payments.error;
+    } catch {
+      // Missing configuration or a database outage must fail closed.
+    }
+  }
+  return NextResponse.json({ available }, { headers: { "Cache-Control": "no-store" } });
+}
+
 // POST { orderId: string }
 export async function POST(req: Request) {
   const yocoEnv = readYocoEnv();
