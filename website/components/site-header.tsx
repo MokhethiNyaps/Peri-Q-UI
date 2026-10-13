@@ -2,6 +2,7 @@ import { Menu } from "lucide-react";
 import Link from "next/link";
 import { Brand } from "@/components/brand";
 import { CartBadge, MobileCartLink } from "@/components/cart-badge";
+import { AccountLink } from "@/components/account-link";
 
 const navigation = [
   { href: "/menu/", label: "Menu & Order" },
@@ -16,19 +17,20 @@ export function SiteHeader() {
       <div className="site-shell flex h-20 items-center justify-between gap-5">
         <Brand compact />
 
-        <nav aria-label="Primary navigation" className="hidden items-center gap-7 md:flex">
+        <nav aria-label="Primary navigation" className="hidden items-center gap-5 lg:flex">
           {navigation.map((item) => (
             <Link key={item.href} href={item.href} className="nav-link">
               {item.label}
             </Link>
           ))}
           <CartBadge />
+          <AccountLink />
           <Link href="/#contact" className="button button-sm button-dark">
             Contact us
           </Link>
         </nav>
 
-        <details className="mobile-menu relative md:hidden">
+        <details className="mobile-menu relative lg:hidden">
           <summary
             className="grid size-11 cursor-pointer list-none place-items-center rounded-full border border-black/10 bg-white text-charcoal"
             aria-label="Open navigation"
@@ -45,6 +47,7 @@ export function SiteHeader() {
               </Link>
             ))}
             <MobileCartLink />
+            <AccountLink mobile />
             <Link href="/#contact" className="button button-dark mt-2 w-full">
               Contact us
             </Link>

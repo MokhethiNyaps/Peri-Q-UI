@@ -3,6 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 import { CartProvider } from "@/lib/cart";
+import { CustomerAuthProvider } from "@/lib/customer-auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -49,11 +50,11 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
-        <CartProvider>
+        <CustomerAuthProvider><CartProvider>
           <SiteHeader />
           {children}
           <SiteFooter />
-        </CartProvider>
+        </CartProvider></CustomerAuthProvider>
       </body>
     </html>
   );

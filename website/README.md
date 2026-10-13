@@ -106,3 +106,16 @@ Build is `pnpm build` → `.next/` (serverless functions `ƒ /api/yoco/*` visibl
 - Have the business owner or legal adviser verify that the privacy-policy wording matches current app behaviour and legal obligations.
 - Use `https://rastasperiq.co.za/privacy-policy/` for the Play Console privacy-policy URL.
 - Use `https://rastasperiq.co.za/delete-account/` for the Play Console account-deletion URL.
+
+## Website customer accounts
+
+Customers can use `/account/` to sign up, sign in, edit their name and phone number, and view their orders. These accounts and profile fields are shared with the mobile app. Guest orders remain linked to their original guest identity; signing in does not reassign them.
+
+Email confirmation and password recovery need these production URLs in Supabase → Authentication → URL Configuration → Redirect URLs:
+
+- `https://rastasperiq.co.za/auth/callback/`
+- `https://rastasperiq.co.za/auth/callback/?recovery=1`
+
+Keep existing mobile redirects and set the Site URL to `https://rastasperiq.co.za`. Configure a production SMTP provider to send reset emails to customers outside your Supabase project team; the default Supabase email service limits recipients. Development can use equivalent callback URLs on `http://localhost:3000`.
+
+Order status updates run in the background every eight seconds while the page is visible. Slow or failed updates retain the order content instead of replacing it with a loading placeholder.

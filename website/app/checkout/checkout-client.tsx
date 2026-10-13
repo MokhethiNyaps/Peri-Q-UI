@@ -7,11 +7,13 @@ import { useCart } from "@/lib/cart";
 import { fetchMenu, isStoreOpenNow, type AppSettings } from "@/lib/menu";
 import { ensureAnonSession } from "@/lib/auth";
 import { createBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
+import { useCustomerAuth } from "@/lib/customer-auth";
 
 type OrderType = "pickup" | "delivery";
 type PaymentMethod = "cash_collection" | "cash_delivery" | "eft" | "yoco";
 
 export default function CheckoutClient() {
+  const { user, profile } = useCustomerAuth();
   const { entries, subtotal, clear } = useCart();
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
@@ -26,6 +28,15 @@ export default function CheckoutClient() {
   const [yocoAvailable, setYocoAvailable] = useState(false);
   const submittingRef = useRef(false);
   const requestIdRef = useRef<string | null>(null);
+  const profileName = profile?.full_name;
+  const profilePhone = profile?.phone;
+  const accountId = user && !user.is_anonymous ? user.id : null;
+  useEffect(() => {
+    if (accountId && profileName !== undefined) {
+      setName(profileName ?? "");
+      setPhone(profilePhone ?? "");
+    }
+  }, [accountId, profileName, profilePhone]);
 
   useEffect(() => {
     void fetch("/api/yoco/checkout/")

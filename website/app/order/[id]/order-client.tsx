@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Clock3, CreditCard, MapPin, Phone, Truck, User, XCircle } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { ensureAnonSession } from "@/lib/auth";
+import { useCustomerAuth } from "@/lib/customer-auth";
 
 type OrderRow = {
   id: string;
@@ -36,6 +37,7 @@ type OrderItemRow = {
 };
 
 export default function OrderClient({ orderId }: { orderId: string }) {
+  const { user } = useCustomerAuth();
   const search = useSearchParams();
   const checkout = search.get("checkout"); // success | cancel | failure
   const isNew = search.get("new") === "1";
@@ -45,13 +47,22 @@ export default function OrderClient({ orderId }: { orderId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [retryingYoco, setRetryingYoco] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const currentOrder = useRef<OrderRow | null>(null);
+  const requestVersion = useRef(0);
+  const inFlight = useRef(false);
+  const active = useRef(false);
 
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
+    if (inFlight.current || !active.current) return;
+    const version = requestVersion.current;
+    inFlight.current = true;
+    setRefreshing(true);
     try {
-      setLoading(true);
       const supa = createBrowserClient();
-      // Ensure at least an anon session so RLS `orders_select_owner_or_admin` passes (owner OR admin)
-      await ensureAnonSession();
+      const { data: { session } } = await supa.auth.getSession();
+      if (!session) throw new Error("Sign in using the account or browser you used to place this order.");
       const { data, error: err } = await supa
         .from("orders")
         .select(
@@ -60,33 +71,50 @@ export default function OrderClient({ orderId }: { orderId: string }) {
         .eq("id", orderId)
         .maybeSingle();
 
+      if (!active.current || requestVersion.current !== version) return;
       if (err) throw err;
       if (!data) {
+        currentOrder.current = null;
+        setOrder(null);
         setError("Order not found. It may belong to another device/account. If you ordered as guest on a different browser, the kitchen still has it — contact the restaurant with your order number.");
-        setLoading(false);
         return;
       }
       const row = data as unknown as OrderRow & { order_items: OrderItemRow[] };
-      setOrder({ ...row, payment_status: row.payment_status ?? "unpaid" });
+      const nextOrder = { ...row, payment_status: row.payment_status ?? "unpaid" };
+      currentOrder.current = nextOrder;
+      setOrder(nextOrder);
       setItems(row.order_items ?? []);
       setError(null);
+      setRefreshError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load order.");
+      if (!active.current || requestVersion.current !== version) return;
+      const message = e instanceof Error ? e.message : "Could not update your order. Please try again.";
+      if (currentOrder.current) setRefreshError(message);
+      else setError(message);
     } finally {
-      setLoading(false);
+      if (active.current && requestVersion.current === version) {
+        inFlight.current = false;
+        setRefreshing(false);
+        setLoading(false);
+      }
     }
-  };
+  }, [orderId]);
 
   useEffect(() => {
+    active.current = true;
+    ++requestVersion.current;
+    inFlight.current = false;
+    currentOrder.current = null;
+    setOrder(null);
+    setError(null);
+    setRefreshError(null);
+    setLoading(true);
     void fetchOrder();
-    // Realtime poll fallback every 8s while pending payment?
     const t = setInterval(() => {
-      // only poll if payment pending/paid not yet reflected?
-      void fetchOrder();
+      if (!document.hidden) void fetchOrder();
     }, 8000);
-    return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orderId]);
+    return () => { active.current = false; clearInterval(t); };
+  }, [fetchOrder, user?.id]);
 
   const retryYocoCheckout = async () => {
     if (!order) return;
@@ -127,6 +155,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
           <h1 className="font-display text-3xl font-black uppercase">Order not found</h1>
           <p className="mt-3 text-sm leading-6 text-amber-900/80">{error}</p>
           <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/account/" className="button button-primary">Sign in</Link>
             <Link href="/menu/" className="button button-primary">Back to menu</Link>
             <Link href="/checkout/" className="button border border-black/10 bg-white text-charcoal">Checkout</Link>
           </div>
@@ -181,7 +210,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
             {isNew && (
               <div className="rounded-[1.75rem] border border-leaf/20 bg-leaf/10 p-5">
                 <p className="flex items-center gap-2 font-display text-xl font-black uppercase text-leaf"><CheckCircle2 size={20} /> Order confirmed #{order.order_number}</p>
-                <p className="mt-2 text-sm leading-6 text-ash">Estimated time <strong>{order.estimated_minutes} min</strong>. The restaurant sees this order in the same system as app orders (Supabase Realtime). Follow status updates here or contact the store.</p>
+                <p className="mt-2 text-sm leading-6 text-ash">Estimated time <strong>{order.estimated_minutes} min</strong>. Follow status updates here or contact the restaurant.</p>
               </div>
             )}
             {showSuccessBanner && !isPaid && (
@@ -272,7 +301,8 @@ export default function OrderClient({ orderId }: { orderId: string }) {
               <Link href="/menu/" className="button w-full justify-center border border-black/10 bg-white text-charcoal">Back to menu</Link>
               <a href="https://wa.me/27736423549" target="_blank" rel="noreferrer" className="button button-primary w-full justify-center">Chat on WhatsApp</a>
             </div>
-            <button onClick={() => void fetchOrder()} className="mt-4 w-full rounded-full bg-muted px-4 py-2 text-xs font-extrabold text-ash hover:bg-black/5">Refresh status</button>
+            <button onClick={() => void fetchOrder()} disabled={refreshing} className="mt-4 w-full rounded-full bg-muted px-4 py-2 text-xs font-extrabold text-ash hover:bg-black/5 disabled:opacity-60">Refresh status</button>
+            <p role="status" aria-live="polite" className="mt-2 min-h-10 text-xs leading-5 text-ash">{refreshError ?? (refreshing ? "Updating status…" : "Status updates automatically.")}</p>
           </aside>
         </div>
       </section>
