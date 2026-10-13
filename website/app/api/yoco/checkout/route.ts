@@ -21,7 +21,8 @@ export async function GET() {
       // Missing configuration or a database outage must fail closed.
     }
   }
-  return NextResponse.json({ available }, { headers: { "Cache-Control": "no-store" } });
+  const mode = readYocoEnv()?.secretKey.startsWith("sk_test_") ? "test" : "live";
+  return NextResponse.json(available ? { available, mode } : { available }, { headers: { "Cache-Control": "no-store" } });
 }
 
 // POST { orderId: string }

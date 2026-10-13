@@ -26,6 +26,7 @@ export default function CheckoutClient() {
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [yocoAvailable, setYocoAvailable] = useState(false);
+  const [yocoTestMode, setYocoTestMode] = useState(false);
   const submittingRef = useRef(false);
   const requestIdRef = useRef<string | null>(null);
   const profileName = profile?.full_name;
@@ -41,7 +42,10 @@ export default function CheckoutClient() {
   useEffect(() => {
     void fetch("/api/yoco/checkout/")
       .then((res) => res.ok ? res.json() : { available: false })
-      .then((data: { available?: boolean }) => setYocoAvailable(data.available === true))
+      .then((data: { available?: boolean; mode?: string }) => {
+        setYocoAvailable(data.available === true);
+        setYocoTestMode(data.mode === "test");
+      })
       .catch(() => setYocoAvailable(false));
     if (!isSupabaseConfigured()) {
       setLoadingSettings(false);
@@ -282,7 +286,7 @@ export default function CheckoutClient() {
                   { id: "cash_collection" as const, label: "Cash on Collection (pickup)", hint: "Pay in store when you collect", show: true },
                   { id: "cash_delivery" as const, label: "Cash on Delivery", hint: "Pay the driver on arrival", show: orderType === "delivery" },
                   { id: "eft" as const, label: "EFT", hint: "Contact the restaurant for bank details and send payment proof", show: true },
-                  { id: "yoco" as const, label: "Pay online with Card (Yoco)", hint: yocoAvailable ? "Secure Yoco hosted checkout — Visa, Mastercard, etc." : "Online card payments are not available yet. Please choose cash or EFT.", show: true },
+                  { id: "yoco" as const, label: yocoTestMode ? "Test card checkout (Yoco)" : "Pay online with Card (Yoco)", hint: yocoAvailable ? (yocoTestMode ? "Testing only. No real payment is collected. Use cash or EFT for real orders." : "Secure Yoco hosted checkout — Visa, Mastercard, etc.") : "Online card payments are not available yet. Please choose cash or EFT.", show: true },
                 ].filter((m) => m.show).map((m) => (
                   <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 ${paymentMethod === m.id ? "border-charcoal bg-charcoal text-white" : "border-black/10 bg-white"}`}>
                     <input type="radio" name="payment" disabled={m.id === "yoco" && !yocoAvailable} checked={paymentMethod === m.id} onChange={() => setPaymentMethod(m.id)} className="size-5 accent-peri-red" />

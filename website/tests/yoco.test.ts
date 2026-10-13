@@ -90,7 +90,7 @@ describe("Checkout ownership", () => {
   });
   it("enables payments only when the payment schema is accessible", async () => {
     db.results = [ok([]), ok([])];
-    expect(await (await paymentReadiness()).json()).toEqual({ available: true });
+    expect(await (await paymentReadiness()).json()).toEqual({ available: true, mode: "test" });
     db.results = [ok([]), { data: null, error: { message: "missing table" } }];
     expect(await (await paymentReadiness()).json()).toEqual({ available: false });
   });
