@@ -59,7 +59,7 @@ class PaymentPreferencesScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 18),
-              ...PaymentMethod.values.map((method) {
+              ...[PaymentMethod.yoco].map((method) {
                 final isCard =
                     method == PaymentMethod.card ||
                     method == PaymentMethod.yoco;
@@ -68,8 +68,8 @@ class PaymentPreferencesScreen extends StatelessWidget {
                   child: _PaymentPreferenceCard(
                     method: method,
                     selected: controller.preferredPaymentMethod == method,
-                    enabled: !isCard,
-                    onTap: isCard
+                    enabled: isCard,
+                    onTap: !isCard
                         ? null
                         : () async {
                             await controller.setPreferredPaymentMethod(method);
@@ -160,7 +160,7 @@ class _PaymentPreferenceCard extends StatelessWidget {
                     ),
                     if (!enabled)
                       Text(
-                        'Coming soon',
+                        'Secure Yoco checkout',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                   ],

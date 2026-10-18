@@ -83,10 +83,9 @@ export default function TermsAndConditionsPage() {
 
           <h2>5. Payment</h2>
           <p>
-            Available payment methods are shown during checkout. If you choose EFT, you
-            may be asked to upload proof so staff can reconcile payment. Do not upload card
-            numbers, passwords, or unrelated documents. Card payment is not processed by
-            the current app unless the checkout screen explicitly states otherwise.
+            Pay upfront by card through Yoco for collection and delivery. We create your
+            order only after Yoco confirms successful payment. If payment fails or is
+            cancelled, your cart remains available and no order is placed.
           </p>
 
           <h2>6. Pickup and delivery</h2>

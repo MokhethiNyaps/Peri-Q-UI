@@ -57,11 +57,20 @@ export async function POST(req: Request) {
     const svc = createServiceClient();
     const existing = await checked(svc.from("yoco_webhook_events").select("processed").eq("id", eventId).maybeSingle());
     if (existing?.processed) return NextResponse.json({ ok: true, duplicate: true });
+    const draft = await checked(svc.from("checkout_intents").select("payment_amount_cents,yoco_mode,payment_method").eq("yoco_checkout_id",checkoutId).maybeSingle());
+    if (!draft) return NextResponse.json({error:"Checkout not yet linked. Retry later."},{status:503});
+    if (draft.payment_amount_cents !== amount || draft.yoco_mode !== mode || draft.payment_method !== "yoco") return NextResponse.json({error:"Payment mismatch."},{status:422});
+    if (eventType === "payment.succeeded") {
+      const result = await svc.rpc("finalize_card_checkout", { p_checkout_id: checkoutId, p_payment_id: paymentId, p_amount: amount, p_mode: mode });
+      if (result.error) throw result.error;
+    } else {
+      await checked(svc.from("checkout_intents").update({payment_status:"failed"}).eq("yoco_checkout_id",checkoutId).is("paid_at",null));
+      return NextResponse.json({ok:true});
+    }
     const order = await checked(svc.from("orders")
       .select("id,total_price,payment_status,paid_at,payment_amount_cents,yoco_checkout_id,yoco_mode,payment_method")
       .eq("yoco_checkout_id", checkoutId).maybeSingle());
-    // A checkout save can still be in flight. Ask Yoco to retry, keeping the event unprocessed.
-    if (!order) return NextResponse.json({ error: "Checkout not yet linked. Retry later." }, { status: 503 });
+    if (!order) throw new Error("Order finalization did not persist.");
     const trustedAmount = Number(order.payment_amount_cents ?? Math.round(Number(order.total_price) * 100));
     if (trustedAmount !== amount || order.yoco_mode !== mode || !["yoco", "card"].includes(order.payment_method)) {
       return NextResponse.json({ error: "Payment does not match this order." }, { status: 422 });

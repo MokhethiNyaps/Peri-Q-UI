@@ -1,10 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-
-import '../core/app_theme.dart';
 import '../models/menu_item.dart';
 import 'app_image.dart';
 
-class FoodCard extends StatelessWidget {
+class FoodCard extends StatefulWidget {
   const FoodCard({
     super.key,
     required this.item,
@@ -12,204 +11,134 @@ class FoodCard extends StatelessWidget {
     this.compact = false,
     this.onTap,
   });
-
   final MenuItemModel item;
   final VoidCallback onAdd;
   final VoidCallback? onTap;
   final bool compact;
+  @override
+  State<FoodCard> createState() => _FoodCardState();
+}
+
+class _FoodCardState extends State<FoodCard> {
+  bool added = false;
+  Timer? reset;
+  @override
+  void dispose() {
+    reset?.cancel();
+    super.dispose();
+  }
+
+  void add() {
+    widget.onAdd();
+    setState(() => added = true);
+    reset?.cancel();
+    reset = Timer(const Duration(milliseconds: 900), () {
+      if (mounted) setState(() => added = false);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppRadii.card);
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final appColors = context.appColors;
-
-    if (compact) {
-      return InkWell(
-        onTap: item.isAvailable ? onTap : null,
-        borderRadius: radius,
-        child: Ink(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: appColors.elevatedSurface,
-            borderRadius: radius,
-            border: Border.all(color: appColors.softOutline),
-            boxShadow: [
-              BoxShadow(
-                color: appColors.shadow,
-                blurRadius: 12,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              AppImage(
-                imagePath: item.imagePath,
-                semanticLabel: '${item.name} photo',
-                width: 84,
-                height: 84,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      item.description,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          width: 9,
-                          height: 9,
-                          decoration: BoxDecoration(
-                            color: item.isAvailable
-                                ? appColors.success
-                                : colors.error,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          item.isAvailable ? 'Available' : 'Out of stock',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'R${item.price.toStringAsFixed(0)}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colors.primary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton.tonalIcon(
-                    onPressed: item.isAvailable ? onAdd : null,
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Add'),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.primaryContainer,
-                      foregroundColor: colors.onPrimaryContainer,
-                      minimumSize: const Size(72, 48),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    final item = widget.item;
+    final image = AppImage(
+      imagePath: item.imagePath,
+      semanticLabel: '${item.name} photo',
+      width: widget.compact ? 100 : double.infinity,
+      height: widget.compact ? 112 : null,
+      fit: BoxFit.cover,
+      borderRadius: BorderRadius.circular(8),
+    );
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          item.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
           ),
         ),
-      );
-    }
-
-    return InkWell(
-      onTap: item.isAvailable ? onTap : null,
-      borderRadius: radius,
-      child: Ink(
-        decoration: BoxDecoration(
-          color: appColors.elevatedSurface,
-          borderRadius: radius,
-          border: Border.all(color: appColors.softOutline),
-          boxShadow: [
-            BoxShadow(
-              color: appColors.shadow,
-              blurRadius: 18,
-              offset: const Offset(0, 8),
+        const SizedBox(height: 4),
+        Text(
+          item.description,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(
+              'R${item.price.toStringAsFixed(0)}',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Semantics(
+              label: 'Add ${item.name} to cart',
+              button: true,
+              child: FilledButton.tonalIcon(
+                onPressed: item.isAvailable ? add : null,
+                icon: AnimatedSwitcher(
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 140),
+                  child: Icon(
+                    added ? Icons.check_rounded : Icons.add_rounded,
+                    key: ValueKey(added),
+                    size: 18,
+                  ),
+                ),
+                label: Text(
+                  !item.isAvailable
+                      ? 'Sold out'
+                      : added
+                      ? 'Added'
+                      : 'Add',
+                ),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(76, 48),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                ),
+              ),
             ),
           ],
         ),
+      ],
+    );
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: item.isAvailable ? widget.onTap : null,
+        borderRadius: BorderRadius.circular(12),
         child: Padding(
-          padding: const EdgeInsets.all(10),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: AppImage(
-                  imagePath: item.imagePath,
-                  semanticLabel: '${item.name} photo',
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  borderRadius: BorderRadius.circular(12),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
+          child: widget.compact
+              ? Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    image,
+                    const SizedBox(width: 16),
+                    Expanded(child: details),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: image),
+                    const SizedBox(height: 12),
+                    details,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                item.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                item.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Text(
-                    'R${item.price.toStringAsFixed(0)}',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: colors.primary,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  const Spacer(),
-                  Semantics(
-                    button: true,
-                    enabled: item.isAvailable,
-                    label: 'Add ${item.name} to cart',
-                    child: Tooltip(
-                      message: 'Add ${item.name}',
-                      child: InkWell(
-                        onTap: item.isAvailable ? onAdd : null,
-                        borderRadius: BorderRadius.circular(AppRadii.pill),
-                        child: Ink(
-                          width: 48,
-                          height: 48,
-                          decoration: BoxDecoration(
-                            color: item.isAvailable
-                                ? colors.primary
-                                : appColors.sunkenSurface,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.add,
-                            color: item.isAvailable
-                                ? colors.onPrimary
-                                : colors.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
         ),
       ),
     );

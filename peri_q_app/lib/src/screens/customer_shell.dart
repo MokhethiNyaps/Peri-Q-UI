@@ -79,7 +79,10 @@ class _CustomerShellState extends State<CustomerShell>
     ];
 
     return Scaffold(
-      body: IndexedStack(index: currentIndex, children: pages),
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(index: currentIndex, children: pages),
+      ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: AnimatedBuilder(
         animation: widget.controller,

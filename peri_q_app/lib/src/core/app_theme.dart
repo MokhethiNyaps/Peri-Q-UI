@@ -17,9 +17,9 @@ abstract final class AppSpacing {
 }
 
 abstract final class AppRadii {
-  static const double input = 16;
-  static const double card = 20;
-  static const double panel = 28;
+  static const double input = 10;
+  static const double card = 12;
+  static const double panel = 16;
   static const double sheet = 32;
   static const double pill = 999;
 }
@@ -349,6 +349,7 @@ class AppTheme {
     final isDark = brightness == Brightness.dark;
     final base = ThemeData(
       useMaterial3: true,
+      fontFamily: 'Roboto',
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,

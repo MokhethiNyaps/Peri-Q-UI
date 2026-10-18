@@ -60,7 +60,7 @@ class AppPreferences {
     this.selectedMenuCategory = 'All',
     this.savedAddresses = const [],
     this.defaultAddressId,
-    this.preferredPaymentMethod = PaymentMethod.cashCollection,
+    this.preferredPaymentMethod = PaymentMethod.yoco,
     this.themeMode = ThemeMode.system,
   });
 
@@ -130,7 +130,7 @@ class AppPreferences {
           .toList(),
       defaultAddressId: json['defaultAddressId'] as String?,
       preferredPaymentMethod: paymentMethodFromCode(
-        json['preferredPaymentMethod'] as String? ?? 'cash_collection',
+        json['preferredPaymentMethod'] as String? ?? 'yoco',
       ),
       themeMode: mode,
     );

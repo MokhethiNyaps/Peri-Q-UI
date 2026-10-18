@@ -49,7 +49,7 @@ class AppController extends ChangeNotifier {
   String customerName = '';
   String customerPhone = '';
   String? defaultAddressId;
-  PaymentMethod preferredPaymentMethod = PaymentMethod.cashCollection;
+  PaymentMethod preferredPaymentMethod = PaymentMethod.yoco;
   String? userId;
   String? userEmail;
   bool isGuest = true;
@@ -265,13 +265,25 @@ class AppController extends ChangeNotifier {
       selectedMenuCategory = preferences.selectedMenuCategory;
       savedAddresses = List<SavedAddress>.from(preferences.savedAddresses);
       defaultAddressId = _validDefaultAddressId(preferences.defaultAddressId);
-      preferredPaymentMethod = preferences.preferredPaymentMethod;
+      preferredPaymentMethod = PaymentMethod.yoco;
       themeMode = preferences.themeMode;
       _applyAppSettings(fetchedAppSettings);
       menuCategories = _orderedCategories(fetchedMenuCategories);
       menuItems = _orderedMenuItems(fetchedMenuItems);
       isMenuStale = _menuRepository.lastFetchUsedCache;
       orders = fetchedOrders;
+      final storage = _preferencesRepository;
+      if (storage is CheckoutCartStore && userId != null) {
+        final saved = await (storage as CheckoutCartStore).loadCheckoutCart(
+          userId!,
+        );
+        if (saved != null) {
+          cart = (saved['items'] as List<dynamic>? ?? [])
+              .map((e) => CartItemModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          _pendingOrderRequestId = saved['requestId'] as String?;
+        }
+      }
       _startWatchingOrders();
       _startWatchingAppSettings();
       _startWatchingMenu();
@@ -294,7 +306,7 @@ class AppController extends ChangeNotifier {
       cart = [];
       savedAddresses = [];
       defaultAddressId = null;
-      preferredPaymentMethod = PaymentMethod.cashCollection;
+      preferredPaymentMethod = PaymentMethod.yoco;
     } finally {
       if (!_isDisposed && bootstrapRevision == _bootstrapRevision) {
         isBootstrapping = false;
@@ -412,7 +424,7 @@ class AppController extends ChangeNotifier {
     cart = [];
     savedAddresses = [];
     defaultAddressId = null;
-    preferredPaymentMethod = PaymentMethod.cashCollection;
+    preferredPaymentMethod = PaymentMethod.yoco;
     await _savePreferences();
     notifyListeners();
   }
@@ -554,9 +566,19 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> setPreferredPaymentMethod(PaymentMethod method) async {
-    preferredPaymentMethod = method;
+    preferredPaymentMethod = PaymentMethod.yoco;
     await _savePreferences();
     notifyListeners();
+  }
+
+  Future<void> _persistCheckoutCart() async {
+    final storage = _preferencesRepository;
+    if (storage is CheckoutCartStore && userId != null) {
+      await (storage as CheckoutCartStore).saveCheckoutCart(userId!, {
+        'items': cart.map((e) => e.toJson()).toList(),
+        'requestId': _pendingOrderRequestId,
+      });
+    }
   }
 
   void addToCart(
@@ -581,11 +603,15 @@ class AppController extends ChangeNotifier {
       selectedAddOns: List<AddOnOption>.from(selectedAddOns),
     );
     cart = [...cart, newItem];
+    _pendingOrderRequestId = null;
+    unawaited(_persistCheckoutCart());
     notifyListeners();
   }
 
   void incrementCartItem(CartItemModel cartItem) {
     cartItem.quantity += 1;
+    _pendingOrderRequestId = null;
+    unawaited(_persistCheckoutCart());
     notifyListeners();
   }
 
@@ -595,11 +621,15 @@ class AppController extends ChangeNotifier {
       return;
     }
     cartItem.quantity -= 1;
+    _pendingOrderRequestId = null;
+    unawaited(_persistCheckoutCart());
     notifyListeners();
   }
 
   void removeCartItem(CartItemModel cartItem) {
     cart.removeWhere((item) => item.id == cartItem.id);
+    _pendingOrderRequestId = null;
+    unawaited(_persistCheckoutCart());
     notifyListeners();
   }
 
@@ -608,6 +638,9 @@ class AppController extends ChangeNotifier {
     required PaymentMethod paymentMethod,
     String? deliveryAddress,
   }) async {
+    if (paymentMethod != PaymentMethod.yoco) {
+      throw const OrderSubmissionException('Pay by card through Yoco.');
+    }
     final sessionRevision = _sessionRevision;
     if (cart.isEmpty) {
       throw const OrderSubmissionException('Your cart is empty.');
@@ -628,6 +661,7 @@ class AppController extends ChangeNotifier {
     }
     _pendingOrderRequestId ??=
         '${userId ?? 'user'}-${DateTime.now().microsecondsSinceEpoch}';
+    await _persistCheckoutCart();
     final order = await _orderRepository.createOrder(
       OrderDraft(
         customerName: customerName,
@@ -649,6 +683,7 @@ class AppController extends ChangeNotifier {
     _pendingOrderRequestId = null;
     orders = [order, ...orders];
     cart = [];
+    unawaited(_persistCheckoutCart());
     notifyListeners();
     unawaited(_notifyNewOrderBestEffort(order));
     return order;

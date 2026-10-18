@@ -14,7 +14,7 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.useRealTimers(); });
 async function mount() {
   await act(async () => { render(<OrderClient orderId="order-1" />); });
-  return screen.getByRole("heading", { name: "Order details", exact: true });
+  return screen.getByRole("heading", { name: "Order details" });
 }
 describe("Order status refresh without scrolling jumps", () => {
   it("keeps the same content mounted while the next poll is slow", async () => {
@@ -22,19 +22,19 @@ describe("Order status refresh without scrolling jumps", () => {
     let finish!: (value: unknown) => void;
     query.maybeSingle.mockReturnValue(new Promise(resolve => { finish = resolve; }));
     await act(async () => { vi.advanceTimersByTime(8000); });
-    expect(screen.getByRole("heading", { name: "Order details", exact: true })).toBe(details);
+    expect(screen.getByRole("heading", { name: "Order details" })).toBe(details);
     expect(screen.getByText("Updating status…")).toBeInTheDocument();
     await act(async () => { vi.advanceTimersByTime(16000); });
     expect(query.maybeSingle).toHaveBeenCalledTimes(2);
     await act(async () => { finish({ data: { ...order, status: "preparing" }, error: null }); });
-    expect(screen.getByRole("heading", { name: "Order details", exact: true })).toBe(details);
+    expect(screen.getByRole("heading", { name: "Order details" })).toBe(details);
     expect(screen.getByText("Preparing", { exact: true })).toBeInTheDocument();
   });
   it("keeps the order visible if a background request fails", async () => {
     const details = await mount();
     query.maybeSingle.mockRejectedValue(new Error("Connection interrupted"));
     await act(async () => { vi.advanceTimersByTime(8000); });
-    expect(screen.getByRole("heading", { name: "Order details", exact: true })).toBe(details);
+    expect(screen.getByRole("heading", { name: "Order details" })).toBe(details);
     expect(screen.getByRole("status")).toHaveTextContent("Connection interrupted");
   });
   it("stops polling after leaving the page", async () => {

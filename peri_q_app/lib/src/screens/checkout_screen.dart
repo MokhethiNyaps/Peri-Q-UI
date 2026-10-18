@@ -22,7 +22,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   late final TextEditingController phoneController;
   final addressController = TextEditingController();
   OrderType orderType = OrderType.pickup;
-  PaymentMethod paymentMethod = PaymentMethod.cashCollection;
+  PaymentMethod paymentMethod = PaymentMethod.yoco;
   String? selectedAddressId;
   bool isSubmitting = false;
 
@@ -57,34 +57,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 
-  void _selectOrderType(OrderType type) {
-    setState(() {
-      orderType = type;
-      if (orderType == OrderType.pickup &&
-          paymentMethod == PaymentMethod.cashDelivery) {
-        paymentMethod = PaymentMethod.cashCollection;
-      }
-      if (orderType == OrderType.delivery &&
-          paymentMethod == PaymentMethod.cashCollection) {
-        paymentMethod = PaymentMethod.cashDelivery;
-      }
-    });
-  }
-
-  PaymentMethod _availablePaymentFor(PaymentMethod method, OrderType type) {
-    if (method == PaymentMethod.card || method == PaymentMethod.yoco) {
-      return PaymentMethod.cashCollection;
-    }
-    if (type == OrderType.pickup && method == PaymentMethod.cashDelivery) {
-      return PaymentMethod.cashCollection;
-    }
-    return method;
-  }
-
-  Future<void> _selectPayment(PaymentMethod method) async {
-    setState(() => paymentMethod = method);
-    await widget.controller.setPreferredPaymentMethod(method);
-  }
+  void _selectOrderType(OrderType type) => setState(() => orderType = type);
+  PaymentMethod _availablePaymentFor(PaymentMethod method, OrderType type) =>
+      PaymentMethod.yoco;
 
   void _selectSavedAddress(String addressId) {
     SavedAddress? address;
@@ -307,34 +282,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 12),
-              _PaymentTile(
-                title: 'Cash on Collection',
-                icon: Icons.storefront_rounded,
-                selected: paymentMethod == PaymentMethod.cashCollection,
-                enabled: true,
-                onTap: () => _selectPayment(PaymentMethod.cashCollection),
-              ),
-              _PaymentTile(
-                title: 'Cash on Delivery',
-                icon: Icons.two_wheeler_rounded,
-                selected: paymentMethod == PaymentMethod.cashDelivery,
-                enabled: orderType == OrderType.delivery,
-                onTap: () => _selectPayment(PaymentMethod.cashDelivery),
-              ),
-              _PaymentTile(
-                title: 'EFT / Bank Transfer',
-                icon: Icons.account_balance_rounded,
-                subtitle: 'Upload proof after ordering',
-                selected: paymentMethod == PaymentMethod.eft,
-                enabled: true,
-                onTap: () => _selectPayment(PaymentMethod.eft),
-              ),
-              _PaymentTile(
-                title: 'Card Payment',
+              const _PaymentTile(
+                title: 'Card through Yoco',
+                subtitle:
+                    'Pay securely before we send your order to the grill.',
                 icon: Icons.credit_card_rounded,
-                subtitle: 'Coming soon',
-                selected: paymentMethod == PaymentMethod.card,
-                enabled: false,
+                selected: true,
+                enabled: true,
                 onTap: null,
               ),
               const SizedBox(height: 24),
@@ -406,12 +360,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Text('Placing order…'),
+                        const Flexible(child: Text('Confirming card payment…')),
                       ],
                     )
                   : Text(
                       key: const ValueKey('checkout-ready'),
-                      'Place Order • R${total.toStringAsFixed(0)}',
+                      'Pay with Yoco • R${total.toStringAsFixed(0)}',
                     ),
             ),
           ),

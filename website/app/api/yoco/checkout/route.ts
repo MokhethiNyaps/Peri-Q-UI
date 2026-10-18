@@ -13,7 +13,7 @@ export async function GET() {
     try {
       const svc = createServiceClient();
       const [orders, payments] = await Promise.all([
-        svc.from("orders").select("yoco_checkout_id,payment_status").limit(0),
+        svc.from("checkout_intents").select("yoco_checkout_id,payment_status").limit(0),
         svc.from("payments").select("id").limit(0),
       ]);
       available = !orders.error && !payments.error;
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   }
   const orderId = (body as { orderId?: unknown })?.orderId;
   if (typeof orderId !== "string" || !orderId.trim()) {
-    return NextResponse.json({ error: "Missing orderId (UUID). Create the order first via place_order, then call this endpoint.", code: "missing_order_id" }, { status: 400 });
+    return NextResponse.json({ error: "Missing orderId (UUID). Prepare a card checkout first, then call this endpoint.", code: "missing_order_id" }, { status: 400 });
   }
 
   const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -69,12 +69,13 @@ export async function POST(req: Request) {
     if (authError || !auth.user) {
       return NextResponse.json({ error: "Your session has expired. Please try again.", code: "unauthorized" }, { status: 401 });
     }
-    const { data, error } = await svc.from("orders").select("id,order_number,user_id,total_price,payment_method,payment_status,paid_at,yoco_checkout_id,yoco_mode,client_request_id,created_at").eq("id", orderId.trim()).maybeSingle();
+    const { data, error } = await svc.from("checkout_intents").select("id,order_number,redirect_url,user_id,total_price,payment_method,payment_status,paid_at,yoco_checkout_id,yoco_mode,client_request_id,created_at").eq("id", orderId.trim()).maybeSingle();
     if (error) throw error;
     order = (data as Record<string, unknown> | null) ?? null;
     if (!order || order.user_id !== auth.user.id) {
       return NextResponse.json({ error: "Order not found. Ensure the order was created with the same Supabase project that the website uses.", code: "order_not_found" }, { status: 404 });
     }
+    if (order.redirect_url) return NextResponse.json({ redirectUrl: order.redirect_url, checkoutId: order.yoco_checkout_id });
     const paymentStatus = String(order["payment_status"] ?? "unpaid");
     const paidAt = order["paid_at"] as string | null;
     if (paymentStatus === "paid" || !!paidAt) {
@@ -83,7 +84,7 @@ export async function POST(req: Request) {
     const pm = String(order["payment_method"] ?? "");
     if (pm !== "yoco" && pm !== "card") {
       return NextResponse.json(
-        { error: `Order payment_method is '${pm}'. Recreate the order with paymentMethod 'yoco' at checkout, or change payment method to Yoco.`, code: "wrong_payment_method" },
+        { error: `Order payment_method is '${pm}'. Prepare checkout with paymentMethod 'yoco' at checkout, or change payment method to Yoco.`, code: "wrong_payment_method" },
         { status: 409 },
       );
     }
@@ -99,9 +100,10 @@ export async function POST(req: Request) {
     }
 
     const siteUrl = getSiteUrl();
-    const successUrl = `${siteUrl}/order/${orderId.trim()}/?checkout=success`;
-    const cancelUrl = `${siteUrl}/order/${orderId.trim()}/?checkout=cancel`;
-    const failureUrl = `${siteUrl}/order/${orderId.trim()}/?checkout=failure`;
+    const mobile = (body as {source?:string}).source === "mobile";
+    const successUrl = `${siteUrl}/payment/${orderId.trim()}/?checkout=success${mobile ? "&source=mobile" : ""}`;
+    const cancelUrl = `${siteUrl}/payment/${orderId.trim()}/?checkout=cancel${mobile ? "&source=mobile" : ""}`;
+    const failureUrl = `${siteUrl}/payment/${orderId.trim()}/?checkout=failure${mobile ? "&source=mobile" : ""}`;
 
     const idempotencyKey = String(order["client_request_id"] ?? order["id"] ?? `${orderId}-web`);
 
@@ -168,8 +170,9 @@ export async function POST(req: Request) {
       const svc2 = createServiceClient();
       // Update orders with checkout id + ensure payment_status pending
       const { error: orderError } = await svc2
-        .from("orders")
+        .from("checkout_intents")
         .update({
+          redirect_url: redirectUrl,
           yoco_checkout_id: checkoutId,
           payment_status: "pending",
           yoco_mode: mode,
@@ -181,30 +184,6 @@ export async function POST(req: Request) {
         .not("payment_status", "in", "(paid,refunded)");
       if (orderError) throw orderError;
 
-      // Insert once, then update only unpaid attempts. A retry must not reset
-      // an audit row that a concurrent webhook has already marked succeeded.
-      const paymentRow =
-        {
-          order_id: String(order["id"]),
-          yoco_checkout_id: checkoutId,
-          amount_cents: amountCents,
-          currency: "ZAR",
-          status: "pending",
-          raw_payload: json,
-          mode,
-          updated_at: new Date().toISOString(),
-        };
-      const { error: payErr } = await svc2.from("payments").upsert(
-        paymentRow,
-        { onConflict: "order_id", ignoreDuplicates: true },
-      );
-      if (payErr) {
-        throw payErr;
-      }
-      const { error: updateError } = await svc2.from("payments")
-        .update(paymentRow).eq("order_id", String(order["id"]))
-        .neq("status", "succeeded");
-      if (updateError) throw updateError;
     } catch (e) {
       console.error("Could not persist Yoco checkout", e);
       return NextResponse.json({ error: "Could not save payment details. Please retry from your order page.", code: "payment_save_failed" }, { status: 503 });

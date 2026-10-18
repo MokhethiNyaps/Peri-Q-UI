@@ -1,9 +1,15 @@
 import 'dart:async';
+import 'dart:io';
+import 'dart:ui' as ui;
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:peri_q_app/src/core/app_controller.dart';
+import 'package:peri_q_app/src/core/app_theme.dart';
+import 'package:peri_q_app/src/screens/customer_shell.dart';
 import 'package:peri_q_app/src/core/auth_deep_links.dart';
 import 'package:peri_q_app/src/models/app_auth_session.dart';
 import 'package:peri_q_app/src/models/app_preferences.dart';
@@ -24,6 +30,79 @@ import 'package:peri_q_app/src/screens/reset_password_screen.dart';
 import 'package:peri_q_app/src/screens/splash_screen.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    const fontDir=String.fromEnvironment('SCREENSHOT_FONT_DIR');
+    if(fontDir.isNotEmpty){
+      for(final font in {'Roboto':'roboto-regular.ttf','MaterialIcons':'materialicons-regular.otf'}.entries){
+        final loader=FontLoader(font.key)..addFont(File('$fontDir/${font.value}').readAsBytes().then(ByteData.sublistView));
+        await loader.load();
+      }
+    }
+  });
+  for (final size in [const Size(360, 800), const Size(800, 360)]) {
+    for (final dark in [false, true]) {
+      testWidgets('customer screens ${size.width}x${size.height} dark=$dark', (
+        tester,
+      ) async {
+        tester.view.physicalSize = size;
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final harness = _ControllerHarness(
+          menuItems: [
+            const MenuItemModel(
+              id: 'meal',
+              name: 'Flame-grilled chicken',
+              description: 'Served with pap and chakalaka',
+              price: 70,
+              category: 'Meals',
+              imagePath: 'assets/images/white-app-icon.png',
+            ),
+          ],
+        );
+        await harness.controller.bootstrapFuture;
+        harness.controller.addToCart(harness.controller.menuItems.first);
+        for (final screen in [
+          CustomerShell(controller: harness.controller),
+          CheckoutScreen(controller: harness.controller),
+        ]) {
+          await tester.pumpWidget(
+            MaterialApp(
+              theme: dark ? AppTheme.darkTheme : AppTheme.lightTheme,
+              home: RepaintBoundary(
+                key: const ValueKey('preview'),
+                child: screen,
+              ),
+            ),
+          );
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull);
+          const screenshots = String.fromEnvironment('SCREENSHOT_DIR');
+          if (screenshots.isNotEmpty) {
+            await tester.runAsync(() async {
+              final boundary = tester.renderObject<RenderRepaintBoundary>(
+                find.byKey(const ValueKey('preview')),
+              );
+              final frame = await boundary.toImage(pixelRatio: 1);
+              final bytes = await frame.toByteData(
+                format: ui.ImageByteFormat.png,
+              );
+              await File(
+                '$screenshots/${screen is CustomerShell ? 'menu' : 'checkout'}-${size.width.toInt()}-${dark ? 'dark' : 'light'}.png',
+              ).writeAsBytes(bytes!.buffer.asUint8List());
+              frame.dispose();
+            });
+          }
+        }
+        expect(find.text('Card through Yoco'), findsOneWidget);
+        expect(find.text('Cash on Collection'), findsNothing);
+        await tester.pumpWidget(const SizedBox());
+        harness.controller.dispose();
+      });
+    }
+  }
+
   group('AppController authentication', () {
     test(
       'registers email users, activates the session, and stores profile data',
@@ -566,7 +645,7 @@ void main() {
         await harness.controller.bootstrapFuture;
 
         expect(harness.controller.defaultAddress?.label, 'Home');
-        expect(harness.controller.preferredPaymentMethod, PaymentMethod.eft);
+        expect(harness.controller.preferredPaymentMethod, PaymentMethod.yoco);
 
         await harness.controller.addSavedAddress(
           label: 'Work',
@@ -585,7 +664,7 @@ void main() {
         );
         expect(
           harness.preferences.preferences.preferredPaymentMethod,
-          PaymentMethod.cashDelivery,
+          PaymentMethod.yoco,
         );
 
         await harness.controller.deleteSavedAddress(workAddress.id);
@@ -672,7 +751,7 @@ void main() {
         await expectLater(
           harness.controller.placeOrder(
             orderType: OrderType.delivery,
-            paymentMethod: PaymentMethod.cashDelivery,
+            paymentMethod: PaymentMethod.yoco,
           ),
           throwsA(isA<OrderSubmissionException>()),
         );
@@ -680,7 +759,7 @@ void main() {
 
         await harness.controller.placeOrder(
           orderType: OrderType.delivery,
-          paymentMethod: PaymentMethod.cashDelivery,
+          paymentMethod: PaymentMethod.yoco,
           deliveryAddress:
               '12 Main Street, Bloemfontein\nRing the side gate bell.',
         );
@@ -716,13 +795,13 @@ void main() {
         await expectLater(
           harness.controller.placeOrder(
             orderType: OrderType.pickup,
-            paymentMethod: PaymentMethod.cashCollection,
+            paymentMethod: PaymentMethod.yoco,
           ),
           throwsA(isA<OrderSubmissionException>()),
         );
         await harness.controller.placeOrder(
           orderType: OrderType.pickup,
-          paymentMethod: PaymentMethod.cashCollection,
+          paymentMethod: PaymentMethod.yoco,
         );
 
         expect(harness.orders.requestIds, hasLength(2));
@@ -766,7 +845,7 @@ void main() {
 
         final order = await harness.controller.placeOrder(
           orderType: OrderType.pickup,
-          paymentMethod: PaymentMethod.cashCollection,
+          paymentMethod: PaymentMethod.yoco,
         );
         await harness.controller.advanceOrderStatus(order);
         await Future<void>.delayed(Duration.zero);

@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -52,6 +55,11 @@ order_items (
 
   @override
   Future<OrderModel> createOrder(OrderDraft order, {String? userId}) async {
+    if (order.paymentMethod != PaymentMethod.yoco) {
+      throw const OrderSubmissionException(
+        'Only card payment through Yoco is accepted.',
+      );
+    }
     if (userId == null || userId.isEmpty) {
       throw StateError(
         'A signed-in Supabase user is required to place orders.',
@@ -60,7 +68,7 @@ order_items (
 
     try {
       final response = await _client.rpc(
-        'place_order',
+        'prepare_card_checkout',
         params: {
           'p_customer_name': order.customerName,
           'p_customer_phone': order.customerPhone,
@@ -91,12 +99,71 @@ order_items (
           'The store did not return an order confirmation. Please try again.',
         );
       }
-      final row = await _client
+      final existingPaid = await _client
           .from('orders')
           .select(_orderSelect)
           .eq('id', orderId)
-          .single();
-      return _fromOrderRow(row);
+          .maybeSingle();
+      if (existingPaid != null && existingPaid['payment_status'] == 'paid') {
+        return _fromOrderRow(existingPaid);
+      }
+      final client = HttpClient()
+        ..connectionTimeout = const Duration(seconds: 20);
+      try {
+        final request = await client.postUrl(
+          Uri.parse('https://rastasperiq.co.za/api/yoco/checkout/'),
+        );
+        request.headers.contentType = ContentType.json;
+        request.headers.set(
+          'Authorization',
+          'Bearer ${_client.auth.currentSession?.accessToken ?? ''}',
+        );
+        request.write(jsonEncode({'orderId': orderId, 'source': 'mobile'}));
+        final response = await request.close();
+        final body =
+            jsonDecode(await utf8.decoder.bind(response).join())
+                as Map<String, dynamic>;
+        if (response.statusCode != 200 || body['redirectUrl'] == null) {
+          throw OrderSubmissionException(
+            body['error'] as String? ??
+                'Card checkout is unavailable. Your cart is saved.',
+          );
+        }
+        if (!await launchUrl(
+          Uri.parse(body['redirectUrl'] as String),
+          mode: LaunchMode.externalApplication,
+        )) {
+          throw const OrderSubmissionException(
+            'Could not open secure card checkout. Your cart is saved.',
+          );
+        }
+      } finally {
+        client.close();
+      }
+      for (var attempt = 0; attempt < 120; attempt++) {
+        final paid = await _client
+            .from('orders')
+            .select(_orderSelect)
+            .eq('id', orderId)
+            .maybeSingle();
+        if (paid != null && paid['payment_status'] == 'paid') {
+          return _fromOrderRow(paid);
+        }
+        final draft = await _client
+            .from('checkout_intents')
+            .select('payment_status')
+            .eq('id', orderId)
+            .single();
+        if (draft['payment_status'] == 'failed') {
+          throw const OrderSubmissionException(
+            'Payment failed. No order was placed. Your cart is saved.',
+          );
+        }
+        await Future<void>.delayed(const Duration(seconds: 3));
+      }
+      throw const OrderSubmissionException(
+        'Payment is not confirmed yet. Your cart is saved. A successful payment will appear in Orders, even if you close the app.',
+      );
     } on PostgrestException catch (error) {
       throw OrderSubmissionException(_friendlyOrderError(error));
     }

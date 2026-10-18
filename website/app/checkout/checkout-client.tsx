@@ -10,15 +10,15 @@ import { createBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import { useCustomerAuth } from "@/lib/customer-auth";
 
 type OrderType = "pickup" | "delivery";
-type PaymentMethod = "cash_collection" | "cash_delivery" | "eft" | "yoco";
+type PaymentMethod = "yoco";
 
 export default function CheckoutClient() {
   const { user, profile } = useCustomerAuth();
-  const { entries, subtotal, clear } = useCart();
+  const { entries, subtotal } = useCart();
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [orderType, setOrderType] = useState<OrderType>("pickup");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash_collection");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("yoco");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -66,7 +66,7 @@ export default function CheckoutClient() {
         if (parsed.phone) setPhone(parsed.phone);
         if (parsed.address) setAddress(parsed.address);
         if (parsed.orderType) setOrderType(parsed.orderType);
-        if (parsed.paymentMethod) setPaymentMethod(parsed.paymentMethod);
+        
       }
     } catch {}
   }, []);
@@ -93,17 +93,15 @@ export default function CheckoutClient() {
     if (settings && !globalStoreOpen) fe.store = "Ordering is paused by the restaurant right now.";
     else if (!storeOpen) fe.store = `Store is closed. Hours ${settings?.openingTime}–${settings?.closingTime} (Africa/Johannesburg).`;
     if (orderType === "delivery" && address.trim().length < 8) fe.address = "Enter a full delivery address (at least 8 chars, house + street).";
-    if (orderType === "pickup" && paymentMethod === "cash_delivery") fe.payment = "Cash on Delivery is only for delivery orders.";
-    if (paymentMethod === "yoco" && !yocoAvailable) fe.payment = "Online card payments are unavailable. Please choose another payment method.";
+    if (paymentMethod === "yoco" && !yocoAvailable) fe.payment = "Online card payments are unavailable. Your cart stays saved. Please try again later.";
     if (!canPickup && orderType === "pickup") fe.orderType = "Pickup is unavailable right now.";
     if (!canDelivery && orderType === "delivery") fe.orderType = "Delivery is unavailable right now.";
     setFieldErrors(fe);
     return Object.keys(fe).length === 0;
   };
 
-  const mapPaymentForRpc = (pm: PaymentMethod, ot: OrderType): string => {
+  const mapPaymentForRpc = (pm: PaymentMethod): string => {
     if (pm === "yoco") return "yoco";
-    if (pm === "cash_delivery" && ot === "pickup") return "cash_collection";
     return pm;
   };
 
@@ -126,7 +124,7 @@ export default function CheckoutClient() {
       const accessToken = sessData.session?.access_token ?? anon.accessToken;
 
       requestIdRef.current ??= `web-${crypto.randomUUID()}`;
-      const clientRequestId = requestIdRef.current;
+
       const payloadItems = entries.map((e) => ({
         menu_item_id: e.item.id,
         quantity: e.quantity,
@@ -136,9 +134,18 @@ export default function CheckoutClient() {
       }));
 
       const expectedTotal = totalForType(orderType);
-      const rpcPayment = mapPaymentForRpc(paymentMethod, orderType);
+      const fingerprint = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(JSON.stringify({payloadItems,orderType,expectedTotal,name,phone,address,owner:anon.userId}))))).map(b=>b.toString(16).padStart(2,"0")).join("");
+      try {
+        const saved=JSON.parse(localStorage.getItem("peri_q_checkout_request") ?? "null") as {fingerprint:string;requestId:string}|null;
+        if(saved?.fingerprint===fingerprint) requestIdRef.current=saved.requestId;
+        else requestIdRef.current=`web-${crypto.randomUUID()}`;
+        localStorage.setItem("peri_q_checkout_request",JSON.stringify({fingerprint,requestId:requestIdRef.current}));
+      } catch { /* Checkout still uses in-memory retry protection if storage is unavailable. */ }
+      const clientRequestId=requestIdRef.current;
 
-      const { data, error: rpcError } = await supa.rpc("place_order", {
+      const rpcPayment = mapPaymentForRpc(paymentMethod);
+
+      const { data, error: rpcError } = await supa.rpc("prepare_card_checkout", {
         p_customer_name: name.trim(),
         p_customer_phone: phone.trim(),
         p_order_type: orderType,
@@ -160,7 +167,7 @@ export default function CheckoutClient() {
 
       const orderId = (data as { id?: string })?.id;
       if (!orderId) throw new Error("Store did not return an order confirmation. Please try again.");
-      clear();
+
 
       // If Yoco, initiate checkout session server-side (trusted amount)
       if (paymentMethod === "yoco") {
@@ -173,18 +180,18 @@ export default function CheckoutClient() {
           body: JSON.stringify({ orderId }),
         });
         const json = (await res.json().catch(() => ({}))) as { redirectUrl?: string; error?: string; code?: string };
+        if (json.code === "already_paid") { window.location.href = `/payment/${orderId}/`; return; }
         if (!res.ok || !json.redirectUrl) {
-          // Order already exists as pending/awaiting payment; show order page with retry
-          window.location.href = `/order/${orderId}/?checkout=failure`;
+          // The cart remains saved if checkout cannot start.
+          throw new Error(json.error ?? "Payment could not start. Your cart is saved.");
           return;
         }
-        // The order is saved; payment retries continue from its order page.
+        // Only the signed payment webhook can create the order.
         window.location.href = json.redirectUrl;
         return;
       }
 
-      // Cash/EFT: success
-      window.location.href = `/order/${orderId}/?new=1`;
+
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not place order. Check your connection and try again.");
     } finally {
@@ -254,8 +261,6 @@ export default function CheckoutClient() {
                     onClick={() => {
                       if (!enabled) return;
                       setOrderType(id);
-                      if (id === "pickup" && paymentMethod === "cash_delivery") setPaymentMethod("cash_collection");
-                      if (id === "delivery" && paymentMethod === "cash_collection") setPaymentMethod("cash_delivery");
                     }}
                     className={`rounded-2xl border p-4 text-left transition ${orderType === id ? "border-charcoal bg-charcoal text-white" : enabled ? "border-black/10 bg-white hover:bg-muted" : "border-black/5 bg-muted opacity-50"}`}
                   >
@@ -283,10 +288,7 @@ export default function CheckoutClient() {
               <p className="mt-1 text-xs font-semibold text-ash/70">Cash stays preserved. Yoco is for online card payments. Server validates the total — browser amount is never trusted.</p>
               <div className="mt-4 grid gap-3">
                 {[
-                  { id: "cash_collection" as const, label: "Cash on Collection (pickup)", hint: "Pay in store when you collect", show: true },
-                  { id: "cash_delivery" as const, label: "Cash on Delivery", hint: "Pay the driver on arrival", show: orderType === "delivery" },
-                  { id: "eft" as const, label: "EFT", hint: "Contact the restaurant for bank details and send payment proof", show: true },
-                  { id: "yoco" as const, label: yocoTestMode ? "Test card checkout (Yoco)" : "Pay online with Card (Yoco)", hint: yocoAvailable ? (yocoTestMode ? "Testing only. No real payment is collected. Use cash or EFT for real orders." : "Secure Yoco hosted checkout — Visa, Mastercard, etc.") : "Online card payments are not available yet. Please choose cash or EFT.", show: true },
+                  { id: "yoco" as const, label: yocoTestMode ? "Test card checkout (Yoco)" : "Pay online with Card (Yoco)", hint: yocoAvailable ? (yocoTestMode ? "Test mode: no real payment is collected." : "Secure Yoco hosted checkout — Visa, Mastercard, etc.") : "Card checkout is temporarily unavailable. Your cart stays saved.", show: true },
                 ].filter((m) => m.show).map((m) => (
                   <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 ${paymentMethod === m.id ? "border-charcoal bg-charcoal text-white" : "border-black/10 bg-white"}`}>
                     <input type="radio" name="payment" disabled={m.id === "yoco" && !yocoAvailable} checked={paymentMethod === m.id} onChange={() => setPaymentMethod(m.id)} className="size-5 accent-peri-red" />
@@ -303,9 +305,6 @@ export default function CheckoutClient() {
                   <p className="font-extrabold text-charcoal">How Yoco works</p>
                   <p>You’ll be redirected to Yoco’s secure hosted checkout. After payment, you return here. Your order is only marked <em>paid</em> after the server verifies the Yoco webhook — not just the browser redirect.</p>
                 </div>
-              )}
-              {paymentMethod === "eft" && (
-                <p className="mt-3 text-xs leading-6 text-ash">Contact the restaurant for bank details and send your payment proof with your order number. Staff will confirm the payment.</p>
               )}
             </div>
           </div>
@@ -339,18 +338,18 @@ export default function CheckoutClient() {
               <div className="flex justify-between"><span className="text-ash">Subtotal</span><span className="font-black">R{subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-ash">Delivery fee</span><span className="font-black">{orderType === "delivery" ? `R${deliveryFee.toFixed(2)}` : "—"}</span></div>
               <div className="flex justify-between text-[1.05rem]"><span className="font-black">Total to pay</span><span className="font-black text-peri-red">R{totalForType(orderType).toFixed(2)}</span></div>
-              <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-xs leading-5 text-ash"><ShieldCheck size={16} className="shrink-0 text-leaf" /> Server validates amount. Never trust client total.</p>
+              <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-xs leading-5 text-ash"><ShieldCheck size={16} className="shrink-0 text-leaf" /> Secure card payment through Yoco.</p>
             </div>
 
             <button onClick={handleSubmit} disabled={submitting || entries.length === 0} className="button button-primary mt-6 w-full justify-center disabled:opacity-40">
-              {submitting ? "Placing order…" : paymentMethod === "yoco" ? "Place order & Pay with Yoco" : "Confirm order"}
+              {submitting ? "Placing order…" : paymentMethod === "yoco" ? "Pay securely with Yoco" : "Confirm order"}
               {!submitting && <ArrowRight size={18} />}
             </button>
 
             <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-ash/60">
               <Clock3 size={14} /> {orderType === "delivery" ? "45–60 min (incl. delivery)" : "~25 min"}
             </div>
-            <p className="mt-3 text-center text-xs font-semibold text-ash/60">Orders from website use the same authoritative orders table as the mobile app.</p>
+            <p className="mt-3 text-center text-xs font-semibold text-ash/60">Flame-grilled in Bloemfontein. Prepared after payment.</p>
           </aside>
         </div>
       </section>

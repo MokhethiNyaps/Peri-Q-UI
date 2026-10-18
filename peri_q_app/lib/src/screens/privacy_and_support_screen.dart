@@ -98,17 +98,17 @@ class PrivacyAndSupportScreen extends StatelessWidget {
           const _PrivacySection(
             title: 'Information used',
             body:
-                'The app uses your name, phone number, optional email, delivery address, order history and any EFT proof you choose to upload to process and support orders. Guest checkout creates an anonymous Supabase session so your orders remain private.',
+                'The app uses your name, phone number, optional email, delivery address, order history and payment status to process and support orders. Guest checkout creates an anonymous Supabase session so your orders remain private.',
           ),
           const _PrivacySection(
             title: 'Storage and sharing',
             body:
-                'Order and account data is sent securely to the business Supabase project. Payment proofs are stored in a private bucket. The app has no advertising or analytics SDK and does not sell personal information.',
+                'Order and account data is sent securely to the business Supabase project. Historical payment proofs remain in private storage. New orders use secure Yoco card checkout. The app has no advertising or analytics SDK and does not sell personal information.',
           ),
           const _PrivacySection(
             title: 'Your choices',
             body:
-                'Delivery addresses are optional unless you select delivery. EFT proof is only needed when you choose EFT. Signed-in customers can delete their account from Profile; they can also contact support for privacy help.',
+                'Delivery addresses are optional unless you select delivery. New orders require upfront card payment through Yoco. Signed-in customers can delete their account from Profile; they can also contact support for privacy help.',
           ),
           Container(
             padding: const EdgeInsets.all(16),

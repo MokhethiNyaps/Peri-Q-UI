@@ -69,7 +69,9 @@ class HomeScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 22),
                         ],
-                        const SectionHeader(title: 'Categories'),
+                        const Text('BLOEMFONTEIN · FLAME-GRILLED CHESANYAMA'),
+                        const SizedBox(height: 20),
+                        const SectionHeader(title: 'Find your fire'),
                         const SizedBox(height: 12),
                         SizedBox(
                           height: categoryRailHeight,
@@ -83,17 +85,6 @@ class HomeScreen extends StatelessWidget {
                                 duration: const Duration(milliseconds: 180),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(999),
-                                  boxShadow: selected
-                                      ? [
-                                          BoxShadow(
-                                            color: colors.primary.withValues(
-                                              alpha: 0.2,
-                                            ),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 7),
-                                          ),
-                                        ]
-                                      : null,
                                 ),
                                 child: ChoiceChip(
                                   selected: selected,
@@ -207,7 +198,7 @@ class HomeScreen extends StatelessWidget {
                   sliver: SliverLayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.crossAxisExtent;
-                      final useListLayout = width < 360 || textScale > 1.25;
+                      final useListLayout = width < 560 || textScale > 1.25;
                       final crossAxisCount = width > 760
                           ? 4
                           : width > 560
@@ -562,18 +553,6 @@ class _HeroBanner extends StatelessWidget {
                       Color(0x001A1715),
                     ],
                     stops: [0, 0.48, 0.72, 1],
-                  ),
-                ),
-              ),
-              Positioned(
-                right: -55,
-                bottom: -80,
-                child: Container(
-                  width: 190,
-                  height: 190,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppTheme.chesaOrange.withValues(alpha: 0.17),
                   ),
                 ),
               ),

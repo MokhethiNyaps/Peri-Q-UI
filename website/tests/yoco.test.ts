@@ -10,6 +10,7 @@ vi.mock("@/lib/supabase", () => ({
   readServerSupabaseConfig: () => ({ url: "https://example.supabase.co", serviceRoleKey: "test" }),
   createServiceClient: () => ({
     auth: { getUser: async () => ({ data: { user: { id: db.userId } }, error: null }) },
+    rpc: async (name:string,args:unknown) => {db.calls.push({table:name,method:"rpc",args:[args]});return {data:"order-1",error:null};},
     from: (table: string) => {
       const chain: Record<string, unknown> = {};
       for (const method of ["select", "eq", "maybeSingle", "single", "update", "upsert", "is", "not", "neq", "limit"]) {
@@ -47,7 +48,7 @@ describe("Production webhook verification", () => {
     expect(db.calls).toHaveLength(0);
   });
   it("matches the checkout ID, saves payment, then acknowledges", async () => {
-    db.results = [ok(), ok(order), ok(), ok(), ok({ payment_status: "paid" }), ok(), ok()];
+    db.results = [ok(), ok(order), ok(order), ok(), ok(), ok({ payment_status: "paid" }), ok(), ok()];
     expect((await webhook(signedRequest())).status).toBe(200);
     expect(db.calls).toContainEqual({ table: "orders", method: "eq", args: ["yoco_checkout_id", "ch-1"] });
     expect(db.calls.some(c => c.table === "yoco_webhook_events" && c.method === "update" && (c.args[0] as { processed?: boolean }).processed)).toBe(true);
@@ -76,9 +77,8 @@ describe("Production webhook verification", () => {
   it("does not downgrade paid orders on a late failure", async () => {
     db.results = [ok(), ok({ ...order, payment_status: "paid", paid_at: "2026-10-12" }), ok(), ok(), ok({ payment_status: "paid" }), ok(), ok()];
     expect((await webhook(signedRequest({ ...event, type: "payment.failed" }))).status).toBe(200);
-    expect(db.calls).toContainEqual({ table: "orders", method: "not", args: ["payment_status", "in", "(paid,refunded)"] });
-    const audit = db.calls.find(c => c.table === "payments" && c.method === "upsert");
-    expect(audit?.args[0]).toMatchObject({ status: "succeeded" });
+    expect(db.calls).toContainEqual({table:"checkout_intents",method:"is",args:["paid_at",null]});
+    expect(db.calls.some(c=>c.table==="orders" && c.method==="update")).toBe(false);
   });
 });
 

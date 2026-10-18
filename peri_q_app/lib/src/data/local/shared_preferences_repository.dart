@@ -27,7 +27,22 @@ class FlutterSecurePreferencesStorage implements SecurePreferencesStorage {
   }
 }
 
-class SharedPreferencesRepository implements PreferencesRepository {
+class SharedPreferencesRepository
+    implements PreferencesRepository, CheckoutCartStore {
+  @override
+  Future<Map<String, dynamic>?> loadCheckoutCart(String userId) async {
+    final value = await _secureStorage.read('checkout_cart_$userId');
+    if (value == null) return null;
+    try {
+      return jsonDecode(value) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Future<void> saveCheckoutCart(String userId, Map<String, dynamic> value) =>
+      _secureStorage.write('checkout_cart_$userId', jsonEncode(value));
   static const _sessionKey = 'has_active_session';
   static const _guestKey = 'session_is_guest';
   // These legacy keys contained personal data in SharedPreferences. Keep the
@@ -98,7 +113,7 @@ class SharedPreferencesRepository implements PreferencesRepository {
           ? defaultAddressId
           : (savedAddresses.isEmpty ? null : savedAddresses.first.id),
       preferredPaymentMethod: paymentMethodFromCode(
-        preferences.getString(_preferredPaymentKey) ?? 'cash_collection',
+        preferences.getString(_preferredPaymentKey) ?? 'yoco',
       ),
     );
   }

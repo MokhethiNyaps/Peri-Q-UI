@@ -3,7 +3,7 @@ import CheckoutClient from "./checkout-client";
 
 export const metadata: Metadata = {
   title: "Checkout",
-  description: "Enter your details, choose pickup or delivery, and pay with cash, EFT or Yoco card.",
+  description: "Enter your details, choose pickup or delivery, and pay with Yoco card before your order is placed.",
   alternates: { canonical: "/checkout/" },
 };
 

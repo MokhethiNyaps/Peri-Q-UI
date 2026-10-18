@@ -7,6 +7,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test(
+    'checkout cart and retry ID survive restart and stay scoped to the customer',
+    () async {
+      final secure = _MemorySecurePreferencesStorage();
+      final first = SharedPreferencesRepository(secureStorage: secure);
+      await first.saveCheckoutCart('customer-a', {
+        'items': [
+          {'notes': 'Gate 2'},
+        ],
+        'requestId': 'retry-123',
+      });
+      final restored = SharedPreferencesRepository(secureStorage: secure);
+      expect(
+        (await restored.loadCheckoutCart('customer-a'))?['requestId'],
+        'retry-123',
+      );
+      expect(await restored.loadCheckoutCart('customer-b'), isNull);
+    },
+  );
   group('SharedPreferencesRepository secure personal data', () {
     test('migrates legacy plaintext personal data once', () async {
       SharedPreferences.setMockInitialValues({

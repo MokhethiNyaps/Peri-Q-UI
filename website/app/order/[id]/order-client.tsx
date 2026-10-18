@@ -222,7 +222,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
             {showCancelBanner && (
               <div className="rounded-[1.75rem] border border-black/10 bg-white p-5">
                 <p className="flex items-center gap-2 font-extrabold text-charcoal"><XCircle size={18} className="text-ash" /> Payment was cancelled</p>
-                <p className="mt-1 text-sm text-ash">You left the Yoco checkout without completing. Your order is saved — retry below when ready. No card was charged.</p>
+                <p className="mt-1 text-sm text-ash">You left the Yoco checkout without completing. Your order is saved — retry below when ready. Check the payment status before retrying.</p>
               </div>
             )}
             {showFailureBanner && (
