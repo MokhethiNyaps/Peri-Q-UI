@@ -31,6 +31,7 @@ function signedRequest(value = event, timestamp = String(Math.floor(Date.now() /
   return new Request("https://example.com/api/yoco/webhook", { method: "POST", body: rawBody, headers: { "webhook-id": "delivery-1", "webhook-timestamp": timestamp, "webhook-signature": `v1,${signature}` } });
 }
 beforeEach(() => {
+  vi.unstubAllGlobals();
   db.results = []; db.calls = []; db.userId = "user-a";
   vi.stubEnv("YOCO_SECRET_KEY", "sk_test_example"); vi.stubEnv("YOCO_WEBHOOK_SECRET", secret);
 });
@@ -48,13 +49,13 @@ describe("Production webhook verification", () => {
     expect(db.calls).toHaveLength(0);
   });
   it("matches the checkout ID, saves payment, then acknowledges", async () => {
-    db.results = [ok(), ok(order), ok(order), ok(), ok(), ok({ payment_status: "paid" }), ok(), ok()];
+    db.results = [ok(), ok(order), ok({ ...order, payment_status: "paid" }), ok(), ok(), ok()];
     expect((await webhook(signedRequest())).status).toBe(200);
     expect(db.calls).toContainEqual({ table: "orders", method: "eq", args: ["yoco_checkout_id", "ch-1"] });
     expect(db.calls.some(c => c.table === "yoco_webhook_events" && c.method === "update" && (c.args[0] as { processed?: boolean }).processed)).toBe(true);
   });
   it("retries an unprocessed event when a database write fails", async () => {
-    db.results = [ok({ processed: false }), ok(order), ok(), { data: null, error: { message: "temporary failure" } }];
+    db.results = [ok({ processed: false }), ok(order), ok({ ...order, payment_status: "paid" }), { data: null, error: { message: "temporary failure" } }];
     expect((await webhook(signedRequest())).status).toBe(503);
     expect(db.calls.some(c => c.method === "update" && (c.args[0] as { processed?: boolean }).processed)).toBe(false);
   });
@@ -103,5 +104,50 @@ describe("Checkout ownership", () => {
     const req = new Request("https://example.com/api/yoco/checkout", { method: "POST", body: JSON.stringify({ orderId: "order-1" }), headers: { Authorization: "Bearer test-token" } });
     expect((await checkout(req)).status).toBe(404);
     expect(db.calls.filter(c => c.method === "update")).toHaveLength(0);
+  });
+});
+
+
+
+describe("Safe checkout initiation and retries", () => {
+  const request = () => new Request("https://example.com/api/yoco/checkout", {
+    method: "POST", body: JSON.stringify({ orderId: "order-1", source: "mobile" }),
+    headers: { Authorization: "Bearer test-token" },
+  });
+  const draft = () => ({ ...order, created_at: new Date().toISOString(), client_request_id: "request-1" });
+  it("rejects paid checkouts before returning a previously saved payment link", async () => {
+    db.results = [ok({ ...draft(), payment_status: "paid", redirect_url: "https://c.yoco.com/old" })];
+    expect(await (await checkout(request())).json()).toMatchObject({ code: "already_paid" });
+  });
+  it("uses the trusted amount, stable idempotency key and mobile metadata", async () => {
+    db.results = [ok(draft()), ok()];
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "ch-1", redirectUrl: "https://c.yoco.com/checkout/one", processingMode: "test" })));
+    vi.stubGlobal("fetch", fetchMock);
+    expect((await checkout(request())).status).toBe(200);
+    const options = fetchMock.mock.calls[0][1];
+    expect(JSON.parse(options.body)).toMatchObject({ amount: 12500, currency: "ZAR", metadata: { source: "mobile" } });
+    expect(options.headers["Idempotency-Key"]).toBe("request-1");
+  });
+  it("does not recreate an uncertain checkout beyond the provider idempotency window", async () => {
+    db.results = [ok({ ...draft(), created_at: new Date(Date.now() - 25 * 3600_000).toISOString() })];
+    const fetchMock = vi.fn(); vi.stubGlobal("fetch", fetchMock);
+    expect(await (await checkout(request())).json()).toMatchObject({ code: "checkout_expired" });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+  it("does not expose provider responses or configuration details to customers", async () => {
+    db.results = [ok(draft())];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ description: "sensitive-upstream-detail" }), { status: 403 })));
+    const response = await checkout(request());
+    expect(response.status).toBe(502);
+    const body = await response.text();
+    expect(body).not.toContain("sensitive-upstream-detail");
+    expect(body).not.toContain("YOCO_SECRET_KEY");
+    expect(body).not.toContain("Yoco");
+  });
+  it("audits verified failed payments without creating kitchen orders", async () => {
+    db.results = [ok(), ok(order), ok(), ok()];
+    expect((await webhook(signedRequest({ ...event, type: "payment.failed" }))).status).toBe(200);
+    expect(db.calls.some(c => c.table === "yoco_webhook_events" && c.method === "upsert")).toBe(true);
+    expect(db.calls.some(c => c.method === "rpc")).toBe(false);
   });
 });

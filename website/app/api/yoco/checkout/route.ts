@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error:
-          "Yoco is not configured on the server. Owner: add YOCO_SECRET_KEY (sk_test_/sk_live_) and YOCO_WEBHOOK_SECRET (whsec_...) in Vercel → Project Settings → Environment Variables and redeploy. Test keys work immediately; live keys need verified domain.",
+          "Card payments are temporarily unavailable. Your cart is saved. Please try again later.",
         code: "yoco_not_configured",
       },
       { status: 503 },
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   const supaCfg = readServerSupabaseConfig();
   if (!supaCfg) {
     return NextResponse.json(
-      { error: "Supabase server env missing: set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY in Vercel (Production) and redeploy.", code: "supabase_not_configured" },
+      { error: "Ordering is temporarily unavailable. Your cart is saved. Please try again later.", code: "supabase_not_configured" },
       { status: 503 },
     );
   }
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
   }
   const orderId = (body as { orderId?: unknown })?.orderId;
   if (typeof orderId !== "string" || !orderId.trim()) {
-    return NextResponse.json({ error: "Missing orderId (UUID). Prepare a card checkout first, then call this endpoint.", code: "missing_order_id" }, { status: 400 });
+    return NextResponse.json({ error: "Please return to checkout and try again.", code: "missing_order_id" }, { status: 400 });
   }
 
   const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
@@ -73,9 +73,8 @@ export async function POST(req: Request) {
     if (error) throw error;
     order = (data as Record<string, unknown> | null) ?? null;
     if (!order || order.user_id !== auth.user.id) {
-      return NextResponse.json({ error: "Order not found. Ensure the order was created with the same Supabase project that the website uses.", code: "order_not_found" }, { status: 404 });
+      return NextResponse.json({ error: "Checkout not found for your account. Please return to checkout.", code: "order_not_found" }, { status: 404 });
     }
-    if (order.redirect_url) return NextResponse.json({ redirectUrl: order.redirect_url, checkoutId: order.yoco_checkout_id });
     const paymentStatus = String(order["payment_status"] ?? "unpaid");
     const paidAt = order["paid_at"] as string | null;
     if (paymentStatus === "paid" || !!paidAt) {
@@ -84,19 +83,31 @@ export async function POST(req: Request) {
     const pm = String(order["payment_method"] ?? "");
     if (pm !== "yoco" && pm !== "card") {
       return NextResponse.json(
-        { error: `Order payment_method is '${pm}'. Prepare checkout with paymentMethod 'yoco' at checkout, or change payment method to Yoco.`, code: "wrong_payment_method" },
+        { error: "Only card payments are supported. Please return to checkout.", code: "wrong_payment_method" },
         { status: 409 },
       );
     }
 
     const totalPrice = Number(order["total_price"] ?? 0);
     const amountCents = Math.round(totalPrice * 100);
-    if (!Number.isFinite(amountCents) || amountCents < 200) {
+    if (!Number.isSafeInteger(amountCents) || amountCents < 200) {
       // Yoco minimum R2.00 = 200c
-      return NextResponse.json({ error: `Order amount R${totalPrice.toFixed(2)} is below Yoco minimum R2.00 or invalid. Check menu prices.`, code: "amount_too_small" }, { status: 422 });
+      return NextResponse.json({ error: "The order total must be at least R2.00. Please review your cart.", code: "amount_too_small" }, { status: 422 });
     }
     if (String(order["payment_status"]) === "refunded") {
       return NextResponse.json({ error: "Order was refunded; cannot create a new checkout.", code: "refunded" }, { status: 409 });
+    }
+
+    const expectedMode = yocoEnv.secretKey.startsWith("sk_test_") ? "test" : "live";
+    if (order.yoco_checkout_id && order.yoco_mode !== expectedMode) {
+      return NextResponse.json({ error: "This checkout is no longer available. Contact the restaurant before paying again.", code: "checkout_mode_changed" }, { status: 409 });
+    }
+    if (order.redirect_url) return NextResponse.json({ redirectUrl: order.redirect_url, checkoutId: order.yoco_checkout_id });
+    // Provider idempotency keys expire after 24 hours. Never recreate an
+    // uncertain session after that window, even if its linkage write failed.
+    const createdAt = Date.parse(String(order.created_at ?? ""));
+    if (!Number.isFinite(createdAt) || Date.now() - createdAt >= 23 * 60 * 60 * 1000) {
+      return NextResponse.json({ error: "This checkout needs a payment check. Contact the restaurant before paying again.", code: "checkout_expired" }, { status: 409 });
     }
 
     const siteUrl = getSiteUrl();
@@ -111,7 +122,7 @@ export async function POST(req: Request) {
     const metadata: Record<string, unknown> = {
       order_id: String(order["id"]),
       order_number: String(order["order_number"] ?? ""),
-      source: "website",
+      source: mobile ? "mobile" : "website",
     };
 
     const yocoBody = {
@@ -132,6 +143,7 @@ export async function POST(req: Request) {
         "Idempotency-Key": idempotencyKey,
       },
       body: JSON.stringify(yocoBody),
+      signal: AbortSignal.timeout(20_000),
     });
 
     const text = await res.text();
@@ -143,17 +155,8 @@ export async function POST(req: Request) {
     }
 
     if (!res.ok) {
-      const detail = (json["description"] as string) || (json["error"] as string) || text || `Yoco returned ${res.status}`;
-      // Map common errors
-      return NextResponse.json(
-        {
-          error: `Yoco checkout failed: ${detail}. Check YOCO_SECRET_KEY (test vs live), amount >= R2.00, and that site URL is ${siteUrl} (live requires verified domain).`,
-          code: "yoco_error",
-          yocoStatus: res.status,
-          yocoBody: json,
-        },
-        { status: 502 },
-      );
+      console.error("Card checkout provider request failed", { status: res.status });
+      return NextResponse.json({ error: "Payment could not start. Please try again; your cart is saved.", code: "yoco_error" }, { status: 502 });
     }
 
     const checkoutId = String(json["id"] ?? "");
@@ -161,8 +164,8 @@ export async function POST(req: Request) {
     const processingMode = (json["processingMode"] as string) ?? (json["processing_mode"] as string) ?? (yocoEnv.secretKey.startsWith("sk_test_") ? "test" : "live");
     const mode = processingMode === "test" ? "test" : processingMode === "live" ? "live" : null;
 
-    if (!checkoutId || !redirectUrl) {
-      return NextResponse.json({ error: "Yoco did not return redirectUrl. Response: " + text.slice(0, 800), code: "yoco_bad_response", yocoBody: json }, { status: 502 });
+    if (!checkoutId || !redirectUrl || mode !== expectedMode) {
+      return NextResponse.json({ error: "Payment could not start. Please try again; your cart is saved.", code: "yoco_bad_response" }, { status: 502 });
     }
 
     // Persist checkout linkage (idempotent)
@@ -184,14 +187,15 @@ export async function POST(req: Request) {
         .not("payment_status", "in", "(paid,refunded)");
       if (orderError) throw orderError;
 
-    } catch (e) {
-      console.error("Could not persist Yoco checkout", e);
+    } catch {
+      console.error("Could not persist card checkout", { checkoutId });
       return NextResponse.json({ error: "Could not save payment details. Please retry from your order page.", code: "payment_save_failed" }, { status: 503 });
     }
 
     return NextResponse.json({ checkoutId, redirectUrl, amountCents, mode, orderId: String(order["id"]) });
   } catch (e) {
-    console.error("yoco checkout error", e);
-    return NextResponse.json({ error: e instanceof Error ? e.message : "Could not create Yoco checkout.", code: "internal" }, { status: 500 });
+    console.error("Card checkout request failed", { type: e instanceof Error ? e.name : "unknown" });
+    return NextResponse.json({ error: "Payment could not start. Please try again; your cart is saved.", code: "internal" }, { status: 503 });
   }
 }
+

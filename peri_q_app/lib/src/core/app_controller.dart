@@ -639,7 +639,7 @@ class AppController extends ChangeNotifier {
     String? deliveryAddress,
   }) async {
     if (paymentMethod != PaymentMethod.yoco) {
-      throw const OrderSubmissionException('Pay by card through Yoco.');
+      throw const OrderSubmissionException('Pay by card to continue.');
     }
     final sessionRevision = _sessionRevision;
     if (cart.isEmpty) {
@@ -1167,3 +1167,4 @@ class AppController extends ChangeNotifier {
     return _categoryPriority(item.category) < 1000;
   }
 }
+

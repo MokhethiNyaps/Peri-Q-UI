@@ -216,7 +216,7 @@ export default function MenuClient() {
                         <ArrowRight size={16} />
                       </button>
                     </div>
-                    <p className="mt-2 text-[0.68rem] font-semibold text-ash/70">Price validated on server at checkout.</p>
+                    <p className="mt-2 text-[0.68rem] font-semibold text-ash">Price validated on server at checkout.</p>
                   </div>
                 </article>
               ))}
@@ -324,3 +324,4 @@ export default function MenuClient() {
     </main>
   );
 }
+

@@ -52,7 +52,7 @@ export default function CartClient() {
                             <h3 className="font-display text-lg font-black uppercase leading-none">{e.item.name}</h3>
                             <p className="mt-1 text-xs font-semibold text-ash">{e.item.category} • R{e.item.price.toFixed(0)} each {e.spiceLevel ? `• ${e.spiceLevel}` : ""}</p>
                             {e.selectedAddOns.length > 0 && <p className="mt-1 text-xs text-peri-red">+ {e.selectedAddOns.map((a) => `${a.name} (R${a.price.toFixed(0)})`).join(", ")}</p>}
-                            {e.notes && <p className="mt-1 line-clamp-2 text-xs italic text-ash/70">&ldquo;{e.notes}&rdquo;</p>}
+                            {e.notes && <p className="mt-1 line-clamp-2 text-xs italic text-ash">&ldquo;{e.notes}&rdquo;</p>}
                           </div>
                           <button onClick={() => remove(e.id)} aria-label="Remove item" className="grid size-9 place-items-center rounded-full border border-black/10 bg-white text-ash hover:text-peri-red">
                             <Trash2 size={16} />
@@ -93,10 +93,11 @@ export default function CartClient() {
               <Link href="/menu/" className="button w-full justify-center border border-black/10 bg-white text-charcoal">Continue shopping</Link>
             </div>
 
-            <p className="mt-4 text-center text-xs font-semibold text-ash/60">Website and app share the same Supabase orders table — kitchen sees website orders instantly.</p>
+            <p className="mt-4 text-center text-xs font-semibold text-ash">Website and app share the same Supabase orders table — kitchen sees website orders instantly.</p>
           </aside>
         </div>
       </section>
     </main>
   );
 }
+

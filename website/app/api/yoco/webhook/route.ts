@@ -64,55 +64,46 @@ export async function POST(req: Request) {
       const result = await svc.rpc("finalize_card_checkout", { p_checkout_id: checkoutId, p_payment_id: paymentId, p_amount: amount, p_mode: mode });
       if (result.error) throw result.error;
     } else {
-      await checked(svc.from("checkout_intents").update({payment_status:"failed"}).eq("yoco_checkout_id",checkoutId).is("paid_at",null));
-      return NextResponse.json({ok:true});
+      await checked(svc.from("checkout_intents").update({ payment_status: "failed" })
+        .eq("yoco_checkout_id", checkoutId).is("paid_at", null)
+        .not("payment_status", "in", "(paid,refunded)"));
+      // Draft failures have no order row. Keep their verified audit record
+      // without inventing an unpaid kitchen order or storing card details.
+      await checked(svc.from("yoco_webhook_events").upsert({
+        id: eventId, type: eventType,
+        payload: { id: eventId, type: eventType, payload: { id: paymentId, amount, currency: "ZAR", mode, metadata: { checkoutId } } },
+        yoco_checkout_id: checkoutId, processed: true, processed_at: new Date().toISOString(),
+      }, { onConflict: "id", ignoreDuplicates: true }));
+      return NextResponse.json({ ok: true });
     }
     const order = await checked(svc.from("orders")
       .select("id,total_price,payment_status,paid_at,payment_amount_cents,yoco_checkout_id,yoco_mode,payment_method")
       .eq("yoco_checkout_id", checkoutId).maybeSingle());
-    if (!order) throw new Error("Order finalization did not persist.");
+    if (!order || !["paid", "refunded"].includes(order.payment_status)) throw new Error("Order finalization did not persist a confirmed payment.");
     const trustedAmount = Number(order.payment_amount_cents ?? Math.round(Number(order.total_price) * 100));
     if (trustedAmount !== amount || order.yoco_mode !== mode || !["yoco", "card"].includes(order.payment_method)) {
       return NextResponse.json({ error: "Payment does not match this order." }, { status: 422 });
     }
     const inserted = await svc.from("yoco_webhook_events").upsert({
-      id: eventId, type: eventType, payload: event, order_id: order.id,
+      id: eventId, type: eventType, payload: { id: eventId, type: eventType, payload: { id: paymentId, amount, currency: "ZAR", mode, metadata: { checkoutId } } }, order_id: order.id,
       yoco_checkout_id: checkoutId, processed: false,
     }, { onConflict: "id", ignoreDuplicates: true });
     if (inserted.error) throw inserted.error;
 
     const now = new Date().toISOString();
-    const success = eventType === "payment.succeeded";
-    // Conditional writes protect a paid/refunded order from late failure events.
-    if (success) {
-      await checked(svc.from("orders").update({
-        payment_status: "paid", paid_at: order.paid_at ?? now,
-        yoco_payment_id: paymentId, updated_at: now,
-      }).eq("id", order.id).neq("payment_status", "refunded"));
-    } else {
-      await checked(svc.from("orders").update({
-        payment_status: "failed", yoco_payment_id: paymentId, updated_at: now,
-      }).eq("id", order.id).is("paid_at", null).not("payment_status", "in", "(paid,refunded)"));
-    }
-    const current = await checked(svc.from("orders").select("payment_status").eq("id", order.id).single());
-    if (!current) throw new Error("Order disappeared during payment processing.");
-    if (current.payment_status !== "refunded") {
-      const payment = {
+    // finalize_card_checkout is the only writer that creates a paid order.
+    // Its row lock and transaction protect duplicate/concurrent deliveries.
+    if (order.payment_status !== "refunded") {
+      await checked(svc.from("payments").upsert({
         order_id: order.id, yoco_checkout_id: checkoutId, amount_cents: amount,
-        currency: "ZAR", status: current.payment_status === "paid" ? "succeeded" : "failed",
-        yoco_payment_id: paymentId, webhook_event_id: eventId, raw_payload: event, mode, updated_at: now,
-      };
-      if (success || current.payment_status === "paid") {
-        await checked(svc.from("payments").upsert(payment, { onConflict: "order_id" }));
-      } else {
-        // Never downgrade a succeeded payment if another webhook arrived concurrently.
-        await checked(svc.from("payments").update(payment).eq("order_id", order.id).neq("status", "succeeded"));
-      }
+        currency: "ZAR", status: "succeeded", yoco_payment_id: paymentId,
+        webhook_event_id: eventId, mode, updated_at: now,
+      }, { onConflict: "order_id" }));
     }
     await checked(svc.from("yoco_webhook_events").update({ processed: true, processed_at: now }).eq("id", eventId));
     return NextResponse.json({ ok: true, id: eventId, orderId: order.id });
   } catch (error) {
-    console.error("Yoco event processing failed", error);
+    console.error("Payment event processing failed", { eventId, type: error instanceof Error ? error.name : "database" });
     return NextResponse.json({ error: "Processing failed. Retry later." }, { status: 503 });
   }
 }
@@ -120,3 +111,4 @@ export async function POST(req: Request) {
 export async function GET() {
   return NextResponse.json({ ok: true, message: "Yoco webhook endpoint. Send signed events using POST." });
 }
+

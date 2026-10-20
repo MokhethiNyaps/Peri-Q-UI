@@ -73,8 +73,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessJsonLd) }}
       />
 
-      <section className="hero-grid relative isolate overflow-hidden bg-charcoal text-white">
-        <div className="hero-glow absolute -right-40 top-12 -z-10 size-[42rem] rounded-full" />
+      <section className="relative isolate overflow-hidden bg-charcoal text-white">
         <div className="absolute -bottom-24 -left-28 -z-10 size-72 rounded-full bg-peri-red/20 blur-3xl" />
 
         <div className="site-shell grid min-h-[calc(100svh-5rem)] items-center gap-10 py-16 lg:grid-cols-[1.12fr_0.88fr] lg:py-20">
@@ -296,3 +295,4 @@ export default function HomePage() {
     </main>
   );
 }
+

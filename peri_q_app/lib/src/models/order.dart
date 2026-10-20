@@ -82,7 +82,7 @@ extension PaymentMethodX on PaymentMethod {
       case PaymentMethod.card:
         return 'Card';
       case PaymentMethod.yoco:
-        return 'Yoco';
+        return 'Card';
     }
   }
 }
@@ -288,3 +288,4 @@ class OrderModel {
     };
   }
 }
+

@@ -57,7 +57,7 @@ order_items (
   Future<OrderModel> createOrder(OrderDraft order, {String? userId}) async {
     if (order.paymentMethod != PaymentMethod.yoco) {
       throw const OrderSubmissionException(
-        'Only card payment through Yoco is accepted.',
+        'Only card payment is accepted.',
       );
     }
     if (userId == null || userId.isEmpty) {
@@ -346,3 +346,4 @@ order_items (
     return 'We could not place the order. Check your connection and try again; your cart is still saved.';
   }
 }
+
