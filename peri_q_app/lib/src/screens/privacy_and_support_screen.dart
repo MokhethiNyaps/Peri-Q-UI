@@ -232,4 +232,3 @@ class _PrivacySection extends StatelessWidget {
     );
   }
 }
-

@@ -1167,4 +1167,3 @@ class AppController extends ChangeNotifier {
     return _categoryPriority(item.category) < 1000;
   }
 }
-

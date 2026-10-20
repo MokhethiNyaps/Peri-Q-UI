@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/payment_config.dart';
 import '../../models/menu_item.dart';
 import '../../models/order.dart';
 import '../../repositories/order_repository.dart';
@@ -56,9 +57,7 @@ order_items (
   @override
   Future<OrderModel> createOrder(OrderDraft order, {String? userId}) async {
     if (order.paymentMethod != PaymentMethod.yoco) {
-      throw const OrderSubmissionException(
-        'Only card payment is accepted.',
-      );
+      throw const OrderSubmissionException('Only card payment is accepted.');
     }
     if (userId == null || userId.isEmpty) {
       throw StateError(
@@ -107,12 +106,16 @@ order_items (
       if (existingPaid != null && existingPaid['payment_status'] == 'paid') {
         return _fromOrderRow(existingPaid);
       }
+      final checkoutEndpoint = cardCheckoutUri();
+      if (checkoutEndpoint == null) {
+        throw const OrderSubmissionException(
+          'Card payments are temporarily unavailable. Your cart is saved.',
+        );
+      }
       final client = HttpClient()
         ..connectionTimeout = const Duration(seconds: 20);
       try {
-        final request = await client.postUrl(
-          Uri.parse('https://rastasperiq.co.za/api/yoco/checkout/'),
-        );
+        final request = await client.postUrl(checkoutEndpoint);
         request.headers.contentType = ContentType.json;
         request.headers.set(
           'Authorization',
@@ -346,4 +349,3 @@ order_items (
     return 'We could not place the order. Check your connection and try again; your cart is still saved.';
   }
 }
-

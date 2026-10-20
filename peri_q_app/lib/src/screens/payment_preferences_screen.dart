@@ -181,4 +181,3 @@ class _PaymentPreferenceCard extends StatelessWidget {
     );
   }
 }
-

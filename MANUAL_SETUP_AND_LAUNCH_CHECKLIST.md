@@ -25,12 +25,14 @@ No production migration, credential change, payment, app publication, or manual 
 
 - Package: `za.co.rastasperiq.ordering`; checked-in version `1.0.5+6`.
 - Use Java 21, Android API 36/build tools 36.0.0, and the supported Flutter SDK. This pass used Flutter 3.47.7/Dart 3.13.5 for analysis/tests.
-- Build an installable debug test APK with `flutter build apk --debug --dart-define-from-file=<local-test-config.json>`. The file contains only a staging Supabase URL and publishable key.
+- Build an installable debug test APK with `flutter build apk --debug --dart-define-from-file=<local-test-config.json>`. The file contains a staging `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and public `CARD_CHECKOUT_URL=https://<staging-web-host>/api/yoco/checkout/`. Never use a staging Supabase project with the production payment endpoint. Only HTTPS endpoints without embedded credentials, query strings or fragments are accepted.
 - Never distribute a test APK with server keys or a payment bypass. A debug-signed APK generally cannot replace a Play-installed app signed with the production key; do not uninstall a live app without considering local data loss.
 - Production signing requires the existing protected signing credentials. Check the current Play versionCode and increment it before an actual release. No signing credentials were created and no Play release was submitted.
 
 ## Recovery
 
 Keep payments disabled if migration or verification fails. Do not revert to accepting unverified/cash orders as an emergency shortcut. Preserve payment intents, verified events and historical rows for reconciliation. Prefer rolling back the website/client to the last compatible release while investigating; the card-only migration does not provide a tested down migration. Have a DBA prepare a reviewed recovery script and take a backup before production schema changes. Reconcile payments received during any outage before retrying or issuing refunds.
+
+The attempted local APK build is blocked by HTTP 403 while resolving Maven `org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3`. Use a build environment with access to that required artifact; do not substitute dependency versions merely to conceal the failure.
 
 See `IMPLEMENTATION_REPORT_20261020.md` for actual checks and remaining limitations.
