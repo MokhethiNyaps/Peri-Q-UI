@@ -1390,6 +1390,7 @@ as $$
 declare
   settings public.app_settings%rowtype;
   existing_order_id uuid;
+  existing_draft public.checkout_intents%rowtype;
   created_order_id uuid;
   item_json jsonb;
   menu_row public.menu_items%rowtype;
@@ -1424,11 +1425,25 @@ begin
   end if;
 
   perform pg_advisory_xact_lock(hashtext(auth.uid()::text || p_client_request_id));
-  select id into existing_order_id
+  select * into existing_draft
   from public.checkout_intents
   where user_id = auth.uid() and client_request_id = p_client_request_id;
-  if existing_order_id is not null then
-    return jsonb_build_object('id', existing_order_id);
+
+  -- A retried request may only reuse its draft while the request is unchanged.
+  -- Reusing an identifier after the cart, fulfilment or total changed would
+  -- return the earlier draft and charge its amount instead of the current one.
+  if existing_draft.id is not null then
+    if existing_draft.order_type is distinct from p_order_type
+       or existing_draft.total_price is distinct from p_expected_total
+       or coalesce(existing_draft.delivery_address, '') is distinct from
+          coalesce(
+            case when p_order_type = 'delivery' then trim(p_delivery_address) else null end,
+            ''
+          )
+    then
+      raise exception 'Checkout details changed. Please restart checkout.' using errcode = 'P0001';
+    end if;
+    return jsonb_build_object('id', existing_draft.id);
   end if;
 
   select * into settings from public.app_settings where id = 'default';
