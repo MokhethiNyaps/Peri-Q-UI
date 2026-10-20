@@ -133,8 +133,7 @@ client_request_id even when the order type, address or total had changed, so a m
 switched pickup to delivery could be shown R75 and charged R45. The fix validates the reused draft
 and raises 'Checkout details changed. Please restart checkout.' in
 peri_q_app/supabase/migrations/20261017000000_card_only_checkout.sql and the matching function in
-peri_q_app/supabase/schema.sql. Merge PR #3 (arena/a3ab8541-peri-q-ui -> main, commits a44ef2e and
-670b236) or cherry-pick commit a44ef2e onto the PR branch. PR #3 touches only files that PR #2 does not,
+peri_q_app/supabase/schema.sql. Merge PR #3 (arena/a3ab8541-peri-q-ui -> main; the fix is commit a44ef2e) or cherry-pick commit a44ef2e onto the PR branch. PR #3 touches only files that PR #2 does not,
 so it merges into main cleanly before or after PR #2; after merging, run `git merge main` (or rebase) on
 the PR branch so the staging tests use the fixed function.
 Then: in peri_q_app/lib/src/data/supabase/supabase_order_repository.dart map
