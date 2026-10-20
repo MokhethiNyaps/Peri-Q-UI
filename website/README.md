@@ -1,13 +1,13 @@
 # RastasperiQ website — Ordering + Yoco
 
-Next.js **server** site for `rastasperiq.co.za` on Vercel (`website/` root). Shares the same Supabase Postgres as the Android app. Website and app both call `place_order` RPC — one authoritative `orders` table, kitchen sees website orders instantly.
+Next.js **server** site for `rastasperiq.co.za` on Vercel (`website/` root). Shares the same Supabase Postgres as the Android app. Website and app both call `prepare_card_checkout` to create a private draft. Only the signed payment webhook calls `finalize_card_checkout`, which creates the authoritative paid order and its items atomically.
 
 ## Pages
 
 - `/` — landing (hero with **Order on website** CTA, TodaysSpecialLive)
 - `/menu/` — browse live `menu_items` + `menu_categories` (RLS public read), add to cart, server price re-validated at checkout
 - `/cart/` — quantities ±, remove, subtotal, delivery fee preview
-- `/checkout/` — name/phone, pickup/delivery + address, payment choice (cash/eft/Yoco), creates order via `place_order`
+- `/checkout/` — name/phone, pickup/delivery + address, card-only payment, creates a draft via `prepare_card_checkout`
 - `/order/[id]/` — order confirmation, fulfilment vs payment status separate, Yoco retry
 - `/get-app/` — sends Android visitors into the Play Store app and shows a scannable QR to everyone else
 - `/privacy-policy/` — public privacy policy for the Android app
@@ -27,7 +27,7 @@ Next.js **server** site for `rastasperiq.co.za` on Vercel (`website/` root). Sha
 The rules live in `app/get-app/page.tsx` and `components/get-app-panel.tsx`; the
 links are configured in `lib/site.ts` under `app`.
 
-The page is a static export, so device detection happens in the browser after
+The page is prerendered in the server-mode Next.js build, so device detection happens in the browser after
 hydration, not on the server. That is why the page renders a neutral "Checking
 your device…" state first.
 
@@ -68,9 +68,9 @@ Only social links with a configured URL are displayed, so the site never sends v
 ## Shared ordering (single authoritative backend)
 
 - Uses **same Supabase project** as the Android app (`NEXT_PUBLIC_SUPABASE_URL/_PUBLISHABLE_KEY`). Menu, `app_settings`, `orders`, `order_items`, `payments` and `yoco_webhook_events` are single source; no duplicate customer or menu tables.
-- Website signs in anonymously (Supabase Auth → Anonymous enabled) like the app, then calls `place_order` RPC which server-calculates trusted totals and enforces store hours, availability, delivery fee.
-- Never trust client total — Yoco amount is `orders.total_price * 100` verified server-side before creating checkout; webhook re-validates amount matches order before marking `paid`.
-- `payment_status` (`unpaid/pending/paid/failed/...`) is separate from fulfilment `status` (`pending/preparing/ready/...`). Yoco webhook only flips `payment_status`, never auto-completes preparation.
+- Website signs in anonymously (Supabase Auth → Anonymous enabled) like the app, then calls `prepare_card_checkout` RPC which server-calculates trusted totals and enforces store hours, availability, delivery fee.
+- Never trust client total — Yoco amount is `checkout_intents.total_price * 100` verified server-side before creating checkout; webhook re-validates amount matches order before marking `paid`.
+- `payment_status` (`unpaid/pending/paid/failed/...`) is separate from fulfilment `status` (`pending/preparing/ready/...`). The webhook finalizes the draft as a paid order, never auto-completes preparation.
 
 ## Connect Supabase + Yoco (Vercel env)
 
@@ -119,3 +119,10 @@ Email confirmation and password recovery need these production URLs in Supabase 
 Keep existing mobile redirects and set the Site URL to `https://rastasperiq.co.za`. Configure a production SMTP provider to send reset emails to customers outside your Supabase project team; the default Supabase email service limits recipients. Development can use equivalent callback URLs on `http://localhost:3000`.
 
 Order status updates run in the background every eight seconds while the page is visible. Slow or failed updates retain the order content instead of replacing it with a loading placeholder.
+
+
+## Card-only rollout gate (20 October 2026)
+
+The connected production database does **not** yet contain `checkout_intents`, `prepare_card_checkout`, or `finalize_card_checkout`. Source-level tests passing does not make live checkout operational. See `../IMPLEMENTATION_REPORT_20261020.md` and `../MANUAL_SETUP_AND_LAUNCH_CHECKLIST.md` for verification boundaries and rollout order. Do not reapply the entire schema file to production.
+
+The current Checkout API does not document a payment-method filter in create-checkout requests. Confirm with the merchant dashboard/Yoco support that only cards are enabled; an app-only card label cannot enforce the hosted page's methods.

@@ -1,74 +1,38 @@
-# Yoco setup for RastasperiQ
+# Card-payment rollout checklist — 20 October 2026
 
-The database and website are prepared. Card payments stay unavailable until the server credentials below are configured. Cash and EFT remain available.
+This replaces the previous checklist's stale cash/EFT instructions. Historical claims in earlier revisions are not evidence that the current card-only flow is deployed.
 
-## Already completed
+## Current production gate
 
-- Merged all GitHub branches into `main`; removed the merged branches.
-- Applied the Yoco payment database migration to the existing Peri Q Supabase project.
-- Verified cash orders, Yoco pending status, duplicate-request protection and changed-price rejection inside a rolled-back transaction. The 22 existing orders were preserved.
-- Confirmed Supabase email and anonymous sign-ins are enabled.
-- Configured Vercel production `SUPABASE_URL` and `NEXT_PUBLIC_SITE_URL`. The existing public Supabase variables are already present.
-- Website menu, cart and checkout pages are deployed on https://rastasperiq.co.za.
+Read-only inspection of the connected **Peri Q** Supabase project found `orders`, `payments`, `yoco_webhook_events`, and `place_order`, but no `checkout_intents`, `prepare_card_checkout`, or `finalize_card_checkout`. The source already depends on those objects. Live card-only ordering is not verified or ready to release.
 
-## 1. Open Yoco Checkout API
+Vercel metadata confirms the production server secret names already exist. Do not paste or replace them merely to repeat setup; verify that their mode and registered webhook match. Preview has only public client configuration, so it cannot currently process payments.
 
-Create or sign in to the restaurant's Yoco account and complete its business/payout profile.
+No production migration, credential change, payment, app publication, or manual deployment was performed in this implementation.
 
-In the Yoco App or https://app.yoco.com, go to **Sales → e-Commerce integrations → Checkout API → How to connect**. If your account does not show Checkout API, use Yoco's in-app support.
+## Safe rollout order
 
-Under **Verified domains**, add **rastasperiq.co.za**. Yoco reviews the website before unlocking live keys. You can start with test keys while waiting.
+1. Prepare a separate staging Supabase project. Copy schema/configuration without private customer data. Confirm a backup and recovery route for production.
+2. Compare actual migration history and schema with `peri_q_app/supabase/schema.sql`. Test the existing `20261017000000_card_only_checkout.sql` against a staging copy of the previous schema. Do not apply the entire schema file to production and do not blindly rerun this migration: its policy, primary-key, column, and trigger additions are not all repeatable.
+3. Configure a staging website with the matching public Supabase URL/key and server-only `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `YOCO_SECRET_KEY`, `YOCO_WEBHOOK_SECRET`, and staging `NEXT_PUBLIC_SITE_URL`. Do not put server secrets in `NEXT_PUBLIC_*`, Dart defines, chat, or GitHub.
+4. Register the canonical HTTPS webhook `/api/yoco/webhook/` with Yoco using the same test key. Verify signed success/failure events and retry behavior. The helper `website/scripts/register-yoco-webhook.ps1` can register the endpoint; save the returned webhook secret securely.
+5. Confirm with the merchant dashboard or Yoco support that the hosted checkout only offers cards. The documented create-checkout request has no per-request payment-method filter; the application's card-only UI cannot enforce dashboard settings. Do not invent a parameter or silently reject money already collected by another enabled method.
+6. Run staging payment success, decline, cancellation, lost connection, late webhook, duplicate/concurrent delivery, duplicate tap, changed price, wrong owner/amount/currency/mode, expiry, and interrupted mobile lifecycle tests. Confirm one paid order, one fulfilment/notification, correct amount, and reconciliation. URL query strings are not proof of payment.
+7. Obtain separate authorization before changing production credentials or applying production migrations. Coordinate the backend cutover and client availability: the card-only migration deliberately disables old `place_order` calls, so previously installed cash-only apps cannot create new orders after cutover. Notify users to update; preserve historical orders, sessions and payment records.
+8. Deploy the reviewed backend migration, compatible website/webhook and test the public readiness endpoint, then release the compatible mobile update through a test track. Verify old clients fail clearly. Only enable live payments after merchant approval and a supervised small authorized payment/reconciliation.
 
-Official instructions: https://support.yoco.help/en/articles/739322-yoco-checkout-api
+## Android testing and release
 
-## 2. Add the server credentials in Vercel
+- Package: `za.co.rastasperiq.ordering`; checked-in version `1.0.5+6`.
+- Use Java 21, Android API 36/build tools 36.0.0, and the supported Flutter SDK. This pass used Flutter 3.47.7/Dart 3.13.5 for analysis/tests.
+- Build an installable debug test APK with `flutter build apk --debug --dart-define-from-file=<local-test-config.json>`. The file contains a staging `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and public `CARD_CHECKOUT_URL=https://<staging-web-host>/api/yoco/checkout/`. Never use a staging Supabase project with the production payment endpoint. Only HTTPS endpoints without embedded credentials, query strings or fragments are accepted.
+- Never distribute a test APK with server keys or a payment bypass. A debug-signed APK generally cannot replace a Play-installed app signed with the production key; do not uninstall a live app without considering local data loss.
+- Production signing requires the existing protected signing credentials. Check the current Play versionCode and increment it before an actual release. No signing credentials were created and no Play release was submitted.
 
-Open https://vercel.com/mokhethi/peri-q-ui/settings/environment-variables and add these to **Production**:
+## Recovery
 
-| Variable | Value / source |
-| --- | --- |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Peri Q project → Project Settings → API Keys → server secret key, or the legacy `service_role` key. This is different from the publishable key. |
-| `YOCO_SECRET_KEY` | Start with the Yoco test secret key, normally `sk_test_...`. After testing and domain approval, replace it with the live secret key, normally `sk_live_...`. |
-| `YOCO_WEBHOOK_SECRET` | The secret returned when the Yoco webhook is registered, normally `whsec_...`. Save it immediately: Yoco provides it once. Use the webhook registered with the same test/live key as checkout. |
+Keep payments disabled if migration or verification fails. Do not revert to accepting unverified/cash orders as an emergency shortcut. Preserve payment intents, verified events and historical rows for reconciliation. Prefer rolling back the website/client to the last compatible release while investigating; the card-only migration does not provide a tested down migration. Have a DBA prepare a reviewed recovery script and take a backup before production schema changes. Reconcile payments received during any outage before retrying or issuing refunds.
 
-Use plain values only: do not include the variable name, quotation marks, or spaces around the value. Keep these three values server-only; do not create `NEXT_PUBLIC_` versions and do not paste secrets into chat or GitHub.
+The attempted local APK build is blocked by HTTP 403 while resolving Maven `org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3`. Use a build environment with access to that required artifact; do not substitute dependency versions merely to conceal the failure.
 
-A Yoco public key (`pk_...`) is not needed by this website's hosted Checkout API integration.
-
-## 3. Register the webhook
-
-Register the following HTTPS endpoint with Yoco:
-
-**https://rastasperiq.co.za/api/yoco/webhook/**
-
-Keep the final slash: this is the site's canonical URL, so Yoco can POST directly without a redirect.
-
-Yoco's documented registration method is **POST https://payments.yoco.com/api/webhooks**, authenticated with the test secret key first. The registration name can be `rastasperiq-website` and the URL is the endpoint above. Save the returned `secret` as `YOCO_WEBHOOK_SECRET` in Vercel.
-
-If your Yoco interface offers webhook registration, use it. Otherwise use the prepared local helper: `website/scripts/register-yoco-webhook.ps1`. Right-click it and choose **Run with PowerShell**, or run it from a PowerShell terminal. It prompts privately for the Yoco secret key, registers the endpoint, and displays the webhook secret for you to copy directly into Vercel. Run this only once per mode unless you intentionally need a replacement webhook. Do not register multiple duplicate webhooks.
-
-When switching to live, register the webhook using the live key and replace the Vercel webhook secret with the value returned for that registration.
-
-Official webhook guide: https://developer.yoco.com/guides/online-payments/webhooks/listen-for-events
-
-## 4. Redeploy and test
-
-After all three secrets are saved, open Vercel → peri-q-ui → Deployments → latest production deployment → Redeploy.
-
-- Open https://rastasperiq.co.za/checkout/. Card payment becomes selectable when server credentials and the payment tables are accessible.
-- Use Yoco's current sandbox card details from its developer documentation.
-- Test a successful payment, a declined payment and a cancelled checkout.
-- Confirm the order shows **Paid** only after the signed webhook arrives. A successful browser redirect alone does not mark an order paid.
-- Confirm the restaurant's mobile owner dashboard shows the website order.
-- After test success and domain approval, replace the test secret key and webhook secret with the live values, redeploy, and have the owner perform and reconcile a small authorised live payment.
-
-No real Yoco transaction has been tested yet because your Yoco account has not been set up.
-
-## 5. Remaining manual checks
-
-- Confirm Yoco's business verification and payout/bank details are complete.
-- Check the business contact information, privacy policy and terms on the site are accurate for the restaurant.
-- Verify the Android app on a real phone: cash order, order tracking, owner dashboard and notifications. No Android phone was connected during the automated checks.
-- Optional security improvement: enable Supabase leaked-password protection if your plan supports it. Supabase's advisor reports that it is currently disabled: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
-
-The menu and store settings use the same Supabase project as the mobile app. Changing menu items or store hours in the mobile owner dashboard also changes the website's data.
+See `IMPLEMENTATION_REPORT_20261020.md` for actual checks and remaining limitations.

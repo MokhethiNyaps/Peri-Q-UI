@@ -160,7 +160,7 @@ class _PaymentPreferenceCard extends StatelessWidget {
                     ),
                     if (!enabled)
                       Text(
-                        'Secure Yoco checkout',
+                        'Secure card checkout',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                   ],

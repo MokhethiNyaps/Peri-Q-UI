@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
+
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,10 +32,18 @@ import 'package:peri_q_app/src/screens/splash_screen.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(() async {
-    const fontDir=String.fromEnvironment('SCREENSHOT_FONT_DIR');
-    if(fontDir.isNotEmpty){
-      for(final font in {'Roboto':'roboto-regular.ttf','MaterialIcons':'materialicons-regular.otf'}.entries){
-        final loader=FontLoader(font.key)..addFont(File('$fontDir/${font.value}').readAsBytes().then(ByteData.sublistView));
+    const fontDir = String.fromEnvironment('SCREENSHOT_FONT_DIR');
+    if (fontDir.isNotEmpty) {
+      for (final font in {
+        'Roboto': 'roboto-regular.ttf',
+        'MaterialIcons': 'materialicons-regular.otf',
+      }.entries) {
+        final loader = FontLoader(font.key)
+          ..addFont(
+            File(
+              '$fontDir/${font.value}',
+            ).readAsBytes().then(ByteData.sublistView),
+          );
         await loader.load();
       }
     }
@@ -95,7 +103,7 @@ void main() {
             });
           }
         }
-        expect(find.text('Card through Yoco'), findsOneWidget);
+        expect(find.text('Pay by card'), findsOneWidget);
         expect(find.text('Cash on Collection'), findsNothing);
         await tester.pumpWidget(const SizedBox());
         harness.controller.dispose();

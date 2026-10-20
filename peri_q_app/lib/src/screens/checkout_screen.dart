@@ -38,14 +38,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     selectedAddressId = widget.controller.defaultAddress?.id;
     addressController.text =
         widget.controller.defaultAddress?.displayAddress ?? '';
-    paymentMethod = _availablePaymentFor(
-      widget.controller.preferredPaymentMethod,
-      orderType,
-    );
     if (!widget.controller.canUseOrderType(orderType) &&
         widget.controller.canUseOrderType(OrderType.delivery)) {
       orderType = OrderType.delivery;
-      paymentMethod = _availablePaymentFor(paymentMethod, orderType);
     }
   }
 
@@ -58,8 +53,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   }
 
   void _selectOrderType(OrderType type) => setState(() => orderType = type);
-  PaymentMethod _availablePaymentFor(PaymentMethod method, OrderType type) =>
-      PaymentMethod.yoco;
 
   void _selectSavedAddress(String addressId) {
     SavedAddress? address;
@@ -157,11 +150,17 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   children: [
                     TextFormField(
                       controller: nameController,
-                      decoration: const InputDecoration(labelText: 'Full Name'),
+                      autofillHints: const [AutofillHints.name],
+                      textCapitalization: TextCapitalization.words,
+                      maxLength: 100,
+                      decoration: const InputDecoration(
+                        labelText: 'Full name',
+                        counterText: '',
+                      ),
                       textInputAction: TextInputAction.next,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter your full name.';
+                        if (value == null || value.trim().length < 2) {
+                          return 'Enter your full name (at least 2 characters).';
                         }
                         return null;
                       },
@@ -170,12 +169,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     TextFormField(
                       controller: phoneController,
                       keyboardType: TextInputType.phone,
+                      autofillHints: const [AutofillHints.telephoneNumber],
+                      maxLength: 30,
                       decoration: const InputDecoration(
-                        labelText: 'Phone Number',
+                        labelText: 'Phone number',
+                        counterText: '',
                       ),
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Enter your phone number.';
+                        if (value == null || value.trim().length < 7) {
+                          return 'Enter a valid phone number.';
                         }
                         return null;
                       },
@@ -258,14 +260,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 TextFormField(
                   controller: addressController,
                   maxLines: 3,
+                  autofillHints: const [AutofillHints.fullStreetAddress],
                   decoration: const InputDecoration(
                     labelText: 'Delivery Address',
                     hintText: 'House number, street, area and landmarks',
                   ),
                   validator: (value) {
                     if (orderType == OrderType.delivery &&
-                        (value == null || value.trim().isEmpty)) {
-                      return 'Enter the delivery address.';
+                        (value == null || value.trim().length < 8)) {
+                      return 'Enter a full delivery address.';
                     }
                     return null;
                   },
@@ -283,7 +286,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 12),
               const _PaymentTile(
-                title: 'Card through Yoco',
+                title: 'Pay by card',
                 subtitle:
                     'Pay securely before we send your order to the grill.',
                 icon: Icons.credit_card_rounded,
@@ -343,7 +346,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             key: const ValueKey('checkout-place-order-button'),
             onPressed: isSubmitting ? null : _submitOrder,
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 160),
+              duration: MediaQuery.disableAnimationsOf(context)
+                  ? Duration.zero
+                  : const Duration(milliseconds: 160),
               child: isSubmitting
                   ? Row(
                       key: ValueKey('checkout-placing'),
@@ -360,12 +365,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           ),
                         ),
                         const SizedBox(width: 10),
-                        const Flexible(child: Text('Confirming card payment…')),
+                        const Flexible(
+                          child: Text(
+                            'Opening payment and waiting for confirmation…',
+                          ),
+                        ),
                       ],
                     )
                   : Text(
                       key: const ValueKey('checkout-ready'),
-                      'Pay with Yoco • R${total.toStringAsFixed(0)}',
+                      'Pay by card • R${total.toStringAsFixed(0)}',
                     ),
             ),
           ),

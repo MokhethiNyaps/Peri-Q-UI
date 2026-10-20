@@ -131,7 +131,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
         body: JSON.stringify({ orderId: order.id }),
       });
       const json = (await res.json().catch(() => ({}))) as { redirectUrl?: string; error?: string };
-      if (!res.ok || !json.redirectUrl) throw new Error(json.error || "Could not start Yoco checkout.");
+      if (!res.ok || !json.redirectUrl) throw new Error(json.error || "Could not start card checkout.");
       window.location.href = json.redirectUrl;
     } catch (e) {
       setInfo(e instanceof Error ? e.message : "Failed to retry payment.");
@@ -173,7 +173,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
   };
   const paymentLabel: Record<string, string> = {
     unpaid: "Awaiting payment",
-    pending: "Payment pending (awaiting Yoco confirmation)",
+    pending: "Payment pending (awaiting confirmation)",
     paid: "Paid",
     failed: "Payment failed",
     cancelled: "Payment cancelled",
@@ -184,8 +184,8 @@ export default function OrderClient({ orderId }: { orderId: string }) {
   const isYoco = order.payment_method === "yoco" || order.payment_method === "card";
   const yocoPending = isYoco && !isPaid && (order.payment_status === "pending" || order.payment_status === "unpaid");
   const showSuccessBanner = checkout === "success";
-  const showCancelBanner = checkout === "cancel";
-  const showFailureBanner = checkout === "failure";
+  const showCancelBanner = checkout === "cancel" && !isPaid;
+  const showFailureBanner = checkout === "failure" && !isPaid;
 
   return (
     <main id="main-content" className="bg-cream">
@@ -199,7 +199,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
             <span className="rounded-full bg-white px-3 py-1.5 text-charcoal">{fulfillmentLabel[order.status] ?? order.status}</span>
             <span className={`rounded-full px-3 py-1.5 ${isPaid ? "bg-leaf text-white" : yocoPending ? "bg-amber-500 text-charcoal" : "bg-white/15 text-white"}`}>{paymentLabel[order.payment_status] ?? order.payment_status}</span>
-            {order.yoco_mode && <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-white/80">Yoco {order.yoco_mode}</span>}
+            {order.yoco_mode === "test" && <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-white/80">Test payment</span>}
           </div>
         </div>
       </section>
@@ -207,7 +207,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
       <section className="section-pad">
         <div className="site-shell grid gap-8 lg:grid-cols-[1.6fr_0.9fr]">
           <div className="grid gap-6">
-            {isNew && (
+            {isNew && isPaid && (
               <div className="rounded-[1.75rem] border border-leaf/20 bg-leaf/10 p-5">
                 <p className="flex items-center gap-2 font-display text-xl font-black uppercase text-leaf"><CheckCircle2 size={20} /> Order confirmed #{order.order_number}</p>
                 <p className="mt-2 text-sm leading-6 text-ash">Estimated time <strong>{order.estimated_minutes} min</strong>. Follow status updates here or contact the restaurant.</p>
@@ -215,20 +215,20 @@ export default function OrderClient({ orderId }: { orderId: string }) {
             )}
             {showSuccessBanner && !isPaid && (
               <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50 p-5">
-                <p className="font-extrabold text-amber-900">Return from Yoco — verifying payment</p>
-                <p className="mt-1 text-sm leading-6 text-amber-900/70">You returned from the secure checkout. Your order is only marked <em>paid</em> after the server verifies the Yoco webhook (usually seconds). Do not pay again yet — this page refreshes automatically. If it stays pending for a few minutes, check with the restaurant.</p>
+                <p className="font-extrabold text-amber-900">Checking your card payment</p>
+                <p className="mt-1 text-sm leading-6 text-amber-900/70">You returned from the secure checkout. Your payment is confirmed by the restaurant before your order is prepared. Do not pay again yet — this page refreshes automatically. If it stays pending for a few minutes, check with the restaurant.</p>
               </div>
             )}
             {showCancelBanner && (
               <div className="rounded-[1.75rem] border border-black/10 bg-white p-5">
-                <p className="flex items-center gap-2 font-extrabold text-charcoal"><XCircle size={18} className="text-ash" /> Payment was cancelled</p>
-                <p className="mt-1 text-sm text-ash">You left the Yoco checkout without completing. Your order is saved — retry below when ready. Check the payment status before retrying.</p>
+                <p className="flex items-center gap-2 font-extrabold text-charcoal"><XCircle size={18} className="text-ash" /> Returned from payment</p>
+                <p className="mt-1 text-sm text-ash">You returned from card checkout. Your order is saved — retry below when ready. Check the payment status before retrying.</p>
               </div>
             )}
             {showFailureBanner && (
               <div className="rounded-[1.75rem] border border-red-200 bg-red-50 p-5">
                 <p className="flex items-center gap-2 font-extrabold text-red-900"><XCircle size={18} /> Payment did not complete</p>
-                <p className="mt-1 text-sm text-red-900/70">Card declined or checkout failed. Retry below or try another payment method.</p>
+                <p className="mt-1 text-sm text-red-900/70">Payment has not been confirmed. Check the payment status before trying your card again.</p>
               </div>
             )}
             {info && <div className="rounded-2xl border border-black/10 bg-white p-4 text-sm font-bold text-charcoal">{info}</div>}
@@ -237,11 +237,11 @@ export default function OrderClient({ orderId }: { orderId: string }) {
             {yocoPending && (
               <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-sm">
                 <h2 className="flex items-center gap-2 font-display text-xl font-black uppercase"><CreditCard size={20} className="text-peri-red" /> Complete payment</h2>
-                <p className="mt-2 text-sm leading-6 text-ash">This order requires online card payment. Continue to Yoco’s secure checkout. Do not refresh repeatedly — the checkout link is idempotent, and the server verifies the amount before marking paid.</p>
+                <p className="mt-2 text-sm leading-6 text-ash">Continue to the hosted card payment page. Check your payment status before trying again.</p>
                 <button onClick={retryYocoCheckout} disabled={retryingYoco} className="button button-primary mt-4 w-full justify-center disabled:opacity-40">
-                  {retryingYoco ? "Opening Yoco…" : "Pay R" + order.total_price.toFixed(2) + " with Yoco"}
+                  {retryingYoco ? "Opening payment…" : "Pay R" + order.total_price.toFixed(2) + " by card"}
                 </button>
-                <p className="mt-3 text-xs leading-5 text-ash/60">Payment succeeds only after the Yoco webhook is verified server-side. The browser success page alone never marks the order paid.</p>
+                <p className="mt-3 text-xs leading-5 text-ash">Your order is prepared after payment is confirmed.</p>
               </div>
             )}
 
@@ -256,13 +256,13 @@ export default function OrderClient({ orderId }: { orderId: string }) {
               <h2 className="font-display text-xl font-black uppercase">Order details</h2>
               <div className="mt-4 grid gap-3 text-sm">
                 <div className="flex gap-3"><User size={18} className="shrink-0 text-peri-red" /><span><strong>{order.customer_name}</strong> • <span className="inline-flex items-center gap-1"><Phone size={14} />{order.customer_phone}</span></span></div>
-                <div className="flex gap-3"><Truck size={18} className="shrink-0 text-peri-red" /><span><strong>{order.order_type === "delivery" ? "Home Delivery" : "Pickup in Store"}</strong> • <span className="text-ash">{order.payment_method.replaceAll("_", " ")}</span></span></div>
+                <div className="flex gap-3"><Truck size={18} className="shrink-0 text-peri-red" /><span><strong>{order.order_type === "delivery" ? "Home Delivery" : "Pickup in Store"}</strong> • <span className="text-ash">{isYoco ? "Card" : order.payment_method.replaceAll("_", " ")}</span></span></div>
                 {order.delivery_address && <div className="flex gap-3"><MapPin size={18} className="shrink-0 text-peri-red" /><span className="text-ash">{order.delivery_address}</span></div>}
                 <div className="flex gap-3"><Clock3 size={18} className="shrink-0 text-peri-red" /><span className="text-ash">Estimated {order.estimated_minutes} min • Created {new Date(order.created_at).toLocaleString("en-ZA")}</span></div>
                 <div className="h-px bg-black/8" />
                 <div className="flex justify-between font-black"><span>Status (fulfilment)</span><span className="capitalize">{order.status}</span></div>
                 <div className="flex justify-between font-black"><span>Status (payment)</span><span className="capitalize">{order.payment_status}{isPaid ? " ✓" : ""}</span></div>
-                {order.yoco_checkout_id && <p className="break-all text-xs text-ash/60">Checkout {order.yoco_checkout_id.slice(0, 24)}…</p>}
+                {order.yoco_checkout_id && <p className="break-all text-xs text-ash">Checkout {order.yoco_checkout_id.slice(0, 24)}…</p>}
               </div>
             </div>
 
@@ -276,9 +276,9 @@ export default function OrderClient({ orderId }: { orderId: string }) {
                     <li key={idx} className="flex justify-between gap-3 py-3 text-sm">
                       <span className="min-w-0 flex-1">
                         <span className="font-extrabold">{it.item_name}</span> <span className="text-ash">×{it.quantity}</span>
-                        <span className="block text-xs text-ash/70">{it.item_category}{it.spice_level ? ` • ${it.spice_level}` : ""}</span>
+                        <span className="block text-xs text-ash">{it.item_category}{it.spice_level ? ` • ${it.spice_level}` : ""}</span>
                         {(it.selected_add_ons ?? []).length > 0 && <span className="block text-xs text-peri-red">+ {(it.selected_add_ons ?? []).map((a) => `${a.name} (R${a.price?.toFixed?.(0) ?? a.price})`).join(", ")}</span>}
-                        {it.notes && <span className="block text-xs italic text-ash/60">&ldquo;{it.notes}&rdquo;</span>}
+                        {it.notes && <span className="block text-xs italic text-ash">&ldquo;{it.notes}&rdquo;</span>}
                       </span>
                       <span className="shrink-0 font-black">R{line.toFixed(2)}</span>
                     </li>
@@ -286,7 +286,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
                 })}
               </ul>
               <div className="mt-4 flex justify-between border-t border-black/8 pt-4 text-lg font-black"><span>Total</span><span className="text-peri-red">R{order.total_price.toFixed(2)}</span></div>
-              <p className="mt-2 text-xs text-ash/60">Total calculated on server from trusted menu. Order is in the same Postgres table staff manage from the app admin dashboard.</p>
+              <p className="mt-2 text-xs text-ash">Total calculated on server from trusted menu. Order is in the same Postgres table staff manage from the app admin dashboard.</p>
             </div>
           </div>
 
@@ -309,3 +309,4 @@ export default function OrderClient({ orderId }: { orderId: string }) {
     </main>
   );
 }
+

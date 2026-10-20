@@ -10,7 +10,7 @@ import { createBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import { useCustomerAuth } from "@/lib/customer-auth";
 
 type OrderType = "pickup" | "delivery";
-type PaymentMethod = "yoco";
+const paymentMethod = "yoco";
 
 export default function CheckoutClient() {
   const { user, profile } = useCustomerAuth();
@@ -18,7 +18,6 @@ export default function CheckoutClient() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const [orderType, setOrderType] = useState<OrderType>("pickup");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("yoco");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -61,7 +60,7 @@ export default function CheckoutClient() {
     try {
       const saved = localStorage.getItem("peri_q_customer_v1");
       if (saved) {
-        const parsed = JSON.parse(saved) as { name?: string; phone?: string; address?: string; orderType?: OrderType; paymentMethod?: PaymentMethod };
+        const parsed = JSON.parse(saved) as { name?: string; phone?: string; address?: string; orderType?: OrderType; paymentMethod?: string };
         if (parsed.name) setName(parsed.name);
         if (parsed.phone) setPhone(parsed.phone);
         if (parsed.address) setAddress(parsed.address);
@@ -75,20 +74,20 @@ export default function CheckoutClient() {
     try {
       localStorage.setItem("peri_q_customer_v1", JSON.stringify({ name, phone, address, orderType, paymentMethod }));
     } catch {}
-  }, [name, phone, address, orderType, paymentMethod]);
+  }, [name, phone, address, orderType]);
 
   const deliveryFee = settings?.deliveryFee ?? 30;
   const totalForType = (t: OrderType) => subtotal + (t === "delivery" ? deliveryFee : 0);
   const canPickup = settings?.pickupAvailable ?? true;
   const canDelivery = settings?.deliveryAvailable ?? true;
-  const storeOpen = settings ? isStoreOpenNow(settings) : true;
-  const globalStoreOpen = settings?.storeOpen ?? true;
+  const storeOpen = settings ? isStoreOpenNow(settings) : false;
+  const globalStoreOpen = settings?.storeOpen ?? false;
 
   const validate = (): boolean => {
     const fe: Record<string, string> = {};
     if (!settings) fe.store = "Store settings are unavailable. Please refresh and try again.";
-    if (!name.trim() || name.trim().length < 2) fe.name = "Enter your full name (2–100 chars).";
-    if (!phone.trim() || phone.trim().length < 7) fe.phone = "Enter a valid phone (7–30 chars).";
+    if (!name.trim() || (name.trim().length < 2 || name.trim().length > 100)) fe.name = "Enter your full name (2–100 chars).";
+    if (!phone.trim() || (phone.trim().length < 7 || phone.trim().length > 30)) fe.phone = "Enter a valid phone (7–30 chars).";
     if (entries.length === 0) fe.cart = "Your cart is empty. Add items from the menu.";
     if (settings && !globalStoreOpen) fe.store = "Ordering is paused by the restaurant right now.";
     else if (!storeOpen) fe.store = `Store is closed. Hours ${settings?.openingTime}–${settings?.closingTime} (Africa/Johannesburg).`;
@@ -100,24 +99,19 @@ export default function CheckoutClient() {
     return Object.keys(fe).length === 0;
   };
 
-  const mapPaymentForRpc = (pm: PaymentMethod): string => {
-    if (pm === "yoco") return "yoco";
-    return pm;
-  };
-
   const handleSubmit = async () => {
     if (submittingRef.current) return;
     setError(null);
     if (!validate()) return;
     if (!isSupabaseConfigured()) {
-      setError("Website is not connected to Supabase. Owner must configure Vercel env.");
+      setError("Ordering is temporarily unavailable. Your cart is saved. Please try again later.");
       return;
     }
     setSubmitting(true);
     submittingRef.current = true;
     try {
       const anon = await ensureAnonSession();
-      if (!anon) throw new Error("Could not create a guest session. In Supabase Dashboard → Auth → enable Anonymous sign-ins and retry.");
+      if (!anon) throw new Error("Could not start a checkout session. Please try again; your cart is saved.");
       const supa = createBrowserClient();
       // Ensure we use fresh session token if available
       const { data: sessData } = await supa.auth.getSession();
@@ -143,7 +137,7 @@ export default function CheckoutClient() {
       } catch { /* Checkout still uses in-memory retry protection if storage is unavailable. */ }
       const clientRequestId=requestIdRef.current;
 
-      const rpcPayment = mapPaymentForRpc(paymentMethod);
+      const rpcPayment = paymentMethod;
 
       const { data, error: rpcError } = await supa.rpc("prepare_card_checkout", {
         p_customer_name: name.trim(),
@@ -162,14 +156,17 @@ export default function CheckoutClient() {
         if (msg.toLowerCase().includes("store is closed") || msg.toLowerCase().includes("ordering is paused")) throw new Error("Ordering is paused or the store is closed. Try during store hours.");
         if (msg.toLowerCase().includes("delivery is unavailable") || msg.toLowerCase().includes("pickup is unavailable")) throw new Error(msg);
         if (msg.toLowerCase().includes("unavailable") || msg.toLowerCase().includes("not found")) throw new Error("An item in your cart is no longer available. Return to the menu and update your cart.");
-        throw new Error(msg || "Could not place order. Check your connection and try again. Cart is still saved.");
+        throw new Error("Could not prepare your order. Check your details and try again; your cart is saved.");
       }
 
       const orderId = (data as { id?: string })?.id;
       if (!orderId) throw new Error("Store did not return an order confirmation. Please try again.");
 
 
-      // If Yoco, initiate checkout session server-side (trusted amount)
+      try {
+        localStorage.setItem("peri_q_pending_payment", JSON.stringify({ orderId, cart: JSON.stringify(entries) }));
+      } catch { /* Confirmation must still work when storage is unavailable. */ }
+      // Initiate checkout server-side using the trusted total.
       if (paymentMethod === "yoco") {
         const res = await fetch("/api/yoco/checkout", {
           method: "POST",
@@ -184,7 +181,6 @@ export default function CheckoutClient() {
         if (!res.ok || !json.redirectUrl) {
           // The cart remains saved if checkout cannot start.
           throw new Error(json.error ?? "Payment could not start. Your cart is saved.");
-          return;
         }
         // Only the signed payment webhook can create the order.
         window.location.href = json.redirectUrl;
@@ -216,9 +212,9 @@ export default function CheckoutClient() {
           <p className="mt-3 max-w-2xl text-sm leading-7 text-white/60">Enter your details to place an order with the restaurant. Confirm your items and choose collection or delivery below.</p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
             <span className={`rounded-full px-3 py-1.5 ${!globalStoreOpen ? "bg-amber-500 text-charcoal" : storeOpen ? "bg-leaf text-white" : "bg-white/15 text-white"}`}>
-              {!globalStoreOpen ? "Ordering paused" : storeOpen ? `Open now • Closes ${settings?.closingTime}` : `Closed • Opens ${settings?.openingTime}`}
+              {!settings ? "Store status unavailable" : !globalStoreOpen ? "Ordering paused" : storeOpen ? `Open now • Closes ${settings?.closingTime}` : `Closed • Opens ${settings?.openingTime}`}
             </span>
-            <span className="rounded-full bg-white/10 px-3 py-1.5 text-white/70">Delivery fee R{deliveryFee.toFixed(0)}</span>
+            <span className="rounded-full bg-white/10 px-3 py-1.5 text-white/70">{settings ? `Delivery fee R${deliveryFee.toFixed(0)}` : "Delivery fee confirmed when store settings load"}</span>
           </div>
         </div>
       </section>
@@ -228,7 +224,7 @@ export default function CheckoutClient() {
           <div className="grid gap-6">
             {fieldErrors.store && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">{fieldErrors.store}</div>}
             {fieldErrors.cart && <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-bold text-amber-900">{fieldErrors.cart}</div>}
-            {error && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-900">{error}</div>}
+            {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold leading-6 text-red-900">{error}</div>}
 
             {/* Details */}
             <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-sm">
@@ -236,12 +232,12 @@ export default function CheckoutClient() {
               <div className="mt-4 grid gap-4">
                 <label>
                   <span className="text-xs font-black uppercase tracking-[0.14em] text-ash">Full name</span>
-                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Thabo Molefe" className="mt-1.5 h-12 w-full rounded-2xl border border-black/10 px-4 text-sm font-semibold focus:border-orange/60 focus:outline-none" />
+                  <input autoComplete="name" maxLength={100} aria-invalid={!!fieldErrors.name} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Thabo Molefe" className="mt-1.5 h-12 w-full rounded-2xl border border-black/10 px-4 text-sm font-semibold focus:border-orange/60 focus:outline-none" />
                   {fieldErrors.name && <span className="mt-1 block text-xs font-bold text-red-600">{fieldErrors.name}</span>}
                 </label>
                 <label>
                   <span className="text-xs font-black uppercase tracking-[0.14em] text-ash">Phone</span>
-                  <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+27 71 234 5678" inputMode="tel" className="mt-1.5 h-12 w-full rounded-2xl border border-black/10 px-4 text-sm font-semibold focus:border-orange/60 focus:outline-none" />
+                  <input type="tel" autoComplete="tel" maxLength={30} aria-invalid={!!fieldErrors.phone} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+27 71 234 5678" inputMode="tel" className="mt-1.5 h-12 w-full rounded-2xl border border-black/10 px-4 text-sm font-semibold focus:border-orange/60 focus:outline-none" />
                   {fieldErrors.phone && <span className="mt-1 block text-xs font-bold text-red-600">{fieldErrors.phone}</span>}
                 </label>
               </div>
@@ -258,6 +254,8 @@ export default function CheckoutClient() {
                 ].map(({ id, icon: Icon, title, subtitle, enabled }) => (
                   <button
                     key={id}
+                    disabled={!enabled}
+                    aria-pressed={orderType === id}
                     onClick={() => {
                       if (!enabled) return;
                       setOrderType(id);
@@ -275,7 +273,7 @@ export default function CheckoutClient() {
                 <div className="mt-4">
                   <label>
                     <span className="text-xs font-black uppercase tracking-[0.14em] text-ash">Delivery address (required)</span>
-                    <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="House number, street, area and landmark — e.g. 12 Main Rd, Heidedal, Bloemfontein — Ring side gate bell" rows={3} className="mt-1.5 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold focus:border-orange/60 focus:outline-none" />
+                    <textarea autoComplete="street-address" aria-invalid={!!fieldErrors.address} value={address} onChange={(e) => setAddress(e.target.value)} placeholder="House number, street, area and landmark — e.g. 12 Main Rd, Heidedal, Bloemfontein — Ring side gate bell" rows={3} className="mt-1.5 w-full rounded-2xl border border-black/10 px-4 py-3 text-sm font-semibold focus:border-orange/60 focus:outline-none" />
                     {fieldErrors.address && <span className="mt-1 block text-xs font-bold text-red-600">{fieldErrors.address}</span>}
                   </label>
                 </div>
@@ -285,27 +283,17 @@ export default function CheckoutClient() {
             {/* Payment */}
             <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-sm">
               <h2 className="font-display text-xl font-black uppercase">Payment method</h2>
-              <p className="mt-1 text-xs font-semibold text-ash/70">Cash stays preserved. Yoco is for online card payments. Server validates the total — browser amount is never trusted.</p>
-              <div className="mt-4 grid gap-3">
-                {[
-                  { id: "yoco" as const, label: yocoTestMode ? "Test card checkout (Yoco)" : "Pay online with Card (Yoco)", hint: yocoAvailable ? (yocoTestMode ? "Test mode: no real payment is collected." : "Secure Yoco hosted checkout — Visa, Mastercard, etc.") : "Card checkout is temporarily unavailable. Your cart stays saved.", show: true },
-                ].filter((m) => m.show).map((m) => (
-                  <label key={m.id} className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-4 ${paymentMethod === m.id ? "border-charcoal bg-charcoal text-white" : "border-black/10 bg-white"}`}>
-                    <input type="radio" name="payment" disabled={m.id === "yoco" && !yocoAvailable} checked={paymentMethod === m.id} onChange={() => setPaymentMethod(m.id)} className="size-5 accent-peri-red" />
-                    <span className="flex-1">
-                      <span className={`block text-sm font-extrabold ${paymentMethod === m.id ? "text-white" : "text-charcoal"}`}>{m.label}</span>
-                      <span className={`block text-xs ${paymentMethod === m.id ? "text-white/60" : "text-ash"}`}>{m.hint}</span>
-                    </span>
-                  </label>
-                ))}
-                {fieldErrors.payment && <p className="text-xs font-bold text-red-600">{fieldErrors.payment}</p>}
-              </div>
-              {paymentMethod === "yoco" && (
-                <div className="mt-4 rounded-2xl bg-muted p-4 text-xs leading-6 text-ash">
-                  <p className="font-extrabold text-charcoal">How Yoco works</p>
-                  <p>You’ll be redirected to Yoco’s secure hosted checkout. After payment, you return here. Your order is only marked <em>paid</em> after the server verifies the Yoco webhook — not just the browser redirect.</p>
+              <p className="mt-2 text-sm leading-6 text-ash">Pay before we start preparing your food.</p>
+              <div className="mt-4 flex items-start gap-3 rounded-2xl bg-muted p-4">
+                <ShieldCheck size={22} className="mt-0.5 shrink-0 text-leaf" aria-hidden="true" />
+                <div>
+                  <p className="font-bold text-charcoal">Pay by card</p>
+                  <p className="mt-1 text-sm leading-6 text-ash">Continue to a secure hosted payment page, then return here for confirmation. We don’t store your card details.</p>
+                  {yocoTestMode && <p className="mt-2 text-sm font-bold text-peri-red">Test mode — no real payment is collected.</p>}
+                  {!yocoAvailable && <p role="status" className="mt-2 text-sm font-bold text-peri-red">Card payments are temporarily unavailable. Your cart is saved.</p>}
                 </div>
-              )}
+              </div>
+              {fieldErrors.payment && <p role="alert" className="mt-3 text-sm font-bold text-peri-red">{fieldErrors.payment}</p>}
             </div>
           </div>
 
@@ -324,7 +312,7 @@ export default function CheckoutClient() {
                       <li key={e.id} className="flex justify-between gap-3 py-3 text-sm">
                         <span className="min-w-0 flex-1 font-semibold">
                           <span className="font-extrabold">{e.item.name}</span> <span className="text-ash">×{e.quantity}</span>
-                          {e.spiceLevel ? <span className="block text-xs text-ash/70">{e.spiceLevel}</span> : null}
+                          {e.spiceLevel ? <span className="block text-xs text-ash">{e.spiceLevel}</span> : null}
                         </span>
                         <span className="shrink-0 font-black">R{line.toFixed(2)}</span>
                       </li>
@@ -338,21 +326,22 @@ export default function CheckoutClient() {
               <div className="flex justify-between"><span className="text-ash">Subtotal</span><span className="font-black">R{subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-ash">Delivery fee</span><span className="font-black">{orderType === "delivery" ? `R${deliveryFee.toFixed(2)}` : "—"}</span></div>
               <div className="flex justify-between text-[1.05rem]"><span className="font-black">Total to pay</span><span className="font-black text-peri-red">R{totalForType(orderType).toFixed(2)}</span></div>
-              <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-xs leading-5 text-ash"><ShieldCheck size={16} className="shrink-0 text-leaf" /> Secure card payment through Yoco.</p>
+              <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-xs leading-5 text-ash"><ShieldCheck size={16} className="shrink-0 text-leaf" /> Your card details stay on the hosted payment page.</p>
             </div>
 
-            <button onClick={handleSubmit} disabled={submitting || entries.length === 0} className="button button-primary mt-6 w-full justify-center disabled:opacity-40">
-              {submitting ? "Placing order…" : paymentMethod === "yoco" ? "Pay securely with Yoco" : "Confirm order"}
+            <button onClick={handleSubmit} disabled={submitting || entries.length === 0 || !yocoAvailable || !settings || !storeOpen || !globalStoreOpen} aria-busy={submitting} className="button button-primary mt-6 w-full justify-center disabled:opacity-40">
+              {submitting ? "Opening payment…" : `Pay by card • R${totalForType(orderType).toFixed(2)}`}
               {!submitting && <ArrowRight size={18} />}
             </button>
 
-            <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-ash/60">
+            <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-ash">
               <Clock3 size={14} /> {orderType === "delivery" ? "45–60 min (incl. delivery)" : "~25 min"}
             </div>
-            <p className="mt-3 text-center text-xs font-semibold text-ash/60">Flame-grilled in Bloemfontein. Prepared after payment.</p>
+            <p className="mt-3 text-center text-xs font-semibold text-ash">Flame-grilled in Bloemfontein. Prepared after payment.</p>
           </aside>
         </div>
       </section>
     </main>
   );
 }
+

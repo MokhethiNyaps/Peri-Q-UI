@@ -16,10 +16,6 @@ export function readYocoEnv(): YocoEnv | null {
   return { secretKey, webhookSecret };
 }
 
-export function isYocoConfigured() {
-  return readYocoEnv() !== null;
-}
-
 export function getSiteUrl(): string {
   const url =
     (process.env.NEXT_PUBLIC_SITE_URL ?? process.env.SITE_URL ?? "https://rastasperiq.co.za").trim();
@@ -99,9 +95,3 @@ export function verifyYocoWebhook({
   return { ok: true };
 }
 
-// Map Yoco processingMode to our mode
-export function normalizeYocoMode(mode: string | null | undefined): "test" | "live" | null {
-  if (mode === "test") return "test";
-  if (mode === "live") return "live";
-  return null;
-}

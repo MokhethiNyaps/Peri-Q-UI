@@ -83,8 +83,8 @@ export default function TermsAndConditionsPage() {
 
           <h2>5. Payment</h2>
           <p>
-            Pay upfront by card through Yoco for collection and delivery. We create your
-            order only after Yoco confirms successful payment. If payment fails or is
+            Pay upfront by card for collection and delivery. We create your
+            order only after payment is confirmed. If payment fails or is
             cancelled, your cart remains available and no order is placed.
           </p>
 
@@ -167,3 +167,4 @@ export default function TermsAndConditionsPage() {
     </main>
   );
 }
+

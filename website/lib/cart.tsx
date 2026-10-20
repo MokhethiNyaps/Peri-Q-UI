@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { MenuItem } from "./menu";
 
 export type CartAddOn = { name: string; price: number };
@@ -44,16 +44,19 @@ function loadFromStorage(): CartEntry[] {
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [entries, setEntriesState] = useState<CartEntry[]>(() => []);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setEntriesState(loadFromStorage());
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
+    if (!hydrated) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     } catch {}
-  }, [entries]);
+  }, [entries, hydrated]);
 
   const setEntries = (next: CartEntry[]) => setEntriesState(next);
 
@@ -84,7 +87,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
   const remove = (id: string) => setEntriesState((prev) => prev.filter((e) => e.id !== id));
-  const clear = () => setEntriesState([]);
+  const clear = useCallback(() => setEntriesState([]), []);
 
   const count = useMemo(() => entries.reduce((s, e) => s + e.quantity, 0), [entries]);
   const subtotal = useMemo(
@@ -105,3 +108,4 @@ export function useCart() {
   if (!ctx) throw new Error("useCart must be used within CartProvider");
   return ctx;
 }
+

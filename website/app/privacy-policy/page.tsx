@@ -143,7 +143,7 @@ export default function PrivacyPolicyPage() {
           <ul>
             <li>Items ordered, quantities, notes, totals, payment status, and timestamps.</li>
             <li>Pickup or delivery selection and the address needed to fulfil a delivery.</li>
-            <li>Historical EFT payment proofs retained for existing orders. New orders use Yoco card payments.</li>
+            <li>Historical EFT payment proofs retained for existing orders. New orders use card payments.</li>
           </ul>
 
           <h3>Guest orders</h3>
@@ -166,7 +166,7 @@ export default function PrivacyPolicyPage() {
             <li>Create and secure accounts and app sessions.</li>
             <li>Receive, prepare, update, and fulfil food orders.</li>
             <li>Deliver orders to the address a customer provides.</li>
-            <li>Review historical payment records and reconcile Yoco card payment status.</li>
+            <li>Review historical payment records and reconcile card payment status.</li>
             <li>Show order status and order history.</li>
             <li>Prevent misuse, troubleshoot problems, and provide customer support.</li>
           </ul>
@@ -236,7 +236,7 @@ export default function PrivacyPolicyPage() {
           <ul>
             <li>Use guest checkout instead of creating a permanent account.</li>
             <li>Provide a delivery address only when you choose delivery.</li>
-            <li>Pay securely by card through Yoco without sharing card details with us.</li>
+            <li>Pay securely by card on a hosted payment page without sharing card details with us.</li>
             <li>Review or correct your account and saved address details in the app.</li>
             <li>
               Delete your account from <strong>Profile → Delete Account</strong>, or follow
@@ -331,3 +331,4 @@ export default function PrivacyPolicyPage() {
     </main>
   );
 }
+

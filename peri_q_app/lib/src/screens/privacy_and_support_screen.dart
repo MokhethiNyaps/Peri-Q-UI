@@ -103,12 +103,12 @@ class PrivacyAndSupportScreen extends StatelessWidget {
           const _PrivacySection(
             title: 'Storage and sharing',
             body:
-                'Order and account data is sent securely to the business Supabase project. Historical payment proofs remain in private storage. New orders use secure Yoco card checkout. The app has no advertising or analytics SDK and does not sell personal information.',
+                'Order and account data is sent securely to the business Supabase project. Historical payment proofs remain in private storage. New orders use secure hosted card checkout. The app has no advertising or analytics SDK and does not sell personal information.',
           ),
           const _PrivacySection(
             title: 'Your choices',
             body:
-                'Delivery addresses are optional unless you select delivery. New orders require upfront card payment through Yoco. Signed-in customers can delete their account from Profile; they can also contact support for privacy help.',
+                'Delivery addresses are optional unless you select delivery. New orders require upfront card payment. Signed-in customers can delete their account from Profile; they can also contact support for privacy help.',
           ),
           Container(
             padding: const EdgeInsets.all(16),
