@@ -133,8 +133,10 @@ client_request_id even when the order type, address or total had changed, so a m
 switched pickup to delivery could be shown R75 and charged R45. The fix validates the reused draft
 and raises 'Checkout details changed. Please restart checkout.' in
 peri_q_app/supabase/migrations/20261017000000_card_only_checkout.sql and the matching function in
-peri_q_app/supabase/schema.sql. Merge PR #3 (arena/a3ab8541-peri-q-ui -> this branch, commit a44ef2e)
-or cherry-pick that commit onto the PR branch.
+peri_q_app/supabase/schema.sql. Merge PR #3 (arena/a3ab8541-peri-q-ui -> main, commits a44ef2e and
+670b236) or cherry-pick commit a44ef2e onto the PR branch. PR #3 touches only files that PR #2 does not,
+so it merges into main cleanly before or after PR #2; after merging, run `git merge main` (or rebase) on
+the PR branch so the staging tests use the fixed function.
 Then: in peri_q_app/lib/src/data/supabase/supabase_order_repository.dart map
 'checkout details changed' to a clear message in _friendlyOrderError, and reset
 _pendingOrderRequestId in AppController.placeOrder when orderType differs from the previous attempt.
@@ -211,9 +213,12 @@ Ordered; each item is something an environment like this one cannot do.
    has no per-request payment-method filter, so this cannot be enforced in code.
 9. **Merge PR #2 only after the agent reports the migration, staging payment and APK gates as passed.**
    Merging to `main` triggers the automatic Vercel production deployment — sequence it deliberately.
-10. Merge the small fix PR **#3** (`arena/a3ab8541-peri-q-ui` → `codex/card-checkout-recovery-and-polish`,
-    commit `a44ef2e`) or ask the agent to cherry-pick it; the fix should land before the staging payment
-    tests, since those are exactly the paths it protects.
+10. Merge the small fix PR **#3** (`arena/a3ab8541-peri-q-ui` → `main`, commit `a44ef2e`) — or have the
+    agent cherry-pick `a44ef2e` onto the PR branch — before the staging payment tests, since those are
+    exactly the paths it protects. Vercel reports "Deployment was blocked" on that PR rather than a build
+    failure: the commit author is not a Vercel team member, and this PR changes no website code. Re-run the
+    deployment from the Vercel dashboard after merging, or verify the preview on PR #2, which builds from
+    the same website source.
 
 ## 7. What this session did not do
 
