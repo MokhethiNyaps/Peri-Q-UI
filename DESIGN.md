@@ -1,5 +1,13 @@
 # Rasta’s Peri Q shared interface system
 
+## "Night Grill" (November 2026)
+
+Browsing (home, menu, dish sheet, page headers) uses a dark stage: Soot `#141110`, Charcoal `#1A1715` surfaces, Warm white `#FFF9F4` text (18.0:1), Smoke `#B9AEA6` secondary text (8.65:1) and Ember `#F07820` for accent text and glow (6.63:1). Peri red `#C8240B` is for filled buttons only (white text 5.66:1); never use it as text on Soot (3.32:1). Cart, checkout, account and legal content stay on the light warm-white surface so forms are easy to read.
+
+Headlines use Big Shoulders Display (SIL OFL, self-hosted: `website/app/fonts`, `peri_q_app/assets/fonts`). Body, prices in forms and controls stay Roboto. The Android app opens in the dark theme for new installs; a saved light/dark/system choice is respected.
+
+Food imagery is only the restaurant's own menu photos from Supabase `menu-images`. Plate cut-outs (`website/public/plates`, made by `tools/plate-cutouts`) remove only the table around the plate and are used only while a dish still points at the exact stored photo they came from. Motion: GSAP ScrollTrigger on the website (plate turn-in, grill-bar reveals, ember spark to cart) and Flutter implicit animations in the app (plate entrance, flame progress). Everything respects reduced motion and animates transform/opacity only.
+
 The flame wordmark and Peri red identify the product. Food, fulfilment and payment status carry the interface; decoration must not slow ordering. Existing business facts, product photographs, account behavior and historical records remain authoritative.
 
 ## Implementation sources

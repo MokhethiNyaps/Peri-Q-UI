@@ -13,3 +13,6 @@ Use flat food rows on phone widths, larger food layouts when space permits, cons
 
 ## Motion and accessibility
 The short add-to-cart checkmark confirms a completed action and respects reduced motion. Checkout progress communicates that payment confirmation is pending. Safe-area protection is applied to the customer shell. Test the actual customer shell and checkout in portrait and landscape, under light and dark themes. Theme contrast and large-text tests are part of the regression suite. Physical low-end Android performance and real Yoco card entry remain separate device/integration checks.
+
+## Night Grill update (November 2026)
+New installs open in the dark theme (surface #141110, matching the website). Headlines (display and headline large/medium) use Big Shoulders Display; body stays Roboto. Menu photos are set down with a short plate-turn (`PlateEntrance`) and order tracking shows a flame progress bar (`FlameProgress`); both are skipped when the system asks for reduced motion. The home and sign-in headers use the transparent flame mark (`assets/images/flame_mark.png`).

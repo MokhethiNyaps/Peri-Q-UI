@@ -204,6 +204,9 @@ extension AppThemeContext on BuildContext {
 }
 
 class AppTheme {
+  /// Condensed display face for headlines (Big Shoulders Display, OFL).
+  static const String displayFontFamily = 'BigShouldersDisplay';
+
   // Brand source colours are kept for artwork and non-text decoration only.
   // Interactive and textual uses should come from ColorScheme/AppSemanticColors.
   static const Color periRed = Color(0xFFC8240B);
@@ -263,7 +266,7 @@ class AppTheme {
     onError: Color(0xFF310604),
     errorContainer: Color(0xFF71100C),
     onErrorContainer: Color(0xFFFFDAD5),
-    surface: Color(0xFF12100F),
+    surface: Color(0xFF141110),
     onSurface: Color(0xFFFFF9F4),
     onSurfaceVariant: Color(0xFFD8CBC4),
     outline: Color(0xFFA9958B),
@@ -671,33 +674,38 @@ class AppTheme {
     return base
         .copyWith(
           displayLarge: base.displayLarge?.copyWith(
-            fontSize: 36,
+            fontFamily: displayFontFamily,
+            fontSize: 42,
             height: 1.04,
-            letterSpacing: -1.1,
+            letterSpacing: 0.2,
             fontWeight: FontWeight.w800,
           ),
           displayMedium: base.displayMedium?.copyWith(
-            fontSize: 32,
+            fontFamily: displayFontFamily,
+            fontSize: 38,
             height: 1.08,
-            letterSpacing: -0.8,
+            letterSpacing: 0.2,
             fontWeight: FontWeight.w800,
           ),
           displaySmall: base.displaySmall?.copyWith(
-            fontSize: 28,
+            fontFamily: displayFontFamily,
+            fontSize: 34,
             height: 1.1,
-            letterSpacing: -0.55,
+            letterSpacing: 0.2,
             fontWeight: FontWeight.w800,
           ),
           headlineLarge: base.headlineLarge?.copyWith(
-            fontSize: 27,
+            fontFamily: displayFontFamily,
+            fontSize: 33,
             height: 1.12,
-            letterSpacing: -0.45,
+            letterSpacing: 0.2,
             fontWeight: FontWeight.w800,
           ),
           headlineMedium: base.headlineMedium?.copyWith(
-            fontSize: 23,
+            fontFamily: displayFontFamily,
+            fontSize: 29,
             height: 1.16,
-            letterSpacing: -0.25,
+            letterSpacing: 0.2,
             fontWeight: FontWeight.w700,
           ),
           headlineSmall: base.headlineSmall?.copyWith(

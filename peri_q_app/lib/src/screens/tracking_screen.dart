@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
 import '../models/order.dart';
+import '../widgets/flame_progress.dart';
 
 class TrackingScreen extends StatelessWidget {
   const TrackingScreen({super.key, required this.order, this.controller});
@@ -84,6 +85,13 @@ class TrackingScreen extends StatelessWidget {
       OrderStatus.completed => 'ORDER COMPLETED',
       OrderStatus.cancelled => 'ORDER CANCELLED',
     };
+    final progress = switch (order.status) {
+      OrderStatus.pending => 0.25,
+      OrderStatus.preparing => 0.5,
+      OrderStatus.ready => 0.75,
+      OrderStatus.completed => 1.0,
+      OrderStatus.cancelled => 0.0,
+    };
     final statusDetail = switch (order.status) {
       OrderStatus.completed => 'Thanks for ordering with RastasperiQ',
       OrderStatus.cancelled => 'Contact the branch if you need help',
@@ -100,7 +108,9 @@ class TrackingScreen extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(24),
               gradient: const LinearGradient(
-                colors: [Color(0xFF641407), Color(0xFF4A2107)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFF1A1715), Color(0xFF5A1406)],
               ),
             ),
             child: Column(
@@ -108,19 +118,24 @@ class TrackingScreen extends StatelessWidget {
               children: [
                 Text(
                   statusHeadline,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelLarge?.copyWith(letterSpacing: 1.6),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    letterSpacing: 1.6,
+                    color: const Color(0xFFFFD1A8),
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   statusDetail,
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 34,
                   ),
                 ),
-                const SizedBox(height: 6),
+                if (order.status != OrderStatus.cancelled) ...[
+                  const SizedBox(height: 16),
+                  FlameProgress(progress: progress, label: statusHeadline),
+                ],
+                const SizedBox(height: 10),
                 Text(
                   order.orderType.label,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(

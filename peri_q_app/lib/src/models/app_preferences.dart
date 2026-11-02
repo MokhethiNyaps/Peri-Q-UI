@@ -61,7 +61,9 @@ class AppPreferences {
     this.savedAddresses = const [],
     this.defaultAddressId,
     this.preferredPaymentMethod = PaymentMethod.yoco,
-    this.themeMode = ThemeMode.system,
+    // New installs open in the dark "Night Grill" brand theme; a saved choice
+    // (light, dark or system) is always respected.
+    this.themeMode = ThemeMode.dark,
   });
 
   final bool hasReturningSession;
@@ -108,13 +110,12 @@ class AppPreferences {
   factory AppPreferences.fromJson(Map<String, dynamic> json) {
     final savedAddressValues = json['savedAddresses'] as List<dynamic>? ?? [];
 
-    ThemeMode mode = ThemeMode.system;
     final themeStr = json['themeMode'] as String?;
-    if (themeStr == 'light') {
-      mode = ThemeMode.light;
-    } else if (themeStr == 'dark') {
-      mode = ThemeMode.dark;
-    }
+    final mode = switch (themeStr) {
+      'light' => ThemeMode.light,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.dark,
+    };
 
     return AppPreferences(
       hasReturningSession: json['hasReturningSession'] as bool? ?? false,

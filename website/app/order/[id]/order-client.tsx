@@ -189,12 +189,12 @@ export default function OrderClient({ orderId }: { orderId: string }) {
 
   return (
     <main id="main-content" className="bg-cream">
-      <section className="bg-charcoal py-10 text-white">
+      <section className="stage stage-glow grill-lines overflow-hidden py-10">
         <div className="site-shell">
           <Link href="/menu/" className="inline-flex items-center gap-2 text-sm font-bold text-white/60 hover:text-white">
             <ArrowLeft size={16} /> Back to menu
           </Link>
-          <h1 className="mt-4 font-display text-5xl font-black uppercase tracking-[-0.05em]">Order #{order.order_number}</h1>
+          <h1 className="mt-4 font-display text-6xl font-extrabold uppercase leading-[0.9]">Order #{order.order_number}</h1>
           <p className="mt-2 text-sm text-white/60">ID {order.id} • Created {new Date(order.created_at).toLocaleString("en-ZA", { timeZone: "Africa/Johannesburg" })}</p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
             <span className="rounded-full bg-white px-3 py-1.5 text-charcoal">{fulfillmentLabel[order.status] ?? order.status}</span>
@@ -207,6 +207,7 @@ export default function OrderClient({ orderId }: { orderId: string }) {
       <section className="section-pad">
         <div className="site-shell grid gap-8 lg:grid-cols-[1.6fr_0.9fr]">
           <div className="grid gap-6">
+            <OrderProgress status={order.status} paid={isPaid} estimatedMinutes={order.estimated_minutes} />
             {isNew && isPaid && (
               <div className="rounded-[1.75rem] border border-leaf/20 bg-leaf/10 p-5">
                 <p className="flex items-center gap-2 font-display text-xl font-black uppercase text-leaf"><CheckCircle2 size={20} /> Order confirmed #{order.order_number}</p>
@@ -286,16 +287,16 @@ export default function OrderClient({ orderId }: { orderId: string }) {
                 })}
               </ul>
               <div className="mt-4 flex justify-between border-t border-black/8 pt-4 text-lg font-black"><span>Total</span><span className="text-peri-red">R{order.total_price.toFixed(2)}</span></div>
-              <p className="mt-2 text-xs text-ash">Total calculated on server from trusted menu. Order is in the same Postgres table staff manage from the app admin dashboard.</p>
+
             </div>
           </div>
 
           <aside className="h-fit rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-sm lg:sticky lg:top-24">
             <h2 className="font-display text-lg font-black uppercase">What next?</h2>
             <ul className="mt-3 grid gap-2 text-sm leading-6 text-ash">
-              <li>• Kitchen advances status: <strong>pending → preparing → ready → completed</strong> (visible here and in the app).</li>
-              <li>• Payment and fulfilment are separate — a paid order still needs preparation.</li>
-              <li>• If payment stays pending after a successful card payment, contact the store with order #{order.order_number} — they can verify in Supabase `payments` table.</li>
+              <li>• The kitchen updates your order here and in the app as it moves from received to ready.</li>
+              <li>• A paid order still needs to be cooked, so give the grill a little time.</li>
+              <li>• If payment still shows as pending a few minutes after paying, contact the restaurant with order #{order.order_number} before paying again.</li>
             </ul>
             <div className="mt-6 grid gap-3">
               <Link href="/menu/" className="button w-full justify-center border border-black/10 bg-white text-charcoal">Back to menu</Link>
@@ -310,3 +311,44 @@ export default function OrderClient({ orderId }: { orderId: string }) {
   );
 }
 
+
+const PROGRESS_STEPS = [
+  { key: "pending", label: "Received" },
+  { key: "preparing", label: "On the grill" },
+  { key: "ready", label: "Ready" },
+  { key: "completed", label: "Done" },
+] as const;
+
+/** A flame bar that grows with each status the kitchen confirms. */
+function OrderProgress({ status, paid, estimatedMinutes }: { status: string; paid: boolean; estimatedMinutes: number }) {
+  if (status === "cancelled") {
+    return (
+      <div className="rounded-[1.75rem] border border-black/10 bg-white p-6 shadow-sm">
+        <p className="font-display text-2xl font-extrabold uppercase text-charcoal">This order was cancelled</p>
+        <p className="mt-1 text-sm text-ash">Contact the restaurant if you have questions about it.</p>
+      </div>
+    );
+  }
+  const index = Math.max(0, PROGRESS_STEPS.findIndex((step) => step.key === status));
+  const percent = paid || index > 0 ? ((index + 1) / PROGRESS_STEPS.length) * 100 : 8;
+  return (
+    <div className="rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-sm">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="font-display text-2xl font-extrabold uppercase text-charcoal">
+          {paid || index > 0 ? PROGRESS_STEPS[index].label : "Waiting for payment"}
+        </p>
+        {index < 2 && <p className="text-sm font-semibold text-ash">About {estimatedMinutes} min</p>}
+      </div>
+      <div className="flame-progress mt-4" role="progressbar" aria-label="Order progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(percent)}>
+        <span style={{ width: `${percent}%` }} />
+      </div>
+      <ol className="mt-3 grid grid-cols-4 gap-2 text-[0.7rem] font-extrabold uppercase tracking-[0.08em]">
+        {PROGRESS_STEPS.map((step, i) => (
+          <li key={step.key} className={(paid || index > 0) && i <= index ? "text-peri-red" : "text-black/30"}>
+            {step.label}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}

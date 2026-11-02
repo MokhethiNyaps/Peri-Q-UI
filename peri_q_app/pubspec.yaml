@@ -69,3 +69,12 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+  # Big Shoulders Display, SIL Open Font License 1.1 (assets/fonts/OFL.txt).
+  # Used for headlines only; body text stays Roboto.
+  fonts:
+    - family: BigShouldersDisplay
+      fonts:
+        - asset: assets/fonts/BigShouldersDisplay-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BigShouldersDisplay-Black.ttf
+          weight: 900

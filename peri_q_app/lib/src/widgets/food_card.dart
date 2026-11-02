@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/menu_item.dart';
 import 'app_image.dart';
+import 'plate_entrance.dart';
 
 class FoodCard extends StatefulWidget {
   const FoodCard({
@@ -42,13 +43,15 @@ class _FoodCardState extends State<FoodCard> {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final item = widget.item;
-    final image = AppImage(
-      imagePath: item.imagePath,
-      semanticLabel: '${item.name} photo',
-      width: widget.compact ? 100 : double.infinity,
-      height: widget.compact ? 112 : null,
-      fit: BoxFit.cover,
-      borderRadius: BorderRadius.circular(8),
+    final image = PlateEntrance(
+      child: AppImage(
+        imagePath: item.imagePath,
+        semanticLabel: '${item.name} photo',
+        width: widget.compact ? 100 : double.infinity,
+        height: widget.compact ? 112 : null,
+        fit: BoxFit.cover,
+        borderRadius: BorderRadius.circular(12),
+      ),
     );
     final details = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
