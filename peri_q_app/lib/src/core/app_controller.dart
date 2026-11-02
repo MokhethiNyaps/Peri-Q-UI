@@ -58,7 +58,7 @@ class AppController extends ChangeNotifier {
   TodaysSpecialSettings todaysSpecialSettings = const TodaysSpecialSettings();
   bool hasReturningSession = false;
   String selectedMenuCategory = 'All';
-  ThemeMode themeMode = ThemeMode.system;
+  ThemeMode themeMode = ThemeMode.dark;
 
   bool isBootstrapping = true;
   String? bootstrapError;

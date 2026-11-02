@@ -597,7 +597,7 @@ class _BrandHeader extends StatelessWidget {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15),
             child: Image.asset(
-              'assets/images/white-app-icon.png',
+              'assets/images/flame_mark.png',
               fit: BoxFit.contain,
             ),
           ),
