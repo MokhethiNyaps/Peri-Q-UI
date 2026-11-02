@@ -16,3 +16,6 @@ The short add-to-cart checkmark confirms a completed action and respects reduced
 
 ## Night Grill update (November 2026)
 New installs open in the dark theme (surface #141110, matching the website). Headlines (display and headline large/medium) use Big Shoulders Display; body stays Roboto. Menu photos are set down with a short plate-turn (`PlateEntrance`) and order tracking shows a flame progress bar (`FlameProgress`); both are skipped when the system asks for reduced motion. The home and sign-in headers use the transparent flame mark (`assets/images/flame_mark.png`).
+
+## Card payment inside the app (November 2026)
+The secure card page opens as a browser sheet over the app (Chrome Custom Tab on Android, Safari view on iOS) instead of switching to the browser app. While it is open, checkout shows a three-step panel (Order, Pay, Confirm) with Reopen payment and Cancel. When the customer finishes, the website's return page sends them back with `rastasperiq://payment-return?order=<id>&result=<success|cancel|failure>`; `MainActivity` is `singleTask`, so the sheet closes and the existing app comes forward. The return link is only a hint: an order is paid only when the database says so, after the signed webhook is verified on the server.

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'core/app_controller.dart';
 import 'core/auth_deep_links.dart';
+import 'core/payment_session.dart';
 import 'core/app_theme.dart';
 import 'core/supabase_config.dart';
 import 'data/local/shared_preferences_repository.dart';
@@ -72,6 +73,14 @@ class _PeriQAppState extends State<PeriQApp> {
   void _handleDeepLink(Uri uri) {
     if (AuthDeepLinks.isPasswordReset(uri)) {
       _hasPendingPasswordRecoveryLink = true;
+      return;
+    }
+    // The secure payment page sends the customer back here when they finish.
+    // This only tells checkout to stop waiting or to confirm; payment itself
+    // is confirmed from the database.
+    final paymentReturn = CardPaymentSession.parseReturnLink(uri);
+    if (paymentReturn != null) {
+      CardPaymentSession.instance.report(paymentReturn);
     }
   }
 

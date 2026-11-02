@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
+import '../core/payment_session.dart';
 import '../models/app_preferences.dart';
 import '../models/order.dart';
 import '../repositories/order_repository.dart';
@@ -91,6 +94,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             : null,
       );
       if (!mounted) return;
+      HapticFeedback.mediumImpact();
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
           builder: (_) =>
@@ -342,44 +346,220 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
         child: SafeArea(
-          child: ElevatedButton(
-            key: const ValueKey('checkout-place-order-button'),
-            onPressed: isSubmitting ? null : _submitOrder,
-            child: AnimatedSwitcher(
-              duration: MediaQuery.disableAnimationsOf(context)
-                  ? Duration.zero
-                  : const Duration(milliseconds: 160),
-              child: isSubmitting
-                  ? Row(
-                      key: ValueKey('checkout-placing'),
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        const Flexible(
-                          child: Text(
-                            'Opening payment and waiting for confirmation…',
-                          ),
-                        ),
-                      ],
-                    )
-                  : Text(
-                      key: const ValueKey('checkout-ready'),
-                      'Pay by card • R${total.toStringAsFixed(0)}',
-                    ),
-            ),
+          child: AnimatedSwitcher(
+            duration: MediaQuery.disableAnimationsOf(context)
+                ? Duration.zero
+                : const Duration(milliseconds: 220),
+            switchInCurve: Curves.easeOutCubic,
+            switchOutCurve: Curves.easeInCubic,
+            child: isSubmitting
+                ? const _CardPaymentProgress(key: ValueKey('checkout-placing'))
+                : ElevatedButton.icon(
+                    key: const ValueKey('checkout-place-order-button'),
+                    onPressed: _submitOrder,
+                    icon: const Icon(Icons.lock_rounded, size: 18),
+                    label: Text('Pay by card • R${total.toStringAsFixed(0)}'),
+                  ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// What the customer sees while a card payment runs: preparing, then the
+/// secure payment sheet with options to reopen or cancel it, then
+/// confirmation. Replaces a single long spinner.
+class _CardPaymentProgress extends StatelessWidget {
+  const _CardPaymentProgress({super.key});
+
+  Future<void> _reopen(BuildContext context) async {
+    final url = CardPaymentSession.instance.checkoutUrl;
+    if (url == null) return;
+    var opened = false;
+    try {
+      opened = await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+    } catch (_) {
+      opened = false;
+    }
+    if (!opened) {
+      opened = await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not reopen the payment page.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final appColors = context.appColors;
+    return ValueListenableBuilder<CardPaymentStage>(
+      valueListenable: CardPaymentSession.instance.stage,
+      builder: (context, stage, _) {
+        final waitingForCustomer = stage == CardPaymentStage.awaitingCustomer;
+        final (title, detail) = switch (stage) {
+          CardPaymentStage.awaitingCustomer => (
+            'Finish paying in the secure window',
+            'Enter your card details on the secure payment page. '
+                "We'll bring you straight back here.",
+          ),
+          CardPaymentStage.confirming => (
+            'Confirming your payment…',
+            'This usually takes a few seconds.',
+          ),
+          _ => (
+            'Preparing secure payment…',
+            'Checking your order and prices.',
+          ),
+        };
+        final step = switch (stage) {
+          CardPaymentStage.awaitingCustomer => 2,
+          CardPaymentStage.confirming => 3,
+          _ => 1,
+        };
+        return Semantics(
+          liveRegion: true,
+          label: '$title. $detail',
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            decoration: BoxDecoration(
+              color: appColors.elevatedSurface,
+              borderRadius: BorderRadius.circular(AppRadii.panel),
+              border: Border.all(color: appColors.softOutline),
+              boxShadow: [
+                BoxShadow(
+                  color: appColors.shadow,
+                  blurRadius: 24,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ExcludeSemantics(
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 28,
+                        height: 28,
+                        child: waitingForCustomer
+                            ? Icon(
+                                Icons.lock_rounded,
+                                color: colors.primary,
+                                size: 24,
+                              )
+                            : Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  color: colors.primary,
+                                ),
+                              ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(title, style: theme.textTheme.titleMedium),
+                            const SizedBox(height: 2),
+                            Text(
+                              detail,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colors.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ExcludeSemantics(child: _PaymentSteps(current: step)),
+                if (waitingForCustomer) ...[
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          key: const ValueKey('checkout-cancel-payment'),
+                          onPressed: CardPaymentSession.instance.abandon,
+                          child: const Text('Cancel'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: OutlinedButton.icon(
+                          key: const ValueKey('checkout-reopen-payment'),
+                          onPressed: () => _reopen(context),
+                          icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                          label: const Text('Reopen payment'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _PaymentSteps extends StatelessWidget {
+  const _PaymentSteps({required this.current});
+
+  final int current;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    const labels = ['Order', 'Pay', 'Confirm'];
+    return Row(
+      children: [
+        for (var i = 0; i < labels.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedContainer(
+                  duration: MediaQuery.disableAnimationsOf(context)
+                      ? Duration.zero
+                      : const Duration(milliseconds: 300),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppRadii.pill),
+                    color: i < current
+                        ? colors.primary
+                        : context.appColors.softOutline,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  labels[i],
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: i < current
+                        ? colors.onSurface
+                        : colors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
