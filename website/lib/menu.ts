@@ -31,7 +31,7 @@ export type AppSettings = {
   closingTime: string; // HH:MM
 };
 
-function imageUrlFor(path: unknown, supabaseUrl?: string): string {
+export function imageUrlFor(path: unknown, supabaseUrl?: string): string {
   const value = typeof path === "string" ? path.trim() : "";
   if (!value) return "/white-app-icon.png";
   if (value.startsWith("https://")) return value;
@@ -77,7 +77,7 @@ export async function fetchMenu(): Promise<{ items: MenuItem[]; categories: Menu
   return { items, categories, appSettings };
 }
 
-function mapMenuRow(row: Record<string, unknown>, supabaseUrl?: string): MenuItem {
+export function mapMenuRow(row: Record<string, unknown>, supabaseUrl?: string): MenuItem {
   return {
     id: String(row["id"] ?? ""),
     name: String(row["name"] ?? ""),
@@ -95,7 +95,7 @@ function mapMenuRow(row: Record<string, unknown>, supabaseUrl?: string): MenuIte
   };
 }
 
-function mapCategoryRow(row: Record<string, unknown>): MenuCategory {
+export function mapCategoryRow(row: Record<string, unknown>): MenuCategory {
   return {
     id: String(row["id"] ?? ""),
     name: String(row["name"] ?? ""),
@@ -126,4 +126,20 @@ export function isStoreOpenNow(settings: AppSettings, now = new Date()): boolean
 export function formatPrice(centsOrRand: number, asRands = true): string {
   const v = asRands ? centsOrRand : centsOrRand / 100;
   return `R${v.toFixed(2)}`.replace(/\.00$/, "");
+}
+
+/**
+ * Category tabs shown to customers: active categories that currently have at
+ * least one item, in the restaurant's sort order, followed by any item
+ * category missing from the catalogue. Empty categories stay hidden until the
+ * restaurant adds an item to them.
+ */
+export function visibleCategories(categories: MenuCategory[], items: MenuItem[]): string[] {
+  const used = new Set(items.map((item) => item.category).filter(Boolean));
+  const ordered = [...categories]
+    .filter((category) => category.isActive && used.has(category.name))
+    .sort((a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name))
+    .map((category) => category.name);
+  const extra = [...used].filter((name) => !ordered.includes(name)).sort();
+  return [...ordered, ...extra];
 }

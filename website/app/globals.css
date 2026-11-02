@@ -8,7 +8,10 @@
   --color-cream: #fff9f4;
   --color-muted: #f5f0ed;
   --color-leaf: #2f7049;
-  --font-display: "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+  /* Night Grill: dark browsing stage and secondary text on dark. */
+  --color-soot: #141110;
+  --color-smoke: #b9aea6;
+  --font-display: var(--font-big-shoulders), "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
   --font-body: Roboto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     "Segoe UI", sans-serif;
 }
@@ -18,6 +21,7 @@
   --duration-quick: 150ms;
   --duration-fast: 250ms;
   --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-reveal: 600ms;
   --shadow-soft: 0 24px 70px rgba(48, 22, 12, 0.1);
   --shadow-card: 0 14px 36px rgba(48, 22, 12, 0.08);
 }
@@ -428,4 +432,357 @@ button:disabled { cursor: not-allowed; }
 }
 @media (prefers-reduced-motion: reduce) {
   .button:hover, .feature-card:hover, .social-link:hover { transform: none; }
+}
+
+/* ------------------------------------------------------------------ */
+/* Night Grill: dark browsing stage, ember light, real plates.         */
+/* ------------------------------------------------------------------ */
+
+.stage {
+  position: relative;
+  isolation: isolate;
+  background: var(--color-soot);
+  color: var(--color-cream);
+}
+
+/* Warm light from below, like coals under a grill. */
+.stage-glow::before {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: -1;
+  height: 70%;
+  background: radial-gradient(60% 70% at 50% 100%, rgba(240, 120, 32, 0.2), rgba(200, 36, 11, 0.08) 45%, transparent 75%);
+  content: "";
+  pointer-events: none;
+}
+
+/* Grill-grate lines, drawn in CSS so no image has to load. */
+.grill-lines {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 249, 244, 0.035) 0 2px,
+    transparent 2px 46px
+  );
+}
+
+.eyebrow-ember {
+  color: var(--color-orange);
+}
+
+.text-smoke-soft {
+  color: var(--color-smoke);
+}
+
+.price-tag {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+/* A real plate photo cut out from its table, lit warm from below. */
+.plate {
+  display: block;
+  filter: drop-shadow(0 28px 34px rgba(0, 0, 0, 0.55)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35));
+  will-change: transform;
+}
+
+.plate-halo {
+  position: absolute;
+  inset: 12% 10% 0;
+  z-index: -1;
+  border-radius: 999px;
+  background: radial-gradient(closest-side, rgba(240, 120, 32, 0.32), rgba(200, 36, 11, 0.1) 60%, transparent);
+  filter: blur(12px);
+}
+
+/* Embers drifting up behind the hero. Pure CSS, off for reduced motion. */
+.embers {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ember {
+  position: absolute;
+  bottom: -10px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: #ffb15c;
+  box-shadow: 0 0 8px 2px rgba(240, 120, 32, 0.7);
+  opacity: 0;
+  animation: ember-rise var(--ember-duration, 7s) linear infinite;
+  animation-delay: var(--ember-delay, 0s);
+}
+
+@keyframes ember-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  12% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--ember-drift, 20px), -70vh, 0) scale(0.3);
+  }
+}
+
+/* Dish cards on the dark stage. */
+.dish-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 249, 244, 0.08);
+  border-radius: 1.25rem;
+  background: var(--color-charcoal);
+  color: var(--color-cream);
+  transition: transform var(--duration-fast) var(--ease-smooth-out), border-color var(--duration-fast) ease-out, box-shadow var(--duration-fast) ease-out;
+}
+
+.dish-card:hover {
+  border-color: rgba(240, 120, 32, 0.45);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+  transform: translateY(-3px);
+}
+
+.dish-card .dish-photo {
+  transition: transform 600ms var(--ease-smooth-out);
+}
+
+.dish-card:hover .dish-photo {
+  transform: scale(1.04);
+}
+
+.chip {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(255, 249, 244, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 249, 244, 0.06);
+  padding: 0.5rem 1rem;
+  color: rgba(255, 249, 244, 0.82);
+  font-size: 0.82rem;
+  font-weight: 800;
+  white-space: nowrap;
+  transition: background-color var(--duration-quick) ease-out, color var(--duration-quick) ease-out, border-color var(--duration-quick) ease-out;
+}
+
+.chip:hover {
+  background: rgba(255, 249, 244, 0.12);
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--color-orange);
+  background: var(--color-orange);
+  color: var(--color-soot);
+}
+
+/* Grill bars that open over a photo as it scrolls into view. */
+.grill-reveal {
+  position: relative;
+  overflow: hidden;
+}
+
+.grill-reveal__bars {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  pointer-events: none;
+}
+
+.grill-reveal__bars span {
+  background: var(--color-soot);
+  transform: scaleX(0); /* open by default; script closes them only to animate */
+  transform-origin: left center;
+}
+
+/* Cart count bump after an add. */
+@keyframes badge-bump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+
+.badge-bump {
+  animation: badge-bump 420ms var(--ease-smooth-out);
+}
+
+/* Ember spark that flies from an Add button to the cart. */
+.cart-spark {
+  position: fixed;
+  z-index: 80;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: radial-gradient(circle, #ffd29a 0%, #f07820 45%, rgba(200, 36, 11, 0) 70%);
+  box-shadow: 0 0 18px 6px rgba(240, 120, 32, 0.55);
+  pointer-events: none;
+}
+
+/* Bottom sheet for a dish: slides up on phones, scales in on desktop. */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  align-items: end;
+  background: rgba(10, 8, 7, 0.72);
+  backdrop-filter: blur(6px);
+  animation: fade-in 200ms ease-out;
+}
+
+.sheet {
+  max-height: 92svh;
+  width: 100%;
+  overflow: auto;
+  border-radius: 1.5rem 1.5rem 0 0;
+  background: var(--color-charcoal);
+  color: var(--color-cream);
+  animation: sheet-up 320ms var(--ease-smooth-out);
+}
+
+@media (min-width: 768px) {
+  .sheet-backdrop {
+    place-items: center;
+    padding: 1.5rem;
+  }
+
+  .sheet {
+    max-width: 56rem;
+    border-radius: 1.5rem;
+    animation: sheet-in 320ms var(--ease-smooth-out);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheet-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(16px) scale(0.97); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.sheet-option {
+  min-height: 2.75rem;
+  border: 1px solid rgba(255, 249, 244, 0.16);
+  border-radius: 999px;
+  background: transparent;
+  padding: 0.55rem 1.1rem;
+  color: var(--color-cream);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.sheet-option[aria-pressed="true"] {
+  border-color: var(--color-orange);
+  background: rgba(240, 120, 32, 0.16);
+  color: #ffd1a8;
+}
+
+.stepper-button {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid rgba(255, 249, 244, 0.16);
+  border-radius: 999px;
+  color: var(--color-cream);
+  font-size: 1.15rem;
+  font-weight: 900;
+}
+
+.field-dark {
+  width: 100%;
+  border: 1px solid rgba(255, 249, 244, 0.16);
+  border-radius: 1rem;
+  background: rgba(255, 249, 244, 0.05);
+  padding: 0.85rem 1rem;
+  color: var(--color-cream);
+}
+
+.field-dark::placeholder {
+  color: rgba(255, 249, 244, 0.42);
+}
+
+/* Floating cart bar on phones once something is in the cart. */
+.cart-bar {
+  position: fixed;
+  right: 0.75rem;
+  bottom: calc(0.75rem + env(safe-area-inset-bottom));
+  left: 0.75rem;
+  z-index: 55;
+  animation: sheet-up 320ms var(--ease-smooth-out);
+}
+
+/* Order progress: a flame that grows with each confirmed step. */
+.flame-progress {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(26, 23, 21, 0.1);
+}
+
+.flame-progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #c8240b, #f07820 70%, #ffb15c);
+  transition: width 700ms var(--ease-smooth-out);
+}
+
+@media (hover: none) {
+  .dish-card:hover {
+    transform: none;
+  }
+
+  .dish-card:hover .dish-photo {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ember {
+    display: none;
+  }
+
+  .dish-card:hover,
+  .dish-card:hover .dish-photo {
+    transform: none;
+  }
+
+  .grill-reveal__bars {
+    display: none;
+  }
+}
+
+.nav-link-dark {
+  color: rgba(255, 249, 244, 0.72);
+}
+
+.nav-link-dark:hover {
+  color: var(--color-cream);
+}
+
+.mobile-nav-link-dark {
+  color: rgba(255, 249, 244, 0.8);
+}
+
+.mobile-nav-link-dark:hover {
+  background: rgba(255, 249, 244, 0.08);
+  color: var(--color-cream);
 }

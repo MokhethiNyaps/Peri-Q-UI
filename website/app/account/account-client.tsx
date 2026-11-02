@@ -103,7 +103,7 @@ export default function AccountClient() {
   const changeMode = (next: Mode) => { setMode(next); setError(null); setMessage(null); setPassword(""); setConfirmPassword(""); };
 
   return <main id="main-content" className="bg-cream">
-    <section className="bg-charcoal py-10 text-white"><div className="site-shell">
+    <section className="stage stage-glow grill-lines overflow-hidden py-10"><div className="site-shell">
       <h1 className="font-display text-4xl font-black uppercase sm:text-5xl">{signedIn ? "My account" : mode === "signup" ? "Create an account" : mode === "reset" ? "Reset your password" : "Sign in"}</h1>
       <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Use the same email and password as the RastasperiQ mobile app. Your details and orders are available here too.</p>
     </div></section>

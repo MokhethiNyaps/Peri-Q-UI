@@ -1,10 +1,22 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
+import { MobileCartBar } from "@/components/mobile-cart-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { siteConfig } from "@/lib/site";
 import { CartProvider } from "@/lib/cart";
 import { CustomerAuthProvider } from "@/lib/customer-auth";
 import "./globals.css";
+
+// Big Shoulders Display (SIL Open Font License, see app/fonts/OFL.txt),
+// self-hosted and subset to Latin so no font is fetched from a third party.
+const bigShoulders = localFont({
+  src: "./fonts/BigShouldersDisplay-var.woff",
+  variable: "--font-big-shoulders",
+  weight: "100 900",
+  display: "swap",
+  preload: true,
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -39,13 +51,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#C8240B",
+  themeColor: "#141110",
   colorScheme: "light",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en-ZA">
+    <html lang="en-ZA" className={bigShoulders.variable}>
       <body>
         <a href="#main-content" className="skip-link">
           Skip to content
@@ -54,6 +66,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <SiteHeader />
           {children}
           <SiteFooter />
+          <MobileCartBar />
         </CartProvider></CustomerAuthProvider>
       </body>
     </html>

@@ -8,39 +8,29 @@ type BrandProps = {
 
 export function Brand({ compact = false, inverted = false }: BrandProps) {
   return (
-    <Link
-      href="/"
-      aria-label="RastasperiQ home"
-      className="group flex items-center gap-3"
-    >
-      <span
-        className={`grid shrink-0 place-items-center overflow-hidden rounded-2xl border p-1 shadow-sm transition-transform group-hover:-rotate-2 ${
-          inverted
-            ? "border-white/15 bg-cream"
-            : "border-black/10 bg-cream"
-        } ${compact ? "size-11" : "size-13"}`}
-      >
-        <Image
-          src="/white-app-icon.png"
-          alt=""
-          width={64}
-          height={64}
-          priority
-          className="h-full w-full scale-[1.45] object-contain"
-        />
-      </span>
+    <Link href="/" aria-label="RastasperiQ home" className="group flex items-center gap-2.5">
+      <Image
+        src="/brand/flame-mark-192.png"
+        alt=""
+        width={96}
+        height={96}
+        priority
+        className={`shrink-0 transition-transform duration-300 group-hover:-rotate-6 ${compact ? "size-10" : "size-12"} ${
+          inverted ? "drop-shadow-[0_0_14px_rgba(240,120,32,0.35)]" : ""
+        }`}
+      />
       <span className="leading-none">
         <span
-          className={`block font-display text-base font-black uppercase tracking-[-0.02em] ${
-            inverted ? "text-white" : "text-charcoal"
+          className={`block font-display text-[1.45rem] font-extrabold uppercase tracking-[0.01em] ${
+            inverted ? "text-cream" : "text-charcoal"
           }`}
         >
-          RastasperiQ
+          Rastasperi<span className="text-orange">Q</span>
         </span>
         {!compact && (
           <span
             className={`mt-1 block text-[0.64rem] font-bold uppercase tracking-[0.22em] ${
-              inverted ? "text-white/55" : "text-ash"
+              inverted ? "text-smoke" : "text-ash"
             }`}
           >
             Flame. Flavour. Vibes.

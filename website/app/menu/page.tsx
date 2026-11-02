@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { fetchPublicMenuSnapshot } from "@/lib/menu-server";
 import MenuClient from "./menu-client";
 
 export const metadata: Metadata = {
@@ -7,6 +9,19 @@ export const metadata: Metadata = {
   alternates: { canonical: "/menu/" },
 };
 
-export default function MenuPage() {
-  return <MenuClient />;
+// The first view is rendered from the restaurant's database (refreshed at most
+// every five minutes); the browser then reloads the live menu in the background.
+export const revalidate = 300;
+
+export default async function MenuPage() {
+  const snapshot = await fetchPublicMenuSnapshot();
+  const initial =
+    snapshot.items.length > 0 && snapshot.settings
+      ? { items: snapshot.items, categories: snapshot.categories, appSettings: snapshot.settings }
+      : null;
+  return (
+    <Suspense>
+      <MenuClient initial={initial} />
+    </Suspense>
+  );
 }

@@ -206,9 +206,9 @@ export default function CheckoutClient() {
 
   return (
     <main id="main-content" className="bg-cream">
-      <section className="bg-charcoal py-10 text-white">
+      <section className="stage stage-glow grill-lines overflow-hidden py-10">
         <div className="site-shell">
-          <h1 className="font-display text-5xl font-black uppercase tracking-[-0.05em]">Checkout</h1>
+          <h1 className="font-display text-6xl font-extrabold uppercase leading-[0.9]">Checkout</h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-white/60">Enter your details to place an order with the restaurant. Confirm your items and choose collection or delivery below.</p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-black">
             <span className={`rounded-full px-3 py-1.5 ${!globalStoreOpen ? "bg-amber-500 text-charcoal" : storeOpen ? "bg-leaf text-white" : "bg-white/15 text-white"}`}>
