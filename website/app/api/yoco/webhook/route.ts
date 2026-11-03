@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { readYocoEnv, verifyYocoWebhook } from "@/lib/yoco";
 
@@ -83,10 +83,26 @@ export async function POST(req: Request) {
       p_event_id: eventId, p_checkout_id: checkoutId, p_payment_id: paymentId, p_amount: amount, p_mode: mode,
     }));
     if (result?.status === "duplicate") return NextResponse.json({ ok: true, duplicate: true });
-    return NextResponse.json({ ok: true, id: eventId, orderId: result?.order_id ?? null });
+    const orderId = result?.order_id ?? null;
+    if (orderId) after(() => alertRestaurant(orderId));
+    return NextResponse.json({ ok: true, id: eventId, orderId });
   } catch (error) {
     console.error("Payment event processing failed", { eventId, type: error instanceof Error ? error.name : "database" });
     return NextResponse.json({ error: "Processing failed. Retry later." }, { status: 503 });
+  }
+}
+
+// Tells the restaurant's admin devices about a newly paid order. Runs after the
+// webhook has answered, so a slow or failed notification never affects the
+// payment. The push function sends each order's alert at most once.
+async function alertRestaurant(orderId: string) {
+  try {
+    const { error } = await createServiceClient().functions.invoke("order-push", {
+      body: { event: "new_order", order_id: orderId },
+    });
+    if (error) throw error;
+  } catch (error) {
+    console.error("New-order alert failed", { orderId, type: error instanceof Error ? error.name : "unknown" });
   }
 }
 
