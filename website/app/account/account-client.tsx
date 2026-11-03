@@ -163,7 +163,7 @@ export default function AccountClient() {
               </Link></li>)}
             </ul>}
           </div>
-          <div className="lg:col-span-2"><PrivacyPanel userId={user.id} /></div>
+          <div className="lg:col-span-2"><PrivacyPanel userId={user.id} onDeleted={() => { clear(); setName(""); setPhone(""); setOrders([]); setMode("signin"); setMessage("Your account has been deleted."); }} /></div>
         </div>}
       </>}
     </section>

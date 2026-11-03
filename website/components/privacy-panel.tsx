@@ -3,7 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Download } from "lucide-react";
-import { exportMyData, fetchPrivacyRequests, submitPrivacyRequest, type PrivacyRequest, type PrivacyRequestType } from "@/lib/customer-account";
+import { deleteMyAccount, exportMyData, fetchPrivacyRequests, submitPrivacyRequest, type PrivacyRequest, type PrivacyRequestType } from "@/lib/customer-account";
 
 const requestTypes: { value: PrivacyRequestType; label: string }[] = [
   { value: "access", label: "Tell me what information you hold about me" },
@@ -16,11 +16,12 @@ const statusLabel: Record<string, string> = { received: "Received", in_progress:
 const fieldClass = "mt-2 w-full rounded-xl border border-black/20 bg-white px-4 py-3 text-base focus:border-peri-red focus:outline-none focus:ring-2 focus:ring-peri-red/20";
 
 /** Self-service POPIA rights for a signed-in customer: a copy of their data, and requests to us. */
-export function PrivacyPanel({ userId }: { userId: string }) {
+export function PrivacyPanel({ userId, onDeleted }: { userId: string; onDeleted: () => void }) {
   const [requests, setRequests] = useState<PrivacyRequest[]>([]);
   const [type, setType] = useState<PrivacyRequestType>("access");
   const [details, setDetails] = useState("");
-  const [busy, setBusy] = useState<"export" | "request" | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
+  const [busy, setBusy] = useState<"export" | "request" | "delete" | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
@@ -45,6 +46,22 @@ export function PrivacyPanel({ userId }: { userId: string }) {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not prepare your data. Please try again.");
     } finally {
+      setBusy(null);
+    }
+  };
+
+  const removeAccount = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (deleteConfirmation.trim().toUpperCase() !== "DELETE") {
+      setError("Type DELETE to confirm.");
+      return;
+    }
+    setBusy("delete"); setError(null); setMessage(null);
+    try {
+      await deleteMyAccount();
+      onDeleted();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not delete your account. Please try again or contact us.");
       setBusy(null);
     }
   };
@@ -81,9 +98,20 @@ export function PrivacyPanel({ userId }: { userId: string }) {
           <button type="button" onClick={() => void download()} disabled={busy !== null} className="button button-dark mt-4 disabled:opacity-50">
             <Download size={16} aria-hidden="true" /> {busy === "export" ? "Preparing…" : "Download my data"}
           </button>
-          <p className="mt-4 text-sm leading-6 text-ash">
-            To delete your whole account, follow the <Link href="/delete-account/" className="font-bold underline">account deletion steps</Link>.
-          </p>
+          <form onSubmit={removeAccount} className="mt-8 grid gap-3 border-t border-black/10 pt-6">
+            <h3 className="font-bold">Delete my account</h3>
+            <p className="text-sm leading-6 text-ash">
+              This permanently deletes your account, details and privacy requests. Past orders are kept as
+              financial records with your name, phone, address and notes removed.{" "}
+              <Link href="/delete-account/" className="font-bold underline">What deletion covers</Link>.
+            </p>
+            <label className="text-sm font-bold">Type DELETE to confirm
+              <input className={fieldClass} autoComplete="off" value={deleteConfirmation} onChange={(e) => setDeleteConfirmation(e.target.value)} />
+            </label>
+            <button disabled={busy !== null || deleteConfirmation.trim().toUpperCase() !== "DELETE"} className="button justify-center border-red-700 bg-red-700 text-white disabled:opacity-40">
+              {busy === "delete" ? "Deleting…" : "Delete my account"}
+            </button>
+          </form>
         </div>
 
         <form onSubmit={submit} className="grid gap-4">

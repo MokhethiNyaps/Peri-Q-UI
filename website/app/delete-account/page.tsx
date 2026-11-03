@@ -45,8 +45,8 @@ export default function DeleteAccountPage() {
               Delete your account
             </h1>
             <p className="mt-7 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">
-              You can request deletion from inside the RastasperiQ app or contact
-              us directly if you cannot access your account.
+              Delete your account yourself in the RastasperiQ app or on this website, or
+              contact us if you cannot access your account.
             </p>
           </div>
         </div>
@@ -62,6 +62,7 @@ export default function DeleteAccountPage() {
                 ["1", "Open the app", "Sign in to the account you want to delete."],
                 ["2", "Go to Profile", "Open your profile and choose Delete Account."],
                 ["3", "Confirm deletion", "Read the confirmation and complete the deletion request."],
+                ["Or", "On the website", "Sign in under Account, then choose Delete my account in the Your privacy section."],
               ].map(([number, title, copy]) => (
                 <div key={number} className="feature-card flex gap-5">
                   <span className="step-number">{number}</span>
@@ -119,10 +120,10 @@ export default function DeleteAccountPage() {
           </div>
           <div className="grid gap-4">
             {[
-              "Your account, profile details, and saved addresses are removed.",
-              "Uploaded EFT payment proof associated with the account is removed, except where retention is legally required.",
-              "Order and financial records may be anonymised and kept for at least five years where South African record-keeping law requires it.",
-              "Residual data in Supabase backups or operational logs may take up to 30 days to expire.",
+              "Your account, sign-in, profile details, notification registrations, unfinished checkouts, consent records and privacy requests are deleted. The app also clears your saved details and addresses.",
+              "Your past orders and payment records are kept as financial records, with your name, phone number, delivery address and order notes removed. How long they are kept is being confirmed against South African record-keeping law.",
+              "Uploaded EFT payment proof associated with the account is removed.",
+              "Copies in our service providers' backups and logs expire on their own schedules.",
             ].map((item) => (
               <div key={item} className="flex gap-4 rounded-2xl border border-black/8 bg-white p-5">
                 <CheckCircle2 className="mt-0.5 shrink-0 text-leaf" size={21} aria-hidden="true" />

@@ -123,3 +123,16 @@ export async function exportMyData(userId: string) {
   ]);
   return { exported_at: new Date().toISOString(), profile: profile[0] ?? null, orders, payments, refunds, policy_acceptances: acceptances, privacy_requests: requests };
 }
+
+/**
+ * Deletes the signed-in customer's account. Past orders are kept by the
+ * database as anonymised financial records; everything else is removed.
+ */
+export async function deleteMyAccount() {
+  const supa = createBrowserClient();
+  const { error } = await supa.rpc("delete_own_account");
+  if (error) throw new Error("Could not delete your account. Please try again or contact us.");
+  // The session belongs to an account that no longer exists.
+  await supa.auth.signOut({ scope: "local" }).catch(() => undefined);
+  localStorage.removeItem("peri_q_customer_v1");
+}
