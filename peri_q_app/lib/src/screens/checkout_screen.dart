@@ -8,6 +8,7 @@ import '../core/payment_session.dart';
 import '../models/app_preferences.dart';
 import '../models/order.dart';
 import '../repositories/order_repository.dart';
+import '../widgets/policy_consent_field.dart';
 import 'confirmation_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -297,6 +298,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 selected: true,
                 enabled: true,
                 onTap: null,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'We use your name, phone number and, for delivery, your '
+                'address only to prepare, deliver and support your order. '
+                'Card details go straight to our payment provider; we never '
+                'see them.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 8),
+              PolicyConsentField(
+                key: const ValueKey('checkout-policy-consent'),
               ),
               const SizedBox(height: 24),
               Container(

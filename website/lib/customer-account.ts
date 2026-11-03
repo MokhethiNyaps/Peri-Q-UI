@@ -1,4 +1,5 @@
 import { createBrowserClient } from "./supabase";
+import { signupAcceptanceMetadata } from "./policy-consent";
 
 export type CustomerProfile = { id: string; full_name: string | null; phone: string | null };
 
@@ -31,7 +32,7 @@ export async function registerCustomer(email: string, password: string, name: st
   if (password.length < 8) throw new Error("Use a password with at least 8 characters.");
   const { data, error } = await createBrowserClient().auth.signUp({
     email: email.trim(), password,
-    options: { data: fields, emailRedirectTo: `${window.location.origin}/auth/callback/` },
+    options: { data: { ...fields, ...signupAcceptanceMetadata }, emailRedirectTo: `${window.location.origin}/auth/callback/` },
   });
   if (error) throw error;
   return data;
@@ -78,4 +79,47 @@ export async function completeAuthCallback(url: string): Promise<boolean> {
     if (error) throw error;
   }
   return parsed.searchParams.get("recovery") === "1" || hash.get("type") === "recovery";
+}
+
+export type PrivacyRequestType = "access" | "correction" | "deletion" | "objection" | "other";
+export type PrivacyRequest = { id: string; request_type: PrivacyRequestType; details: string; status: string; created_at: string; resolved_at: string | null };
+
+export async function fetchPrivacyRequests(): Promise<PrivacyRequest[]> {
+  const { data, error } = await createBrowserClient().from("privacy_requests")
+    .select("id,request_type,details,status,created_at,resolved_at").order("created_at", { ascending: false }).limit(20);
+  if (error) throw error;
+  return (data ?? []) as PrivacyRequest[];
+}
+
+export async function submitPrivacyRequest(type: PrivacyRequestType, details: string) {
+  const text = details.trim();
+  if (!text) throw new Error("Tell us what you need help with.");
+  if (text.length > 2000) throw new Error("Keep your request under 2,000 characters.");
+  const { error } = await createBrowserClient().rpc("submit_privacy_request", { p_request_type: type, p_details: text });
+  if (error) throw new Error(error.message.includes("three open") ? "You already have three open privacy requests. We will reply to those first." : "Could not send your request. Please try again.");
+}
+
+/** Everything the database holds for the signed-in customer, as a downloadable copy (POPIA section 23). */
+export async function exportMyData(userId: string) {
+  const supa = createBrowserClient();
+  // Every read is filtered to this customer: an admin's own export must not
+  // include other customers' rows, which admins are allowed to see.
+  const read = async (table: string, columns: string, column: string, values: string[]) => {
+    if (!values.length) return [];
+    const { data, error } = await supa.from(table).select(columns).in(column, values);
+    if (error) throw new Error("Could not prepare your data. Please try again.");
+    return (data ?? []) as unknown as Record<string, unknown>[];
+  };
+  const [profile, orders, acceptances, requests] = await Promise.all([
+    read("profiles", "id,email,full_name,phone,created_at,updated_at", "id", [userId]),
+    read("orders", "id,order_number,created_at,status,order_type,customer_name,customer_phone,delivery_address,total_price,payment_status,paid_at,order_items(item_name,quantity,unit_price,spice_level,notes,selected_add_ons)", "user_id", [userId]),
+    read("policy_acceptances", "documents,version,context,client,accepted_at", "user_id", [userId]),
+    read("privacy_requests", "request_type,details,status,created_at,resolved_at", "user_id", [userId]),
+  ]);
+  const orderIds = orders.map((order) => String(order.id));
+  const [payments, refunds] = await Promise.all([
+    read("payments", "order_id,amount_cents,currency,status,refunded_amount_cents,created_at", "order_id", orderIds),
+    read("payment_refunds", "order_id,amount_cents,currency,created_at", "order_id", orderIds),
+  ]);
+  return { exported_at: new Date().toISOString(), profile: profile[0] ?? null, orders, payments, refunds, policy_acceptances: acceptances, privacy_requests: requests };
 }

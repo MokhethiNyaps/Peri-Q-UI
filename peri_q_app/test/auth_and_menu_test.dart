@@ -416,6 +416,40 @@ void main() {
   });
 
   group('CheckoutScreen', () {
+    testWidgets('does not start payment until the policy box is ticked', (
+      tester,
+    ) async {
+      final delayedOrders = _DelayedOrderRepository();
+      final harness = _ControllerHarness(
+        orderRepository: delayedOrders,
+        appSettings: const AppSettings(
+          openingTime: '00:00',
+          closingTime: '00:00',
+        ),
+      );
+      await harness.controller.bootstrapFuture;
+      await harness.controller.startGuestSession();
+      await harness.controller.updateCustomer(
+        name: 'Test Customer',
+        phone: '0712345678',
+      );
+      harness.controller.addToCart(_menuItem(id: 'plate', name: 'Plate'));
+
+      await tester.pumpWidget(
+        MaterialApp(home: CheckoutScreen(controller: harness.controller)),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('checkout-place-order-button')),
+      );
+      await tester.pump();
+
+      expect(find.byKey(const ValueKey('checkout-placing')), findsNothing);
+      expect(
+        find.text('Accept the terms and conditions to continue.'),
+        findsOneWidget,
+      );
+    });
+
     testWidgets('shows a spinner while an order is being submitted', (
       tester,
     ) async {
@@ -438,6 +472,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(home: CheckoutScreen(controller: harness.controller)),
       );
+      await _acceptPolicies(tester);
       await tester.tap(
         find.byKey(const ValueKey('checkout-place-order-button')),
       );
@@ -474,6 +509,7 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(home: CheckoutScreen(controller: harness.controller)),
       );
+      await _acceptPolicies(tester);
       await tester.tap(
         find.byKey(const ValueKey('checkout-place-order-button')),
       );
@@ -1368,4 +1404,12 @@ MenuItemModel _menuItem({
     imagePath: 'assets/images/white-app-icon.png',
     isAvailable: isAvailable,
   );
+}
+
+/// Ticks the required terms and privacy box on the checkout screen.
+Future<void> _acceptPolicies(WidgetTester tester) async {
+  final checkbox = find.byKey(const ValueKey('policy-consent-checkbox'));
+  await tester.ensureVisible(checkbox);
+  await tester.tap(checkbox);
+  await tester.pump();
 }

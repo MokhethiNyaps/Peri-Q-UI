@@ -9,6 +9,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/payment_config.dart';
 import '../../core/payment_session.dart';
+import '../../core/policy_version.dart';
 import '../../models/menu_item.dart';
 import '../../models/order.dart';
 import '../../repositories/order_repository.dart';
@@ -110,6 +111,24 @@ order_items (
           .maybeSingle();
       if (existingPaid != null && existingPaid['payment_status'] == 'paid') {
         return _fromOrderRow(existingPaid);
+      }
+      // The customer ticked the policy box on the checkout screen. Saved
+      // before payment opens, against the draft that becomes the order.
+      try {
+        await _client.rpc(
+          'record_policy_acceptance',
+          params: {
+            'p_version': policyVersion,
+            'p_context': 'checkout',
+            'p_client': 'android',
+            'p_checkout_id': orderId,
+          },
+        );
+      } on PostgrestException {
+        throw const OrderSubmissionException(
+          'Could not record your acceptance of our terms. Please try again; '
+          'your cart is saved.',
+        );
       }
       final checkoutUrl = await _requestCheckoutUrl(orderId);
       if (!await _openSecurePaymentPage(checkoutUrl)) {
