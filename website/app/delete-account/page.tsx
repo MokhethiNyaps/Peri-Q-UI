@@ -119,10 +119,10 @@ export default function DeleteAccountPage() {
           </div>
           <div className="grid gap-4">
             {[
-              "Your account, profile details, and saved addresses are removed.",
-              "Uploaded EFT payment proof associated with the account is removed, except where retention is legally required.",
-              "Order and financial records may be anonymised and kept for at least five years where South African record-keeping law requires it.",
-              "Residual data in Supabase backups or operational logs may take up to 30 days to expire.",
+              "Your account, profile details and app notification registrations are removed, and the app clears your saved details and addresses.",
+              "Uploaded EFT payment proof associated with the account is removed.",
+              "Your order history and payment records are currently deleted with your account. We are reviewing how long financial records must be kept by law, and will update this page if that changes.",
+              "Copies in our service providers' backups and logs expire on their own schedules.",
             ].map((item) => (
               <div key={item} className="flex gap-4 rounded-2xl border border-black/8 bg-white p-5">
                 <CheckCircle2 className="mt-0.5 shrink-0 text-leaf" size={21} aria-hidden="true" />
