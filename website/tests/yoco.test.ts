@@ -7,9 +7,19 @@ import { POST as checkout, GET as paymentReadiness } from "../app/api/yoco/check
 
 type Result = { data: unknown; error: unknown };
 const db = vi.hoisted(() => ({ results: [] as { data: unknown; error: unknown }[], rpcResults: {} as Record<string, { data: unknown; error: unknown }[]>, calls: [] as { table: string; method: string; args: unknown[] }[], userId: "user-a" }));
+const scheduled = vi.hoisted(() => ({ tasks: [] as (() => unknown)[], invokeError: null as unknown }));
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: (task: () => unknown) => { scheduled.tasks.push(task); },
+}));
 vi.mock("@/lib/supabase", () => ({
   readServerSupabaseConfig: () => ({ url: "https://example.supabase.co", serviceRoleKey: "test" }),
   createServiceClient: () => ({
+    functions: { invoke: async (name: string, options: unknown) => {
+      db.calls.push({ table: name, method: "invoke", args: [options] });
+      if (scheduled.invokeError) throw scheduled.invokeError;
+      return { data: { delivered: 1 }, error: null };
+    } },
     auth: { getUser: async () => { db.calls.push({ table: "auth", method: "getUser", args: [] }); return { data: { user: { id: db.userId } }, error: null }; } },
     rpc: async (name:string,args:unknown) => {
       db.calls.push({table:name,method:"rpc",args:[args]});
@@ -39,6 +49,7 @@ function signedRequest(value: object = event, timestamp = String(Math.floor(Date
 beforeEach(() => {
   vi.unstubAllGlobals();
   db.results = []; db.rpcResults = {}; db.calls = []; db.userId = "user-a";
+  scheduled.tasks = []; scheduled.invokeError = null;
   vi.stubEnv("YOCO_SECRET_KEY", "sk_test_example"); vi.stubEnv("YOCO_WEBHOOK_SECRET", secret);
 });
 
@@ -195,6 +206,35 @@ describe("Webhook signatures, replays and duplicates", () => {
     const response = await webhook(signedRequest());
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ duplicate: true });
+  });
+});
+
+describe("New-order alerts", () => {
+  const invokes = () => db.calls.filter(c => c.method === "invoke");
+  it("alerts the restaurant after answering Yoco for a newly paid order", async () => {
+    db.results = [ok(), ok(order)];
+    expect((await webhook(signedRequest())).status).toBe(200);
+    expect(invokes()).toHaveLength(0);
+    expect(scheduled.tasks).toHaveLength(1);
+    await scheduled.tasks[0]();
+    expect(invokes()).toEqual([{ table: "order-push", method: "invoke", args: [{ body: { event: "new_order", order_id: "order-1" } }] }]);
+  });
+  it("does not alert again for a duplicate delivery", async () => {
+    db.results = [ok(), ok(order)];
+    db.rpcResults.record_card_payment_event = [ok({ status: "duplicate", order_id: "order-1" })];
+    await webhook(signedRequest());
+    db.results = [ok({ processed: true })];
+    await webhook(signedRequest());
+    expect(scheduled.tasks).toHaveLength(0);
+  });
+  it("never lets a failed alert affect the payment", async () => {
+    db.results = [ok(), ok(order)];
+    scheduled.invokeError = new Error("push service down");
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+    expect((await webhook(signedRequest())).status).toBe(200);
+    await expect(scheduled.tasks[0]()).resolves.toBeUndefined();
+    expect(errors).toHaveBeenCalledWith("New-order alert failed", expect.objectContaining({ orderId: "order-1" }));
+    errors.mockRestore();
   });
 });
 

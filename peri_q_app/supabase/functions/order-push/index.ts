@@ -11,6 +11,7 @@ type OrderRow = {
   order_type: string;
   total_price: number;
   status: string;
+  payment_status: string;
   created_at: string;
 };
 
@@ -57,12 +58,19 @@ Deno.serve(async (request) => {
       auth: { persistSession: false },
     });
 
-    const {
-      data: { user },
-      error: userError,
-    } = await userClient.auth.getUser();
-    if (userError || !user) {
-      return jsonResponse({ error: "Invalid session." }, 401);
+    // The payment webhook calls with the service key once a payment is
+    // verified, so new orders alert the restaurant whichever client paid.
+    const isServer = await sameSecret(
+      authorization.slice("Bearer ".length).trim(),
+      serviceRoleKey,
+    );
+    let user: { id: string } | null = null;
+    if (!isServer) {
+      const { data, error: userError } = await userClient.auth.getUser();
+      if (userError || !data.user) {
+        return jsonResponse({ error: "Invalid session." }, 401);
+      }
+      user = data.user;
     }
 
     const payload = (await request.json()) as {
@@ -79,7 +87,7 @@ Deno.serve(async (request) => {
     const { data: order, error: orderError } = await serviceClient
       .from("orders")
       .select(
-        "id,user_id,order_number,customer_name,order_type,total_price,status,created_at",
+        "id,user_id,order_number,customer_name,order_type,total_price,status,payment_status,created_at",
       )
       .eq("id", payload.order_id!)
       .maybeSingle<OrderRow>();
@@ -90,22 +98,30 @@ Deno.serve(async (request) => {
       return jsonResponse({ error: "Order not found." }, 404);
     }
 
-    const { data: profile, error: profileError } = await serviceClient
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle<{ role: string }>();
-    if (profileError) {
-      throw profileError;
-    }
-
     const event = payload.event!;
-    if (event === "new_order") {
-      if (order.user_id !== user.id || order.status !== "pending") {
+    if (isServer) {
+      if (
+        event !== "new_order" || order.status !== "pending" ||
+        order.payment_status !== "paid"
+      ) {
         return jsonResponse({ error: "Not allowed." }, 403);
       }
-    } else if (profile?.role !== "admin") {
-      return jsonResponse({ error: "Administrator access required." }, 403);
+    } else {
+      const { data: profile, error: profileError } = await serviceClient
+        .from("profiles")
+        .select("role")
+        .eq("id", user!.id)
+        .maybeSingle<{ role: string }>();
+      if (profileError) {
+        throw profileError;
+      }
+      if (event === "new_order") {
+        if (order.user_id !== user!.id || order.status !== "pending") {
+          return jsonResponse({ error: "Not allowed." }, 403);
+        }
+      } else if (profile?.role !== "admin") {
+        return jsonResponse({ error: "Administrator access required." }, 403);
+      }
     }
 
     const eventKey = event === "new_order"
@@ -335,6 +351,23 @@ function requireEnvironment(name: string) {
     throw new Error(`Missing ${name}.`);
   }
   return value;
+}
+
+// Compares digests so the time taken does not reveal how much of a guessed
+// key matched.
+async function sameSecret(candidate: string, secret: string) {
+  const encoder = new TextEncoder();
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(candidate)),
+    crypto.subtle.digest("SHA-256", encoder.encode(secret)),
+  ]);
+  const left = new Uint8Array(a);
+  const right = new Uint8Array(b);
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) {
+    difference |= left[index] ^ right[index];
+  }
+  return difference === 0;
 }
 
 function isUuid(value: unknown): value is string {
