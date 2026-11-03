@@ -4,8 +4,10 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
+import '../core/external_links.dart';
 import '../core/payment_session.dart';
 import '../models/app_preferences.dart';
+import '../models/menu_item.dart';
 import '../models/order.dart';
 import '../repositories/order_repository.dart';
 import '../widgets/policy_consent_field.dart';
@@ -46,6 +48,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         widget.controller.canUseOrderType(OrderType.delivery)) {
       orderType = OrderType.delivery;
     }
+    // The order review repeats these details, so it follows every edit.
+    for (final field in [nameController, phoneController, addressController]) {
+      field.addListener(_refreshReview);
+    }
+  }
+
+  void _refreshReview() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -299,6 +309,19 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 enabled: true,
                 onTap: null,
               ),
+              const SizedBox(height: 24),
+              _OrderReview(
+                key: const ValueKey('checkout-order-review'),
+                items: widget.controller.cart,
+                orderType: orderType,
+                deliveryAddress: addressController.text.trim(),
+                customerName: nameController.text.trim(),
+                customerPhone: phoneController.text.trim(),
+                subtotal: widget.controller.subtotal,
+                deliveryFee: widget.controller.deliveryFeeFor(orderType),
+                total: total,
+                onEditCart: () => Navigator.of(context).maybePop(),
+              ),
               const SizedBox(height: 20),
               Text(
                 'We use your name, phone number and, for delivery, your '
@@ -310,47 +333,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               const SizedBox(height: 8),
               PolicyConsentField(
                 key: const ValueKey('checkout-policy-consent'),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(AppRadii.card),
-                  border: Border.all(color: context.appColors.softOutline),
-                ),
-                child: ExpansionTile(
-                  shape: const Border(),
-                  collapsedShape: const Border(),
-                  tilePadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
-                  ),
-                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  leading: Icon(
-                    Icons.receipt_long_rounded,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  title: Text(
-                    'Order Summary',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  subtitle: Text(
-                    '${widget.controller.cartCount} items • R${total.toStringAsFixed(0)} total',
-                  ),
-                  children: [
-                    _SummaryRow(
-                      label: 'Subtotal',
-                      amount: widget.controller.subtotal,
-                    ),
-                    if (orderType == OrderType.delivery)
-                      _SummaryRow(
-                        label: 'Delivery',
-                        amount: widget.controller.deliveryFeeFor(orderType),
-                      ),
-                    const Divider(height: 20),
-                    _SummaryRow(label: 'Total', amount: total, strong: true),
-                  ],
-                ),
               ),
             ],
           ),
@@ -759,6 +741,144 @@ class _PaymentTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Everything the customer is about to pay for, shown before payment so they
+/// can check it and change it (ECTA section 44): items with their options,
+/// fulfilment, contact details, charges and what happens after payment.
+class _OrderReview extends StatelessWidget {
+  const _OrderReview({
+    super.key,
+    required this.items,
+    required this.orderType,
+    required this.deliveryAddress,
+    required this.customerName,
+    required this.customerPhone,
+    required this.subtotal,
+    required this.deliveryFee,
+    required this.total,
+    required this.onEditCart,
+  });
+
+  final List<CartItemModel> items;
+  final OrderType orderType;
+  final String deliveryAddress;
+  final String customerName;
+  final String customerPhone;
+  final double subtotal;
+  final double deliveryFee;
+  final double total;
+  final VoidCallback onEditCart;
+
+  Future<void> _openTerms(BuildContext context) async {
+    if (!await launchUrl(
+      AppExternalLinks.termsAndConditions,
+      mode: LaunchMode.inAppBrowserView,
+    )) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Could not open the page.')));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall;
+    final fulfilment = orderType == OrderType.delivery
+        ? 'Delivery to ${deliveryAddress.isEmpty ? '(enter your address above)' : deliveryAddress}'
+        : 'Collect from RastasperiQ, 28 King Edward Rd, Bloemfontein';
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(AppRadii.card),
+        border: Border.all(color: context.appColors.softOutline),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.receipt_long_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Review your order',
+                  style: theme.textTheme.titleLarge,
+                ),
+              ),
+              TextButton(
+                key: const ValueKey('checkout-edit-cart'),
+                onPressed: onEditCart,
+                child: const Text('Edit cart'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final line in items)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${line.quantity} × ${line.item.name}',
+                          style: theme.textTheme.bodyMedium,
+                        ),
+                        if (line.spiceLevel != null &&
+                            line.spiceLevel!.isNotEmpty)
+                          Text(line.spiceLevel!, style: muted),
+                        for (final addOn in line.selectedAddOns)
+                          Text(
+                            '+ ${addOn.name} (R${addOn.price.toStringAsFixed(0)})',
+                            style: muted,
+                          ),
+                        if (line.notes.trim().isNotEmpty)
+                          Text('Note: ${line.notes.trim()}', style: muted),
+                      ],
+                    ),
+                  ),
+                  Text('R${line.total.toStringAsFixed(0)}'),
+                ],
+              ),
+            ),
+          const Divider(height: 20),
+          _SummaryRow(label: 'Subtotal', amount: subtotal),
+          if (orderType == OrderType.delivery)
+            _SummaryRow(label: 'Delivery', amount: deliveryFee),
+          _SummaryRow(label: 'Total to pay now', amount: total, strong: true),
+          const Divider(height: 20),
+          Text(fulfilment, style: theme.textTheme.bodyMedium),
+          if (customerName.isNotEmpty || customerPhone.isNotEmpty)
+            Text(
+              'Contact: ${[customerName, customerPhone].where((value) => value.isNotEmpty).join(', ')}',
+              style: muted,
+            ),
+          const SizedBox(height: 10),
+          Text(
+            'You pay the full amount by card now. We start preparing your '
+            'order once the payment is confirmed. Until you pay, you can '
+            'change or leave your order and nothing is charged.',
+            style: muted,
+          ),
+          TextButton(
+            style: TextButton.styleFrom(padding: EdgeInsets.zero),
+            onPressed: () => _openTerms(context),
+            child: const Text('Cancellations and refunds'),
+          ),
+        ],
       ),
     );
   }
