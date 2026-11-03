@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { exportMyData, submitPrivacyRequest } from "../lib/customer-account";
+import { deleteMyAccount, exportMyData, submitPrivacyRequest } from "../lib/customer-account";
 import { POLICY_VERSION, recordCheckoutAcceptance } from "../lib/policy-consent";
 import { PolicyConsent } from "../components/policy-consent";
 
@@ -11,6 +11,7 @@ const db = vi.hoisted(() => ({
 }));
 vi.mock("../lib/supabase", () => ({
   createBrowserClient: () => ({
+    auth: { signOut: async (options: unknown) => { db.calls.push({ table: "auth", method: "signOut", args: [options] }); return { error: null }; } },
     rpc: async (name: string, args: unknown) => { db.calls.push({ table: name, method: "rpc", args: [args] }); return { data: "id-1", error: db.rpcError }; },
     from: (table: string) => {
       const chain: Record<string, unknown> = {};
@@ -71,5 +72,20 @@ describe("Privacy rights", () => {
   it("explains the open-request limit", async () => {
     db.rpcError = { message: "You already have three open privacy requests." };
     await expect(submitPrivacyRequest("other", "Another one")).rejects.toThrow("We will reply to those first");
+  });
+});
+
+describe("Account deletion", () => {
+  it("deletes the account in the database, then clears the local session and saved details", async () => {
+    localStorage.setItem("peri_q_customer_v1", JSON.stringify({ name: "Erin" }));
+    await deleteMyAccount();
+    expect(db.calls.map((call) => `${call.table}.${call.method}`)).toEqual(["delete_own_account.rpc", "auth.signOut"]);
+    expect(db.calls[1].args[0]).toEqual({ scope: "local" });
+    expect(localStorage.getItem("peri_q_customer_v1")).toBeNull();
+  });
+  it("keeps the customer signed in when deletion fails", async () => {
+    db.rpcError = { message: "network" };
+    await expect(deleteMyAccount()).rejects.toThrow("Could not delete your account");
+    expect(db.calls.some((call) => call.method === "signOut")).toBe(false);
   });
 });

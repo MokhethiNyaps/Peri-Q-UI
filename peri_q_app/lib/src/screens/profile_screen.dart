@@ -342,7 +342,7 @@ class ProfileScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'This removes your Supabase account, profile and linked orders. This cannot be undone. Type DELETE to confirm.',
+              'This deletes your account and profile. Past orders are kept as financial records with your name, phone, address and notes removed. This cannot be undone. Type DELETE to confirm.',
             ),
             const SizedBox(height: 16),
             TextField(
