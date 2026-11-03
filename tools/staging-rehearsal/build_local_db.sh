@@ -59,4 +59,9 @@ echo "== stage 2 migration (consent records, privacy requests) =="
 psql $PSQL_ARGS -d "$DB" -q -v ON_ERROR_STOP=1 \
   -f "$REPO_ROOT/peri_q_app/supabase/migrations/20261103160000_consent_and_privacy_requests.sql"
 
+echo "== stage 6 migration (database security) =="
+# shellcheck disable=SC2086
+psql $PSQL_ARGS -d "$DB" -q -v ON_ERROR_STOP=1 \
+  -f "$REPO_ROOT/peri_q_app/supabase/migrations/20261103180000_database_security.sql"
+
 echo "ready: REHEARSAL_DSN='host=... dbname=$DB' python3 rehearsal_test.py"
