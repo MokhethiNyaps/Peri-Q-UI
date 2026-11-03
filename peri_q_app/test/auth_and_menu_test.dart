@@ -11,6 +11,7 @@ import 'package:peri_q_app/src/core/app_controller.dart';
 import 'package:peri_q_app/src/core/app_theme.dart';
 import 'package:peri_q_app/src/screens/customer_shell.dart';
 import 'package:peri_q_app/src/core/auth_deep_links.dart';
+import 'package:peri_q_app/src/core/payment_session.dart';
 import 'package:peri_q_app/src/models/app_auth_session.dart';
 import 'package:peri_q_app/src/models/app_preferences.dart';
 import 'package:peri_q_app/src/models/app_settings.dart';
@@ -448,6 +449,67 @@ void main() {
       delayedOrders.completeSubmission();
       await tester.pumpAndSettle();
       expect(find.textContaining('Order Placed!'), findsOneWidget);
+    });
+
+    testWidgets('offers reopen and cancel while the payment sheet is open', (
+      tester,
+    ) async {
+      final delayedOrders = _DelayedOrderRepository();
+      final harness = _ControllerHarness(
+        orderRepository: delayedOrders,
+        appSettings: const AppSettings(
+          openingTime: '00:00',
+          closingTime: '00:00',
+        ),
+      );
+      await harness.controller.bootstrapFuture;
+      await harness.controller.startGuestSession();
+      await harness.controller.updateCustomer(
+        name: 'Test Customer',
+        phone: '0712345678',
+      );
+      harness.controller.addToCart(_menuItem(id: 'plate', name: 'Plate'));
+      addTearDown(CardPaymentSession.instance.finish);
+
+      await tester.pumpWidget(
+        MaterialApp(home: CheckoutScreen(controller: harness.controller)),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('checkout-place-order-button')),
+      );
+      await tester.pump();
+      expect(find.text('Preparing secure payment…'), findsOneWidget);
+
+      final returns = <PaymentReturn>[];
+      final subscription = CardPaymentSession.instance.returns.listen(
+        returns.add,
+      );
+      addTearDown(subscription.cancel);
+      CardPaymentSession.instance.opened(
+        orderId: 'order-1',
+        checkoutUrl: Uri.parse('https://pay.example/checkout/1'),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Finish paying in the secure window'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('checkout-reopen-payment')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('checkout-cancel-payment')));
+      await tester.pump();
+      expect(returns.single.result, PaymentReturnResult.abandoned);
+
+      CardPaymentSession.instance.confirming();
+      await tester.pump();
+      expect(find.text('Confirming your payment…'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('checkout-reopen-payment')),
+        findsNothing,
+      );
+
+      delayedOrders.completeSubmission();
+      await tester.pumpAndSettle();
     });
   });
 

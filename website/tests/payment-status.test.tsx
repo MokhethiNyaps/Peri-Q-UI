@@ -1,6 +1,6 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import PaymentStatus from "../app/payment/[id]/payment-status";
+import PaymentStatus, { appReturnLink } from "../app/payment/[id]/payment-status";
 
 const mocks = vi.hoisted(() => ({ query: vi.fn(), clear: vi.fn(), entries: [] as { id: string }[] }));
 vi.mock("@/lib/supabase", () => ({ createBrowserClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.query }) }) }) }) }));
@@ -48,6 +48,33 @@ describe("Authoritative payment return status", () => {
     await act(async () => { vi.advanceTimersByTime(3000); });
     expect(screen.getByRole("status")).toHaveTextContent("Waiting for payment confirmation");
     expect(mocks.clear).not.toHaveBeenCalled();
+  });
+  it("returns app customers to the app automatically, with a button as fallback", async () => {
+    const assign = vi.spyOn(window.location, "assign").mockImplementation(() => {});
+    window.history.replaceState({}, "", "/payment/order-1/?source=mobile&checkout=cancel");
+    await mount();
+    expect(screen.getByRole("status")).toHaveTextContent("Return to the app");
+    expect(screen.getByRole("link", { name: /Return to the app/ })).toHaveAttribute("href", expect.stringContaining("payment-return?order=order-1&result=cancel"));
+    await act(async () => { vi.advanceTimersByTime(600); });
+    expect(assign).toHaveBeenCalledWith(expect.stringContaining("payment-return?order=order-1&result=cancel"));
+    expect(mocks.query).not.toHaveBeenCalled();
+  });
+  it("builds an Android intent link and a plain app link elsewhere", () => {
+    expect(appReturnLink("a b", "success", "Mozilla/5.0 (Linux; Android 14)")).toBe(
+      "intent://payment-return?order=a%20b&result=success#Intent;scheme=rastasperiq;package=za.co.rastasperiq.ordering;end",
+    );
+    expect(appReturnLink("x", "failure", "Mozilla/5.0 (iPhone)")).toBe("rastasperiq://payment-return?order=x&result=failure");
+    expect(appReturnLink("x", "cancel", "Android", "https://rastasperiq.co.za/payment/x/?noapp=1")).toContain(
+      "S.browser_fallback_url=https%3A%2F%2Frastasperiq.co.za%2Fpayment%2Fx%2F%3Fnoapp%3D1;end",
+    );
+  });
+  it("does not loop back to the app for app versions without the return link", async () => {
+    const assign = vi.spyOn(window.location, "assign").mockImplementation(() => {});
+    window.history.replaceState({}, "", "/payment/order-1/?source=mobile&checkout=success&noapp=1");
+    await mount();
+    await act(async () => { vi.advanceTimersByTime(2000); });
+    expect(assign).not.toHaveBeenCalled();
+    expect(screen.getByRole("status")).toHaveTextContent("Return to the app");
   });
   it("sends mobile browser returns back to the authenticated app", async () => {
     window.history.replaceState({}, "", "/payment/order-1/?source=mobile&checkout=success");

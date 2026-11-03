@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useEffectEvent, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
-import { CreditCard, ArrowRight } from "lucide-react";
+import { CreditCard, ArrowRight, CheckCircle2, XCircle } from "lucide-react";
 import { createBrowserClient } from "@/lib/supabase";
 import { useCart } from "@/lib/cart";
 
 export default function PaymentStatus({ id }: { id: string }) {
   const [message, setMessage] = useState("Checking payment with the restaurant…");
   const [mobile, setMobile] = useState(false);
+  const [mobileResult, setMobileResult] = useState<MobileResult>("success");
   const { clear, entries } = useCart();
   const finishPayment = useEffectEvent(() => {
     try {
@@ -26,9 +28,24 @@ export default function PaymentStatus({ id }: { id: string }) {
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
     if (query.get("source") === "mobile") {
+      // App customers pay in a browser sheet on top of the app. Send them
+      // straight back; the app confirms the payment from the database.
+      const result = mobileResultFrom(query.get("checkout"));
       setMobile(true);
-      setMessage("Return to the app to check your payment. Your order appears after payment is confirmed. If you left checkout, your cart stays saved. Check Orders before paying again.");
-      return;
+      setMobileResult(result);
+      // Older app versions cannot open the return link; Android then sends
+      // them back here with noapp=1 instead of to the Play Store.
+      if (query.get("noapp") === "1") {
+        setMessage("Return to the app to check your payment. Your order appears after payment is confirmed. If you left checkout, your cart stays saved. Check Orders before paying again.");
+        return;
+      }
+      setMessage(MOBILE_MESSAGES[result]);
+      const timer = window.setTimeout(() => {
+        try {
+          window.location.assign(appReturnLink(id, result, navigator.userAgent, noAppFallback(result)));
+        } catch { /* The button below still works. */ }
+      }, 500);
+      return () => window.clearTimeout(timer);
     }
     let stopped = false;
     let checking = false;
@@ -76,6 +93,32 @@ export default function PaymentStatus({ id }: { id: string }) {
     };
   }, [id]);
 
+  if (mobile) {
+    const success = mobileResult === "success";
+    return (
+      <main id="main-content" className="stage stage-glow grill-lines grid min-h-[80svh] place-items-center px-5 py-16">
+        <section className="w-full max-w-md rounded-[1.5rem] border border-white/10 bg-charcoal p-7 text-center shadow-2xl">
+          <Image src="/brand/flame-mark-192.png" alt="" width={72} height={72} className="mx-auto size-16" priority />
+          <p className="mt-5 inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.18em] text-orange">
+            {success ? <CheckCircle2 size={15} aria-hidden="true" /> : <XCircle size={15} aria-hidden="true" />}
+            {success ? "Payment sent" : mobileResult === "cancel" ? "Payment cancelled" : "Payment not completed"}
+          </p>
+          <h1 className="mt-3 font-display text-4xl font-extrabold uppercase leading-[0.95] text-cream">
+            {success ? "Back to RastasperiQ" : "Your cart is saved"}
+          </h1>
+          <p role="status" aria-live="polite" className="mt-4 text-sm leading-6 text-smoke">{message}</p>
+          <a
+            href={appReturnLink(id, mobileResult, typeof navigator === "undefined" ? "" : navigator.userAgent, noAppFallback(mobileResult))}
+            className="button button-primary mt-7 w-full"
+          >
+            Return to the app
+            <ArrowRight size={18} aria-hidden="true" />
+          </a>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main id="main-content" className="site-shell py-16 sm:py-24">
       <section className="mx-auto max-w-xl rounded-2xl border border-black/10 bg-white p-6 sm:p-10">
@@ -89,4 +132,37 @@ export default function PaymentStatus({ id }: { id: string }) {
       </section>
     </main>
   );
+}
+
+type MobileResult = "success" | "cancel" | "failure";
+
+const MOBILE_MESSAGES: Record<MobileResult, string> = {
+  success: "Taking you back to the app to confirm your order. If nothing happens, tap Return to the app.",
+  cancel: "You left the payment page before paying. Return to the app to try again or change your order.",
+  failure: "The payment did not go through and no order was placed. Return to the app to try again.",
+};
+
+function mobileResultFrom(value: string | null): MobileResult {
+  return value === "cancel" || value === "failure" ? value : "success";
+}
+
+/**
+ * Link back into the RastasperiQ Android app. On Android, an intent link
+ * opens the app directly (or its Play Store page if it is not installed);
+ * elsewhere the plain app scheme is used. The result is only a hint for the
+ * app: payment is confirmed from the database.
+ */
+export function appReturnLink(orderId: string, result: MobileResult, userAgent: string, fallbackUrl?: string): string {
+  const query = `order=${encodeURIComponent(orderId)}&result=${result}`;
+  if (/android/i.test(userAgent)) {
+    const fallback = fallbackUrl ? `S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};` : "";
+    return `intent://payment-return?${query}#Intent;scheme=rastasperiq;package=za.co.rastasperiq.ordering;${fallback}end`;
+  }
+  return `rastasperiq://payment-return?${query}`;
+}
+
+/** This page again, without the automatic return, for app versions that cannot open the link. */
+function noAppFallback(result: MobileResult): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  return `${window.location.origin}${window.location.pathname}?checkout=${result}&source=mobile&noapp=1`;
 }

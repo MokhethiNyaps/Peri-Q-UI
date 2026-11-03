@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:url_launcher/url_launcher.dart';
 import 'dart:typed_data';
+
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/payment_config.dart';
+import '../../core/payment_session.dart';
 import '../../models/menu_item.dart';
 import '../../models/order.dart';
 import '../../repositories/order_repository.dart';
@@ -65,6 +68,8 @@ order_items (
       );
     }
 
+    final session = CardPaymentSession.instance;
+    session.preparing();
     try {
       final response = await _client.rpc(
         'prepare_card_checkout',
@@ -106,44 +111,92 @@ order_items (
       if (existingPaid != null && existingPaid['payment_status'] == 'paid') {
         return _fromOrderRow(existingPaid);
       }
-      final checkoutEndpoint = cardCheckoutUri();
-      if (checkoutEndpoint == null) {
+      final checkoutUrl = await _requestCheckoutUrl(orderId);
+      if (!await _openSecurePaymentPage(checkoutUrl)) {
         throw const OrderSubmissionException(
-          'Card payments are temporarily unavailable. Your cart is saved.',
+          'Could not open secure card checkout. Your cart is saved.',
         );
       }
-      final client = HttpClient()
-        ..connectionTimeout = const Duration(seconds: 20);
-      try {
-        final request = await client.postUrl(checkoutEndpoint);
-        request.headers.contentType = ContentType.json;
-        request.headers.set(
-          'Authorization',
-          'Bearer ${_client.auth.currentSession?.accessToken ?? ''}',
+      session.opened(orderId: orderId, checkoutUrl: checkoutUrl);
+      return await _awaitConfirmedPayment(orderId, session);
+    } on PostgrestException catch (error) {
+      throw OrderSubmissionException(_friendlyOrderError(error));
+    } finally {
+      session.finish();
+    }
+  }
+
+  /// Asks the website's server to create the hosted card checkout for this
+  /// order. The server checks ownership, amount and payment state; the app
+  /// never holds payment-provider credentials.
+  Future<Uri> _requestCheckoutUrl(String orderId) async {
+    final checkoutEndpoint = cardCheckoutUri();
+    if (checkoutEndpoint == null) {
+      throw const OrderSubmissionException(
+        'Card payments are temporarily unavailable. Your cart is saved.',
+      );
+    }
+    final client = HttpClient()
+      ..connectionTimeout = const Duration(seconds: 20);
+    try {
+      final request = await client.postUrl(checkoutEndpoint);
+      request.headers.contentType = ContentType.json;
+      request.headers.set(
+        'Authorization',
+        'Bearer ${_client.auth.currentSession?.accessToken ?? ''}',
+      );
+      request.write(jsonEncode({'orderId': orderId, 'source': 'mobile'}));
+      final response = await request.close();
+      final body =
+          jsonDecode(await utf8.decoder.bind(response).join())
+              as Map<String, dynamic>;
+      final redirect = body['redirectUrl'];
+      final uri = redirect is String ? Uri.tryParse(redirect) : null;
+      if (response.statusCode != 200 || uri == null || uri.scheme != 'https') {
+        throw OrderSubmissionException(
+          body['error'] as String? ??
+              'Card checkout is unavailable. Your cart is saved.',
         );
-        request.write(jsonEncode({'orderId': orderId, 'source': 'mobile'}));
-        final response = await request.close();
-        final body =
-            jsonDecode(await utf8.decoder.bind(response).join())
-                as Map<String, dynamic>;
-        if (response.statusCode != 200 || body['redirectUrl'] == null) {
-          throw OrderSubmissionException(
-            body['error'] as String? ??
-                'Card checkout is unavailable. Your cart is saved.',
-          );
-        }
-        if (!await launchUrl(
-          Uri.parse(body['redirectUrl'] as String),
-          mode: LaunchMode.externalApplication,
-        )) {
-          throw const OrderSubmissionException(
-            'Could not open secure card checkout. Your cart is saved.',
-          );
-        }
-      } finally {
-        client.close();
       }
-      for (var attempt = 0; attempt < 120; attempt++) {
+      return uri;
+    } finally {
+      client.close();
+    }
+  }
+
+  /// Opens the secure payment page in a browser sheet on top of the app
+  /// (Chrome Custom Tab on Android, Safari view on iOS) so the customer never
+  /// leaves RastasperiQ. Falls back to the full browser if no in-app browser
+  /// is available on the device.
+  Future<bool> _openSecurePaymentPage(Uri checkoutUrl) async {
+    try {
+      if (await launchUrl(checkoutUrl, mode: LaunchMode.inAppBrowserView)) {
+        return true;
+      }
+    } catch (_) {
+      // Fall through to the device browser.
+    }
+    return launchUrl(checkoutUrl, mode: LaunchMode.externalApplication);
+  }
+
+  /// Waits until the database shows the order as paid. The return link from
+  /// the payment page only decides how long to wait and what to tell the
+  /// customer; it never marks anything as paid.
+  Future<OrderModel> _awaitConfirmedPayment(
+    String orderId,
+    CardPaymentSession session,
+  ) async {
+    PaymentReturn? latestReturn;
+    Completer<void>? wake;
+    final subscription = session.returns.listen((paymentReturn) {
+      latestReturn = paymentReturn;
+      final pending = wake;
+      if (pending != null && !pending.isCompleted) pending.complete();
+    });
+    final waitingSince = DateTime.now();
+    DateTime? confirmingSince;
+    try {
+      while (DateTime.now().difference(waitingSince) < _paymentWaitLimit) {
         final paid = await _client
             .from('orders')
             .select(_orderSelect)
@@ -159,18 +212,58 @@ order_items (
             .single();
         if (draft['payment_status'] == 'failed') {
           throw const OrderSubmissionException(
-            'Payment failed. No order was placed. Your cart is saved.',
+            'The payment did not go through and no order was placed. '
+            'Your cart is saved, so you can try again.',
           );
         }
-        await Future<void>.delayed(const Duration(seconds: 3));
+
+        final returned = latestReturn?.result;
+        if (returned == PaymentReturnResult.cancelled) {
+          throw const OrderSubmissionException(
+            'Payment cancelled. Your cart is saved.',
+          );
+        }
+        if (returned == PaymentReturnResult.failed) {
+          throw const OrderSubmissionException(
+            'The payment did not go through and no order was placed. '
+            'Your cart is saved, so you can try again.',
+          );
+        }
+        if (returned == PaymentReturnResult.abandoned) {
+          throw const OrderSubmissionException(
+            'Payment not completed. Your cart is saved. If you did pay, '
+            'your order will appear in Orders within a few minutes.',
+          );
+        }
+        if (returned == PaymentReturnResult.success) {
+          final since = confirmingSince ??= DateTime.now();
+          session.confirming();
+          if (DateTime.now().difference(since) > _confirmationWaitLimit) {
+            throw _notConfirmedYet;
+          }
+        }
+
+        // Check again soon; wake straight away if the customer comes back.
+        final pending = Completer<void>();
+        wake = pending;
+        final interval = confirmingSince == null
+            ? const Duration(seconds: 3)
+            : const Duration(seconds: 1);
+        await Future.any([pending.future, Future<void>.delayed(interval)]);
+        wake = null;
       }
-      throw const OrderSubmissionException(
-        'Payment is not confirmed yet. Your cart is saved. A successful payment will appear in Orders, even if you close the app.',
-      );
-    } on PostgrestException catch (error) {
-      throw OrderSubmissionException(_friendlyOrderError(error));
+      throw _notConfirmedYet;
+    } finally {
+      await subscription.cancel();
     }
   }
+
+  static const _paymentWaitLimit = Duration(minutes: 10);
+  static const _confirmationWaitLimit = Duration(seconds: 90);
+  static const _notConfirmedYet = OrderSubmissionException(
+    'Payment is not confirmed yet. Your cart is saved. A successful payment '
+    'will appear in Orders, even if you close the app.',
+  );
 
   @override
   Future<OrderModel> updateOrderStatus({

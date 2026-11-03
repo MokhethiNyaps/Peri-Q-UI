@@ -51,9 +51,7 @@ void main() {
       const key = Key('plate');
       await tester.pumpWidget(
         const MaterialApp(
-          home: PlateEntrance(
-            child: SizedBox(key: key, width: 80, height: 80),
-          ),
+          home: PlateEntrance(child: SizedBox(key: key, width: 80, height: 80)),
         ),
       );
       await tester.pumpAndSettle();
