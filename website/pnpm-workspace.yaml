@@ -12,3 +12,10 @@ minimumReleaseAgeExclude:
   - '@supabase/realtime-js@2.110.9'
   - '@supabase/storage-js@2.110.9'
   - '@supabase/supabase-js@2.110.9'
+
+# Patched releases for advisories reported by `pnpm audit` (see
+# docs/compliance/01-initial-audit.md, D-I3). Remove once upstream
+# postcss and @tailwindcss ship with these versions.
+overrides:
+  nanoid@<3.3.18: ^3.3.18
+  source-map-js@<1.2.2: ^1.2.2
