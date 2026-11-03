@@ -47,4 +47,4 @@ The web uses a 150ms quick duration and a smooth-out curve for brief, interrupti
 
 ## Verification boundary
 
-Source tests and local rendered fixtures cover the shared system and checkout states described in `IMPLEMENTATION_REPORT_20261020.md`. They do not certify physical-device accessibility, every native screen, merchant card entry or live payments. Preserve those limits in future release reports.
+Source tests and local rendered fixtures cover the shared system and checkout states. They do not certify physical-device accessibility, every native screen, merchant card entry or live payments. Preserve those limits in future release reports.
