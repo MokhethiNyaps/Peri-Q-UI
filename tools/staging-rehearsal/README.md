@@ -60,8 +60,14 @@ Then the Stage 2 checks (policy acceptances, privacy requests):
 REHEARSAL_DSN="host=/tmp/pgdata user=postgres dbname=peri_q_rehearsal" python3 stage2_test.py
 ```
 
-Expected output: `14 passed, 0 failed` for Stage 5 and `8 passed, 0 failed` for
-Stage 2. Both migrations are safe to apply
+Then the Stage 6 checks (grants, admin limits, audit log), last:
+
+```bash
+REHEARSAL_DSN="host=/tmp/pgdata user=postgres dbname=peri_q_rehearsal" python3 stage6_test.py
+```
+
+Expected output: `14 passed, 0 failed` for Stage 5, `8 passed, 0 failed` for
+Stage 2 and `9 passed, 0 failed` for Stage 6. All three migrations are safe to apply
 twice: every object uses `if not exists`, `create or replace` or
 `drop policy if exists`.
 
