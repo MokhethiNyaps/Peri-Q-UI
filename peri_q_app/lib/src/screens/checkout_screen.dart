@@ -411,10 +411,7 @@ class _CardPaymentProgress extends StatelessWidget {
             'Confirming your payment…',
             'This usually takes a few seconds.',
           ),
-          _ => (
-            'Preparing secure payment…',
-            'Checking your order and prices.',
-          ),
+          _ => ('Preparing secure payment…', 'Checking your order and prices.'),
         };
         final step = switch (stage) {
           CardPaymentStage.awaitingCustomer => 2,
