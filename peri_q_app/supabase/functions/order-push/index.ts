@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { importPKCS8, SignJWT } from "npm:jose@6";
+import { decodeJwt, importPKCS8, SignJWT } from "npm:jose@6";
 
 type PushEvent = "new_order" | "status_update";
 
@@ -60,10 +60,11 @@ Deno.serve(async (request) => {
 
     // The payment webhook calls with the service key once a payment is
     // verified, so new orders alert the restaurant whichever client paid.
-    const isServer = await sameSecret(
-      authorization.slice("Bearer ".length).trim(),
-      serviceRoleKey,
-    );
+    // The gateway may pass the key through or swap it for a service_role JWT;
+    // verify_jwt = true means that JWT's signature is already checked.
+    const bearer = authorization.slice("Bearer ".length).trim();
+    const isServer = await sameSecret(bearer, serviceRoleKey) ||
+      jwtRole(bearer) === "service_role";
     let user: { id: string } | null = null;
     if (!isServer) {
       const { data, error: userError } = await userClient.auth.getUser();
@@ -368,6 +369,16 @@ async function sameSecret(candidate: string, secret: string) {
     difference |= left[index] ^ right[index];
   }
   return difference === 0;
+}
+
+// Reads the role claim of a JWT whose signature the gateway has verified.
+function jwtRole(token: string) {
+  try {
+    const role = decodeJwt(token).role;
+    return typeof role === "string" ? role : null;
+  } catch {
+    return null;
+  }
 }
 
 function isUuid(value: unknown): value is string {
