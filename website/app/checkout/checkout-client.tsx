@@ -8,6 +8,7 @@ import { fetchMenu, isStoreOpenNow, type AppSettings } from "@/lib/menu";
 import { ensureAnonSession } from "@/lib/auth";
 import { createBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import { useCustomerAuth } from "@/lib/customer-auth";
+import { siteConfig } from "@/lib/site";
 import { recordCheckoutAcceptance } from "@/lib/policy-consent";
 import { PolicyConsent, PrivacyNotice } from "@/components/policy-consent";
 
@@ -308,7 +309,11 @@ export default function CheckoutClient() {
 
           {/* Summary */}
           <aside className="h-fit rounded-[1.75rem] border border-black/8 bg-white p-6 shadow-sm lg:sticky lg:top-24">
-            <h2 className="font-display text-xl font-black uppercase">Summary</h2>
+            {/* Everything the customer pays for, reviewable and changeable before payment (ECTA s44). */}
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="font-display text-xl font-black uppercase">Review your order</h2>
+              <Link href="/cart/" className="text-sm font-bold underline">Edit cart</Link>
+            </div>
             <div className="mt-4 max-h-[22rem] overflow-auto pr-1">
               {entries.length === 0 ? (
                 <p className="rounded-2xl bg-amber-50 p-4 text-sm font-bold text-amber-900">Cart empty — <Link href="/menu/" className="underline">add items</Link>.</p>
@@ -322,6 +327,8 @@ export default function CheckoutClient() {
                         <span className="min-w-0 flex-1 font-semibold">
                           <span className="font-extrabold">{e.item.name}</span> <span className="text-ash">×{e.quantity}</span>
                           {e.spiceLevel ? <span className="block text-xs text-ash">{e.spiceLevel}</span> : null}
+                          {e.selectedAddOns.map((addOn) => <span key={addOn.name} className="block text-xs text-ash">+ {addOn.name} (R{addOn.price.toFixed(2)})</span>)}
+                          {e.notes?.trim() ? <span className="block text-xs text-ash">Note: {e.notes.trim()}</span> : null}
                         </span>
                         <span className="shrink-0 font-black">R{line.toFixed(2)}</span>
                       </li>
@@ -334,9 +341,20 @@ export default function CheckoutClient() {
             <div className="mt-4 grid gap-2 border-t border-black/8 pt-4 text-sm">
               <div className="flex justify-between"><span className="text-ash">Subtotal</span><span className="font-black">R{subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span className="text-ash">Delivery fee</span><span className="font-black">{orderType === "delivery" ? `R${deliveryFee.toFixed(2)}` : "—"}</span></div>
-              <div className="flex justify-between text-[1.05rem]"><span className="font-black">Total to pay</span><span className="font-black text-peri-red">R{totalForType(orderType).toFixed(2)}</span></div>
+              <div className="flex justify-between text-[1.05rem]"><span className="font-black">Total to pay now</span><span className="font-black text-peri-red">R{totalForType(orderType).toFixed(2)}</span></div>
               <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-xs leading-5 text-ash"><ShieldCheck size={16} className="shrink-0 text-leaf" /> Your card details stay on the hosted payment page.</p>
             </div>
+
+            <dl data-testid="order-review-details" className="mt-4 grid gap-2 border-t border-black/8 pt-4 text-sm">
+              <div><dt className="text-xs font-black uppercase tracking-[0.14em] text-ash">{orderType === "delivery" ? "Delivery to" : "Collect from"}</dt>
+                <dd className="mt-0.5 font-semibold">{orderType === "delivery" ? (address.trim() || "Enter your delivery address") : siteConfig.address}</dd></div>
+              <div><dt className="text-xs font-black uppercase tracking-[0.14em] text-ash">Contact</dt>
+                <dd className="mt-0.5 font-semibold">{[name.trim(), phone.trim()].filter(Boolean).join(", ") || "Enter your name and phone"}</dd></div>
+            </dl>
+            <p className="mt-3 text-xs leading-5 text-ash">
+              You pay the full amount by card now, and we start preparing your order once the payment is confirmed. Until you pay, you can change or leave your order and nothing is charged.{" "}
+              <Link href="/terms-and-conditions/" className="font-bold underline">Cancellations and refunds</Link>.
+            </p>
 
             <div className="mt-5">
               <PolicyConsent checked={acceptedPolicies} onChange={(value) => { setAcceptedPolicies(value); if (value) setFieldErrors((current) => { const rest = { ...current }; delete rest.consent; return rest; }); }} error={fieldErrors.consent} />

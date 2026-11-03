@@ -416,6 +416,68 @@ void main() {
   });
 
   group('CheckoutScreen', () {
+    testWidgets('reviews items, options, fulfilment and total before payment', (
+      tester,
+    ) async {
+      final harness = _ControllerHarness(
+        appSettings: const AppSettings(
+          openingTime: '00:00',
+          closingTime: '00:00',
+        ),
+      );
+      await harness.controller.bootstrapFuture;
+      await harness.controller.startGuestSession();
+      await harness.controller.updateCustomer(
+        name: 'Test Customer',
+        phone: '0712345678',
+      );
+      harness.controller.addToCart(
+        _menuItem(id: 'plate', name: 'Plate'),
+        quantity: 2,
+        notes: 'No onions',
+        selectedAddOns: const [AddOnOption(name: 'Cheese', price: 5)],
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(home: CheckoutScreen(controller: harness.controller)),
+      );
+      final review = find.byKey(const ValueKey('checkout-order-review'));
+      await tester.ensureVisible(review);
+
+      expect(
+        find.descendant(of: review, matching: find.text('2 × Plate')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: review, matching: find.text('+ Cheese (R5)')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: review, matching: find.text('Note: No onions')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: review, matching: find.text('R110')),
+        findsWidgets,
+      );
+      expect(
+        find.descendant(
+          of: review,
+          matching: find.textContaining('Collect from RastasperiQ'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: review,
+          matching: find.textContaining('Contact: Test Customer, '),
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('checkout-edit-cart')), findsOneWidget);
+      expect(find.text('Cancellations and refunds'), findsOneWidget);
+    });
+
     testWidgets('does not start payment until the policy box is ticked', (
       tester,
     ) async {
