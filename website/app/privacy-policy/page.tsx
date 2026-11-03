@@ -133,13 +133,14 @@ export default function PrivacyPolicyPage() {
       <ul>
         <li>Account and order information is kept while your account exists.</li>
         <li>
-          When you delete your account, your account details, saved notification tokens and order
-          history are deleted. Financial records that the law requires us to keep may need to be kept
-          for longer: <Pending>record-keeping periods for orders and payments, for attorney and
-          accountant review</Pending>
+          When you delete your account, your account, profile, notification registrations, unfinished
+          checkouts, consent records and privacy requests are deleted. Your past orders and payment
+          records are kept as financial records, with your name, phone number, delivery address and
+          order notes removed, for: <Pending>record-keeping period for orders and payments, for
+          attorney and accountant review</Pending>
         </li>
-        <li>Unfinished checkouts (payments that were never completed): <Pending>retention period</Pending></li>
-        <li>Guest (anonymous) identifiers: <Pending>retention period</Pending></li>
+        <li>Unfinished checkouts (payments that were never completed): <Pending>retention period (proposed: 30 days)</Pending></li>
+        <li>Guest (anonymous) identifiers that never placed an order: <Pending>retention period (proposed: 90 days)</Pending></li>
         <li>Messages you send us: <Pending>retention period</Pending></li>
         <li>Our providers&rsquo; backups and logs expire on their own schedules.</li>
       </ul>
@@ -157,8 +158,9 @@ export default function PrivacyPolicyPage() {
         </li>
       </ul>
       <p>
-        You can update your details in your account, and delete your account in the app or by following
-        our <Link href="/delete-account/">account deletion steps</Link>. For other requests, contact us
+        You can update your details, download a copy of your data, make a privacy request and delete
+        your account in your account on the website, or delete it in the app. See our{" "}
+        <Link href="/delete-account/">account deletion steps</Link>. For other requests, contact us
         using the details below. Formal requests for records follow our <Link href="/paia-manual/">PAIA
         manual</Link>.
       </p>

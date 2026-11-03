@@ -8,6 +8,8 @@ import { fetchMenu, isStoreOpenNow, type AppSettings } from "@/lib/menu";
 import { ensureAnonSession } from "@/lib/auth";
 import { createBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import { useCustomerAuth } from "@/lib/customer-auth";
+import { recordCheckoutAcceptance } from "@/lib/policy-consent";
+import { PolicyConsent, PrivacyNotice } from "@/components/policy-consent";
 
 type OrderType = "pickup" | "delivery";
 const paymentMethod = "yoco";
@@ -21,6 +23,7 @@ export default function CheckoutClient() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -95,6 +98,7 @@ export default function CheckoutClient() {
     if (paymentMethod === "yoco" && !yocoAvailable) fe.payment = "Online card payments are unavailable. Your cart stays saved. Please try again later.";
     if (!canPickup && orderType === "pickup") fe.orderType = "Pickup is unavailable right now.";
     if (!canDelivery && orderType === "delivery") fe.orderType = "Delivery is unavailable right now.";
+    if (!acceptedPolicies) fe.consent = "Accept the terms and conditions to continue.";
     setFieldErrors(fe);
     return Object.keys(fe).length === 0;
   };
@@ -161,6 +165,8 @@ export default function CheckoutClient() {
 
       const orderId = (data as { id?: string })?.id;
       if (!orderId) throw new Error("Store did not return an order confirmation. Please try again.");
+      // Saved before payment opens, against the draft that becomes the order.
+      await recordCheckoutAcceptance(orderId);
 
 
       try {
@@ -240,6 +246,9 @@ export default function CheckoutClient() {
                   <input type="tel" autoComplete="tel" maxLength={30} aria-invalid={!!fieldErrors.phone} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+27 71 234 5678" inputMode="tel" className="mt-1.5 h-12 w-full rounded-2xl border border-black/10 px-4 text-sm font-semibold focus:border-orange/60 focus:outline-none" />
                   {fieldErrors.phone && <span className="mt-1 block text-xs font-bold text-red-600">{fieldErrors.phone}</span>}
                 </label>
+              </div>
+              <div className="mt-4">
+                <PrivacyNotice purpose="We use your name, phone number and, for delivery, your address only to prepare, deliver and support your order." />
               </div>
             </div>
 
@@ -327,6 +336,10 @@ export default function CheckoutClient() {
               <div className="flex justify-between"><span className="text-ash">Delivery fee</span><span className="font-black">{orderType === "delivery" ? `R${deliveryFee.toFixed(2)}` : "—"}</span></div>
               <div className="flex justify-between text-[1.05rem]"><span className="font-black">Total to pay</span><span className="font-black text-peri-red">R{totalForType(orderType).toFixed(2)}</span></div>
               <p className="flex items-center gap-2 rounded-2xl bg-muted p-3 text-xs leading-5 text-ash"><ShieldCheck size={16} className="shrink-0 text-leaf" /> Your card details stay on the hosted payment page.</p>
+            </div>
+
+            <div className="mt-5">
+              <PolicyConsent checked={acceptedPolicies} onChange={(value) => { setAcceptedPolicies(value); if (value) setFieldErrors((current) => { const rest = { ...current }; delete rest.consent; return rest; }); }} error={fieldErrors.consent} />
             </div>
 
             <button onClick={handleSubmit} disabled={submitting || entries.length === 0 || !yocoAvailable || !settings || !storeOpen || !globalStoreOpen} aria-busy={submitting} className="button button-primary mt-6 w-full justify-center disabled:opacity-40">

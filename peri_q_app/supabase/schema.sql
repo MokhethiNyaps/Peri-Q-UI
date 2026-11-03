@@ -1882,3 +1882,545 @@ grant execute on function public.consume_rate_limit(text, integer, integer)
   to service_role;
 
 commit;
+
+
+-- Stage 2 (migrations/20261103160000_consent_and_privacy_requests.sql):
+-- policy acceptances and privacy-rights requests.
+begin;
+
+-- 1) Policy acceptances --------------------------------------------------
+
+-- Evidence that a customer accepted the terms and read the privacy policy,
+-- at signup or at checkout. Customers can read their own records; only the
+-- functions below write them.
+create table if not exists public.policy_acceptances (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  documents text[] not null
+    check (cardinality(documents) >= 1 and documents <@ array['terms', 'privacy']),
+  version text not null check (length(version) between 1 and 60),
+  context text not null check (context in ('signup', 'checkout')),
+  client text not null check (client in ('website', 'android')),
+  checkout_id uuid,
+  accepted_at timestamptz not null default timezone('utc', now())
+);
+create index if not exists policy_acceptances_user_idx
+  on public.policy_acceptances (user_id, accepted_at desc);
+create unique index if not exists policy_acceptances_checkout_idx
+  on public.policy_acceptances (user_id, checkout_id) where checkout_id is not null;
+
+alter table public.policy_acceptances enable row level security;
+revoke all on table public.policy_acceptances from anon, authenticated;
+grant select on table public.policy_acceptances to authenticated;
+grant select, insert on table public.policy_acceptances to service_role;
+
+drop policy if exists "policy_acceptances_owner_read" on public.policy_acceptances;
+create policy "policy_acceptances_owner_read" on public.policy_acceptances
+  for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists "policy_acceptances_admin_read" on public.policy_acceptances;
+create policy "policy_acceptances_admin_read" on public.policy_acceptances
+  for select to authenticated using (public.is_admin());
+
+-- Records a checkout acceptance for the caller. Linking the checkout draft
+-- ties the acceptance to the order that payment creates (same ID). Repeated
+-- calls for one checkout return the existing record.
+create or replace function public.record_policy_acceptance(
+  p_version text,
+  p_context text,
+  p_client text,
+  p_checkout_id uuid default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  caller_id uuid := auth.uid();
+  existing_id uuid;
+  created_id uuid;
+begin
+  if caller_id is null then
+    raise exception 'A signed-in session is required.' using errcode = '42501';
+  end if;
+  if length(coalesce(p_version, '')) not between 1 and 60
+     or p_context not in ('signup', 'checkout')
+     or p_client not in ('website', 'android') then
+    raise exception 'Invalid policy acceptance.' using errcode = '22023';
+  end if;
+  if p_checkout_id is not null then
+    if not exists (
+      select 1 from public.checkout_intents where id = p_checkout_id and user_id = caller_id
+    ) then
+      raise exception 'Checkout not found for this account.' using errcode = '42501';
+    end if;
+    select id into existing_id from public.policy_acceptances
+    where user_id = caller_id and checkout_id = p_checkout_id;
+    if existing_id is not null then
+      return existing_id;
+    end if;
+  end if;
+
+  insert into public.policy_acceptances (user_id, documents, version, context, client, checkout_id)
+  values (caller_id, array['terms', 'privacy'], p_version, p_context, p_client, p_checkout_id)
+  on conflict (user_id, checkout_id) where checkout_id is not null do nothing
+  returning id into created_id;
+  if created_id is null then
+    select id into created_id from public.policy_acceptances
+    where user_id = caller_id and checkout_id = p_checkout_id;
+  end if;
+  return created_id;
+end;
+$$;
+
+revoke all on function public.record_policy_acceptance(text, text, text, uuid) from public, anon;
+grant execute on function public.record_policy_acceptance(text, text, text, uuid) to authenticated;
+
+-- Signup acceptance travels in the new user's metadata (policy_version and
+-- policy_client), because email sign-ups have no session until confirmed.
+-- Invalid or missing values record nothing, so signup can never fail here.
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  accepted_version text := new.raw_user_meta_data ->> 'policy_version';
+  accepted_client text := new.raw_user_meta_data ->> 'policy_client';
+begin
+  insert into public.profiles (id, email, full_name, phone)
+  values (
+    new.id,
+    new.email,
+    new.raw_user_meta_data ->> 'full_name',
+    new.raw_user_meta_data ->> 'phone'
+  )
+  on conflict (id) do update
+    set
+      email = excluded.email,
+      full_name = coalesce(excluded.full_name, public.profiles.full_name),
+      phone = coalesce(excluded.phone, public.profiles.phone);
+
+  if length(coalesce(accepted_version, '')) between 1 and 60
+     and accepted_client in ('website', 'android') then
+    insert into public.policy_acceptances (user_id, documents, version, context, client)
+    values (new.id, array['terms', 'privacy'], accepted_version, 'signup', accepted_client);
+  end if;
+
+  return new;
+end;
+$$;
+
+-- 2) Privacy-rights requests ---------------------------------------------
+
+-- Requests to access, correct or delete personal information, or to object
+-- to processing. Customers submit and read their own; admins read and update
+-- the status.
+create table if not exists public.privacy_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  request_type text not null
+    check (request_type in ('access', 'correction', 'deletion', 'objection', 'other')),
+  details text not null check (length(details) between 1 and 2000),
+  status text not null default 'received'
+    check (status in ('received', 'in_progress', 'completed', 'declined')),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  resolved_at timestamptz
+);
+create index if not exists privacy_requests_user_idx
+  on public.privacy_requests (user_id, created_at desc);
+create index if not exists privacy_requests_open_idx
+  on public.privacy_requests (created_at) where status in ('received', 'in_progress');
+
+drop trigger if exists privacy_requests_touch_updated_at on public.privacy_requests;
+create trigger privacy_requests_touch_updated_at
+before update on public.privacy_requests
+for each row execute procedure public.touch_updated_at();
+
+alter table public.privacy_requests enable row level security;
+revoke all on table public.privacy_requests from anon, authenticated;
+grant select on table public.privacy_requests to authenticated;
+grant update (status, resolved_at) on table public.privacy_requests to authenticated;
+grant select, insert, update on table public.privacy_requests to service_role;
+
+drop policy if exists "privacy_requests_owner_read" on public.privacy_requests;
+create policy "privacy_requests_owner_read" on public.privacy_requests
+  for select to authenticated using (user_id = (select auth.uid()));
+drop policy if exists "privacy_requests_admin_read" on public.privacy_requests;
+create policy "privacy_requests_admin_read" on public.privacy_requests
+  for select to authenticated using (public.is_admin());
+drop policy if exists "privacy_requests_admin_update" on public.privacy_requests;
+create policy "privacy_requests_admin_update" on public.privacy_requests
+  for update to authenticated using (public.is_admin()) with check (public.is_admin());
+
+-- Signed-in (not guest) customers only, at most three open requests each.
+create or replace function public.submit_privacy_request(
+  p_request_type text,
+  p_details text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  caller_id uuid := auth.uid();
+  created_id uuid;
+begin
+  if caller_id is null or coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false) then
+    raise exception 'Sign in to your account to make a privacy request.' using errcode = '42501';
+  end if;
+  if p_request_type not in ('access', 'correction', 'deletion', 'objection', 'other')
+     or length(trim(coalesce(p_details, ''))) not between 1 and 2000 then
+    raise exception 'Invalid privacy request.' using errcode = '22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtext('privacy_request:' || caller_id::text));
+  if (select count(*) from public.privacy_requests
+      where user_id = caller_id and status in ('received', 'in_progress')) >= 3 then
+    raise exception 'You already have three open privacy requests.' using errcode = 'P0001';
+  end if;
+  insert into public.privacy_requests (user_id, request_type, details)
+  values (caller_id, p_request_type, trim(p_details))
+  returning id into created_id;
+  return created_id;
+end;
+$$;
+
+revoke all on function public.submit_privacy_request(text, text) from public, anon;
+grant execute on function public.submit_privacy_request(text, text) to authenticated;
+
+commit;
+
+
+-- Stage 6 (migrations/20261103180000_database_security.sql):
+-- least-privilege grants, admin column limits and the admin audit log.
+begin;
+
+-- 1) Least-privilege table grants (L-1) ----------------------------------
+
+-- Signed-out visitors (anon) only ever read the menu and store settings.
+-- Guests who check out sign in anonymously and act as `authenticated`.
+revoke insert, update, delete on all tables in schema public from anon;
+-- Nobody outside the database owner needs these.
+revoke truncate, trigger, references on all tables in schema public from anon, authenticated;
+
+alter default privileges in schema public revoke insert, update, delete on tables from anon;
+alter default privileges in schema public revoke truncate, trigger, references on tables from anon, authenticated;
+
+-- 2) Admins may change only an order's status (D-M3) --------------------
+
+-- Payment fields, totals and customer details on orders are written only by
+-- the server (service_role) and its functions. RLS still limits status
+-- changes to admins, and the status trigger limits which changes are valid.
+revoke update on table public.orders from authenticated;
+grant update (status) on table public.orders to authenticated;
+
+-- 3) Customers cannot change the email on their profile (D-L3) ------------
+
+-- profiles.email mirrors the sign-in email. Customers may still edit their
+-- name and phone; the email always follows auth.users unless an admin or
+-- the server makes the change.
+create or replace function public.protect_profile_email()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+begin
+  if new.email is distinct from old.email
+     and auth.uid() is not null
+     and not public.is_admin() then
+    new.email := (select email from auth.users where id = new.id);
+  end if;
+  return new;
+end;
+$$;
+
+revoke all on function public.protect_profile_email() from public, anon, authenticated;
+
+drop trigger if exists profiles_protect_email on public.profiles;
+create trigger profiles_protect_email
+before update on public.profiles
+for each row execute procedure public.protect_profile_email();
+
+-- 4) Retired EFT uploads and storage listing (D-M6, D-L2) -----------------
+
+-- EFT payment proofs are no longer accepted. Customers keep read and delete
+-- access to their own historical files (account deletion uses both).
+drop policy if exists "payment_proofs_owner_insert" on storage.objects;
+revoke execute on function public.attach_payment_proof(uuid, text) from authenticated;
+
+-- Menu photos are served from the public bucket URL, which needs no policy.
+-- Listing the bucket is limited to admins, whose uploads overwrite files.
+drop policy if exists "menu_images_public_read" on storage.objects;
+drop policy if exists "menu_images_admin_read" on storage.objects;
+create policy "menu_images_admin_read" on storage.objects
+  for select to authenticated
+  using (bucket_id = 'menu-images' and public.is_admin());
+
+-- 5) Function hardening (L-2 and advisor findings) ------------------------
+
+alter function public.touch_updated_at() set search_path = public, pg_temp;
+
+-- handle_new_user runs only as a trigger; nobody needs to call it directly.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+-- is_admin is used by policies for signed-in users only.
+revoke execute on function public.is_admin() from public, anon;
+grant execute on function public.is_admin() to authenticated, service_role;
+
+-- 6) Admin audit log (D-M3) ----------------------------------------------
+
+-- One row for each change an admin makes to orders, the menu, store
+-- settings, profiles and privacy requests: who, when, and the changed
+-- values. Server and customer changes are not admin actions and are not
+-- logged here. Retention: [To be confirmed with the Stage 3 retention
+-- decision].
+create table if not exists public.admin_audit_log (
+  id bigint generated always as identity primary key,
+  actor_id uuid references auth.users (id) on delete set null,
+  table_name text not null,
+  row_id text not null,
+  action text not null check (action in ('insert', 'update', 'delete')),
+  changes jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now())
+);
+create index if not exists admin_audit_log_created_idx
+  on public.admin_audit_log (created_at desc);
+create index if not exists admin_audit_log_row_idx
+  on public.admin_audit_log (table_name, row_id);
+
+alter table public.admin_audit_log enable row level security;
+revoke all on table public.admin_audit_log from anon, authenticated;
+grant select on table public.admin_audit_log to authenticated;
+grant select on table public.admin_audit_log to service_role;
+
+drop policy if exists "admin_audit_log_admin_read" on public.admin_audit_log;
+create policy "admin_audit_log_admin_read" on public.admin_audit_log
+  for select to authenticated using (public.is_admin());
+
+create or replace function public.log_admin_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  old_row jsonb := case when tg_op in ('UPDATE', 'DELETE') then to_jsonb(old) end;
+  new_row jsonb := case when tg_op in ('INSERT', 'UPDATE') then to_jsonb(new) end;
+  changed jsonb;
+begin
+  if auth.uid() is null or not public.is_admin() then
+    return null;
+  end if;
+  if tg_op = 'UPDATE' then
+    select jsonb_object_agg(key, jsonb_build_object('from', old_row -> key, 'to', value))
+    into changed
+    from jsonb_each(new_row)
+    where key <> 'updated_at' and (old_row -> key) is distinct from value;
+    if changed is null then
+      return null;
+    end if;
+  else
+    changed := coalesce(new_row, old_row);
+  end if;
+  insert into public.admin_audit_log (actor_id, table_name, row_id, action, changes)
+  values (
+    auth.uid(), tg_table_name, coalesce(new_row ->> 'id', old_row ->> 'id'),
+    lower(tg_op), changed
+  );
+  return null;
+end;
+$$;
+
+revoke all on function public.log_admin_change() from public, anon, authenticated;
+
+drop trigger if exists orders_admin_audit on public.orders;
+create trigger orders_admin_audit after update on public.orders
+for each row execute procedure public.log_admin_change();
+drop trigger if exists menu_items_admin_audit on public.menu_items;
+create trigger menu_items_admin_audit after insert or update or delete on public.menu_items
+for each row execute procedure public.log_admin_change();
+drop trigger if exists menu_categories_admin_audit on public.menu_categories;
+create trigger menu_categories_admin_audit after insert or update or delete on public.menu_categories
+for each row execute procedure public.log_admin_change();
+drop trigger if exists app_settings_admin_audit on public.app_settings;
+create trigger app_settings_admin_audit after insert or update on public.app_settings
+for each row execute procedure public.log_admin_change();
+drop trigger if exists profiles_admin_audit on public.profiles;
+create trigger profiles_admin_audit after update on public.profiles
+for each row execute procedure public.log_admin_change();
+drop trigger if exists privacy_requests_admin_audit on public.privacy_requests;
+create trigger privacy_requests_admin_audit after update on public.privacy_requests
+for each row execute procedure public.log_admin_change();
+
+commit;
+
+
+-- Stage 3 (migrations/20261103210000_account_data_retention.sql):
+-- account deletion keeps anonymised orders; retention settings and clean-up.
+begin;
+
+-- 1) Orders outlive the account that placed them ------------------------
+
+alter table public.orders alter column user_id drop not null;
+alter table public.orders drop constraint if exists orders_user_id_fkey;
+alter table public.orders
+  add constraint orders_user_id_fkey
+  foreign key (user_id) references auth.users (id) on delete set null;
+
+-- Removes what identifies a customer from their orders. Items, totals,
+-- payment references and dates stay, as financial records.
+create or replace function public.anonymise_customer_orders(p_user_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  changed integer;
+begin
+  update public.order_items
+  set notes = ''
+  where order_id in (select id from public.orders where user_id = p_user_id)
+    and notes <> '';
+  update public.orders
+  set customer_name = 'Deleted customer',
+      customer_phone = 'deleted',
+      delivery_address = null
+  where user_id = p_user_id;
+  get diagnostics changed = row_count;
+  return changed;
+end;
+$$;
+
+revoke all on function public.anonymise_customer_orders(uuid) from public, anon, authenticated;
+grant execute on function public.anonymise_customer_orders(uuid) to service_role;
+
+-- Account deletion: anonymise the orders, then delete the account. The
+-- profile, push tokens, unfinished checkouts, consent records and privacy
+-- requests are deleted with it; the orders are kept without an owner.
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  caller_id uuid := auth.uid();
+begin
+  if caller_id is null then
+    raise exception 'No signed-in account.' using errcode = '42501';
+  end if;
+  perform public.anonymise_customer_orders(caller_id);
+  delete from auth.users where id = caller_id;
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public, anon;
+grant execute on function public.delete_own_account() to authenticated;
+
+-- 2) Retention settings --------------------------------------------------
+
+-- keep_days = null means "keep until decided". Clean-up only acts on rows
+-- with confirmed = true. Proposed defaults are not confirmed.
+create table if not exists public.retention_settings (
+  data_type text primary key,
+  description text not null,
+  keep_days integer check (keep_days is null or keep_days > 0),
+  confirmed boolean not null default false,
+  confirmed_by text check (confirmed_by is null or length(confirmed_by) between 1 and 200),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+insert into public.retention_settings (data_type, description, keep_days) values
+  ('checkout_drafts', 'Unfinished checkouts: unpaid drafts holding name, phone and address. Proposed: 30 days.', 30),
+  ('guest_accounts', 'Guest (anonymous) sign-ins that never placed an order. Proposed: 90 days.', 90),
+  ('deleted_customer_orders', 'Orders kept after the customer deleted their account, anonymised. Period set by tax and record-keeping law: to be confirmed.', null),
+  ('webhook_events', 'Verified payment notifications from Yoco (no personal details). To be confirmed.', null),
+  ('admin_audit_log', 'Record of admin changes. To be confirmed.', null)
+on conflict (data_type) do nothing;
+
+drop trigger if exists retention_settings_touch_updated_at on public.retention_settings;
+create trigger retention_settings_touch_updated_at
+before update on public.retention_settings
+for each row execute procedure public.touch_updated_at();
+
+-- Admins can read the periods. Changing them can delete financial records,
+-- so it is done deliberately by the owner in the Supabase SQL editor, e.g.:
+--   update public.retention_settings
+--   set keep_days = 30, confirmed = true, confirmed_by = 'Owner, 2026-11-10'
+--   where data_type = 'checkout_drafts';
+alter table public.retention_settings enable row level security;
+revoke all on table public.retention_settings from anon, authenticated;
+grant select on table public.retention_settings to authenticated;
+grant select, update on table public.retention_settings to service_role;
+
+drop policy if exists "retention_settings_admin_read" on public.retention_settings;
+create policy "retention_settings_admin_read" on public.retention_settings
+  for select to authenticated using (public.is_admin());
+
+-- 3) Clean-up job --------------------------------------------------------
+
+-- Deletes data older than each confirmed period and returns how many rows
+-- each rule removed. Unconfirmed or open-ended periods are skipped.
+create or replace function public.run_retention()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth, pg_temp
+as $$
+declare
+  rule record;
+  cutoff timestamptz;
+  removed integer;
+  summary jsonb := '{}'::jsonb;
+begin
+  for rule in
+    select data_type, keep_days from public.retention_settings
+    where confirmed and keep_days is not null
+  loop
+    cutoff := timezone('utc', now()) - make_interval(days => rule.keep_days);
+    removed := 0;
+    if rule.data_type = 'checkout_drafts' then
+      delete from public.checkout_intents where created_at < cutoff;
+      get diagnostics removed = row_count;
+    elsif rule.data_type = 'guest_accounts' then
+      delete from auth.users u
+      where u.is_anonymous
+        and u.created_at < cutoff
+        and coalesce(u.last_sign_in_at, u.created_at) < cutoff
+        and not exists (select 1 from public.orders o where o.user_id = u.id);
+      get diagnostics removed = row_count;
+    elsif rule.data_type = 'deleted_customer_orders' then
+      delete from public.orders where user_id is null and created_at < cutoff;
+      get diagnostics removed = row_count;
+    elsif rule.data_type = 'webhook_events' then
+      delete from public.yoco_webhook_events where created_at < cutoff;
+      get diagnostics removed = row_count;
+    elsif rule.data_type = 'admin_audit_log' then
+      delete from public.admin_audit_log where created_at < cutoff;
+      get diagnostics removed = row_count;
+    end if;
+    summary := summary || jsonb_build_object(rule.data_type, removed);
+  end loop;
+  return summary;
+end;
+$$;
+
+revoke all on function public.run_retention() from public, anon, authenticated;
+grant execute on function public.run_retention() to service_role;
+
+commit;
+
+-- Daily at 02:15 (UTC) where pg_cron is available. Scheduling under the same
+-- name replaces the existing job, so re-running does not duplicate it.
+do $$
+begin
+  if exists (select 1 from pg_available_extensions where name = 'pg_cron') then
+    create extension if not exists pg_cron;
+    perform cron.schedule('retention-daily', '15 2 * * *', 'select public.run_retention()');
+  end if;
+end;
+$$;

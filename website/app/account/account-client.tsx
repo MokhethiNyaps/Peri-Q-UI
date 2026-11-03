@@ -6,6 +6,8 @@ import { useCustomerAuth } from "@/lib/customer-auth";
 import { useCart } from "@/lib/cart";
 import { createBrowserClient, isSupabaseConfigured } from "@/lib/supabase";
 import { registerCustomer, requestPasswordReset, saveCustomerProfile, setCustomerPassword, signInCustomer, signOutCustomer } from "@/lib/customer-account";
+import { PolicyConsent, PrivacyNotice } from "@/components/policy-consent";
+import { PrivacyPanel } from "@/components/privacy-panel";
 
 type Mode = "signin" | "signup" | "reset" | "password";
 type OrderSummary = { id: string; order_number: number; created_at: string; status: string; total_price: number };
@@ -20,6 +22,7 @@ export default function AccountClient() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [acceptedPolicies, setAcceptedPolicies] = useState(false);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -79,6 +82,7 @@ export default function AccountClient() {
         setMessage("If an account exists for this email, you’ll receive a password reset link. Check your inbox and spam folder.");
       } else if (mode === "signup") {
         if (password !== confirmPassword) throw new Error("The passwords do not match.");
+        if (!acceptedPolicies) throw new Error("Accept the terms and conditions to create an account.");
         const result = await registerCustomer(email, password, name, phone);
         setPassword(""); setConfirmPassword("");
         if (!result.session) setMessage("Account created. Check your email to confirm it, then sign in.");
@@ -120,6 +124,10 @@ export default function AccountClient() {
             <label className="font-bold">Email address<input className={fieldClass} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} /></label>
             {mode !== "reset" && <label className="font-bold">Password<input className={fieldClass} type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} required minLength={mode === "signup" ? 8 : undefined} value={password} onChange={(e) => setPassword(e.target.value)} /></label>}
             {mode === "signup" && <label className="font-bold">Confirm password<input className={fieldClass} type="password" autoComplete="new-password" required minLength={8} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} /></label>}
+            {mode === "signup" && <>
+              <PrivacyNotice purpose="We use your name, email and phone number to run your account and your orders." />
+              <PolicyConsent checked={acceptedPolicies} onChange={setAcceptedPolicies} />
+            </>}
             <button disabled={busy} className="button button-primary justify-center disabled:opacity-50">{busy ? "Please wait…" : mode === "signup" ? "Create account" : mode === "reset" ? "Send reset link" : "Sign in"}</button>
           </form>
           <div className="mt-6 flex flex-wrap gap-x-5 gap-y-3 text-sm">
@@ -155,6 +163,7 @@ export default function AccountClient() {
               </Link></li>)}
             </ul>}
           </div>
+          <div className="lg:col-span-2"><PrivacyPanel userId={user.id} onDeleted={() => { clear(); setName(""); setPhone(""); setOrders([]); setMode("signin"); setMessage("Your account has been deleted."); }} /></div>
         </div>}
       </>}
     </section>
