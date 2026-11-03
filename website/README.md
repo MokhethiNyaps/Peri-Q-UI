@@ -121,8 +121,8 @@ Keep existing mobile redirects and set the Site URL to `https://rastasperiq.co.z
 Order status updates run in the background every eight seconds while the page is visible. Slow or failed updates retain the order content instead of replacing it with a loading placeholder.
 
 
-## Card-only rollout gate (20 October 2026)
+## Database and go-live
 
-The connected production database does **not** yet contain `checkout_intents`, `prepare_card_checkout`, or `finalize_card_checkout`. Source-level tests passing does not make live checkout operational. See `../IMPLEMENTATION_REPORT_20261020.md` and `../MANUAL_SETUP_AND_LAUNCH_CHECKLIST.md` for verification boundaries and rollout order. Do not reapply the entire schema file to production.
+The production database has the card-checkout, refund, consent and retention migrations applied (`peri_q_app/supabase/migrations/`). Apply new migrations one at a time after rehearsing them with `tools/staging-rehearsal/`; do not reapply the entire schema file to production. The steps for switching from Yoco test keys to live keys are in `../GO_LIVE_CLIENT_CHECKLIST.md`.
 
 The current Checkout API does not document a payment-method filter in create-checkout requests. Confirm with the merchant dashboard/Yoco support that only cards are enabled; an app-only card label cannot enforce the hosted page's methods.
