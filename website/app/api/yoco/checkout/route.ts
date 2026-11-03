@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
 import { createServiceClient, readServerSupabaseConfig } from "@/lib/supabase";
 import { getSiteUrl, readYocoEnv } from "@/lib/yoco";
+import { allowRequest, CHECKOUT_LIMITS, clientIp, ipBucket } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+function rateLimited(retryAfterSeconds: number) {
+  return NextResponse.json(
+    { error: "Too many payment attempts. Please wait a few minutes and try again. Your cart is saved.", code: "rate_limited" },
+    { status: 429, headers: { "Retry-After": String(retryAfterSeconds) } },
+  );
+}
 
 // Expose readiness, never credentials. Checkout stays unavailable until the
 // server keys and payment schema are present.
@@ -12,11 +20,14 @@ export async function GET() {
   if (readYocoEnv() && readServerSupabaseConfig()) {
     try {
       const svc = createServiceClient();
-      const [orders, payments] = await Promise.all([
+      // payment_refunds comes from the Stage 5 migration, which the webhook
+      // needs. Keep new payments closed until that migration is applied.
+      const [orders, payments, refunds] = await Promise.all([
         svc.from("checkout_intents").select("yoco_checkout_id,payment_status").limit(0),
         svc.from("payments").select("id").limit(0),
+        svc.from("payment_refunds").select("id").limit(0),
       ]);
-      available = !orders.error && !payments.error;
+      available = !orders.error && !payments.error && !refunds.error;
     } catch {
       // Missing configuration or a database outage must fail closed.
     }
@@ -65,9 +76,16 @@ export async function POST(req: Request) {
   let order: Record<string, unknown> | null = null;
   try {
     const svc = createServiceClient();
+    const ip = clientIp(req);
+    if (ip && !(await allowRequest(svc, { bucket: ipBucket("checkout", ip, supaCfg.serviceRoleKey), ...CHECKOUT_LIMITS.perIp }))) {
+      return rateLimited(CHECKOUT_LIMITS.perIp.windowSeconds);
+    }
     const { data: auth, error: authError } = await svc.auth.getUser(token);
     if (authError || !auth.user) {
       return NextResponse.json({ error: "Your session has expired. Please try again.", code: "unauthorized" }, { status: 401 });
+    }
+    if (!(await allowRequest(svc, { bucket: `checkout:user:${auth.user.id}`, ...CHECKOUT_LIMITS.perUser }))) {
+      return rateLimited(CHECKOUT_LIMITS.perUser.windowSeconds);
     }
     const { data, error } = await svc.from("checkout_intents").select("id,order_number,redirect_url,user_id,total_price,payment_method,payment_status,paid_at,yoco_checkout_id,yoco_mode,client_request_id,created_at").eq("id", orderId.trim()).maybeSingle();
     if (error) throw error;

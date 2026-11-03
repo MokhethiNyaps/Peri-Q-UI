@@ -49,4 +49,9 @@ echo "== fixtures =="
 # shellcheck disable=SC2086
 psql $PSQL_ARGS -d "$DB" -q -v ON_ERROR_STOP=1 -f seed.sql
 
+echo "== stage 5 migration (refunds, atomic webhook events, rate limits) =="
+# shellcheck disable=SC2086
+psql $PSQL_ARGS -d "$DB" -q -v ON_ERROR_STOP=1 \
+  -f "$REPO_ROOT/peri_q_app/supabase/migrations/20261103120000_yoco_refunds_and_rate_limits.sql"
+
 echo "ready: REHEARSAL_DSN='host=... dbname=$DB' python3 rehearsal_test.py"
