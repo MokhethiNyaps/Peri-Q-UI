@@ -84,6 +84,12 @@ class PrivacyAndSupportScreen extends StatelessWidget {
             onTap: () => _open(context, AppExternalLinks.termsAndConditions),
           ),
           _ExternalLinkTile(
+            title: 'All legal and policies',
+            subtitle: 'Payments, cancellations, refunds and complaints',
+            icon: Icons.gavel_rounded,
+            onTap: () => _open(context, AppExternalLinks.legalAndPolicies),
+          ),
+          _ExternalLinkTile(
             title: 'Delete account or data',
             subtitle: 'Public instructions and request options',
             icon: Icons.delete_outline_rounded,
@@ -103,7 +109,7 @@ class PrivacyAndSupportScreen extends StatelessWidget {
           const _PrivacySection(
             title: 'Storage and sharing',
             body:
-                'Order and account data is sent securely to the business Supabase project. Historical payment proofs remain in private storage. New orders use secure hosted card checkout. The app has no advertising or analytics SDK and does not sell personal information.',
+                'Order and account data is sent securely to the business Supabase project. Card payments are made on Yoco\'s secure payment page, and order notifications are delivered through Google Firebase Cloud Messaging. Historical payment proofs remain in private storage. The app has no advertising or analytics SDK and does not sell personal information.',
           ),
           const _PrivacySection(
             title: 'Your choices',

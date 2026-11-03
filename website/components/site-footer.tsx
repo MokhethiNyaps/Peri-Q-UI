@@ -27,6 +27,8 @@ export function SiteFooter() {
             <Link href="/get-app/">Get the app</Link>
             <Link href="/privacy-policy/">Privacy policy</Link>
             <Link href="/terms-and-conditions/">Terms and conditions</Link>
+            <Link href="/complaints/">Complaints</Link>
+            <Link href="/legal/">All legal and policies</Link>
             <Link href="/delete-account/">Delete account</Link>
           </div>
         </div>

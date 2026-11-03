@@ -13,6 +13,9 @@ abstract final class AppExternalLinks {
   static final Uri termsAndConditions = Uri.parse(
     'https://rastasperiq.co.za/terms-and-conditions/',
   );
+  static final Uri legalAndPolicies = Uri.parse(
+    'https://rastasperiq.co.za/legal/',
+  );
   static final Uri supportPage = Uri.parse(
     'https://rastasperiq.co.za/#contact',
   );
