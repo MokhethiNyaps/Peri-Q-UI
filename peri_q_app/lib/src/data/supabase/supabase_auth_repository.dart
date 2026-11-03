@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/auth_deep_links.dart';
+import '../../core/policy_version.dart';
 import '../../models/app_auth_session.dart';
 import '../../repositories/auth_repository.dart';
 
@@ -61,7 +62,14 @@ class SupabaseAuthRepository implements AuthRepository {
     final response = await _client.auth.signUp(
       email: normalizedEmail,
       password: password,
-      data: {'full_name': name.trim(), 'phone': phone.trim()},
+      // The database records the policy acceptance from this metadata,
+      // because an email sign-up has no session until it is confirmed.
+      data: {
+        'full_name': name.trim(),
+        'phone': phone.trim(),
+        'policy_version': policyVersion,
+        'policy_client': 'android',
+      },
     );
     final user = response.user ?? _client.auth.currentUser;
     final session = response.session ?? _client.auth.currentSession;

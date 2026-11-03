@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/app_controller.dart';
 import '../core/app_theme.dart';
+import '../widgets/policy_consent_field.dart';
 import 'customer_shell.dart';
 
 enum _AuthMode { signIn, signUp }
@@ -394,6 +395,22 @@ class _AuthScreenState extends State<AuthScreen> {
                                               ),
                                       ),
                                     ),
+                                    if (!isSignIn) ...[
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'We use your name, email and phone '
+                                        'number to run your account and your '
+                                        'orders.',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodySmall,
+                                      ),
+                                      PolicyConsentField(
+                                        key: const ValueKey(
+                                          'auth-policy-consent',
+                                        ),
+                                      ),
+                                    ],
                                     const SizedBox(height: 18),
                                     ElevatedButton(
                                       key: ValueKey(

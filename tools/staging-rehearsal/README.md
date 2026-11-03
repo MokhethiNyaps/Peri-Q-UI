@@ -54,7 +54,14 @@ the same database, after `rehearsal_test.py`:
 REHEARSAL_DSN="host=/tmp/pgdata user=postgres dbname=peri_q_rehearsal" python3 stage5_test.py
 ```
 
-Expected output: `14 passed, 0 failed`. The Stage 5 migration is safe to apply
+Then the Stage 2 checks (policy acceptances, privacy requests):
+
+```bash
+REHEARSAL_DSN="host=/tmp/pgdata user=postgres dbname=peri_q_rehearsal" python3 stage2_test.py
+```
+
+Expected output: `14 passed, 0 failed` for Stage 5 and `8 passed, 0 failed` for
+Stage 2. Both migrations are safe to apply
 twice: every object uses `if not exists`, `create or replace` or
 `drop policy if exists`.
 

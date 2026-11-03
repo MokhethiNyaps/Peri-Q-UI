@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { completeAuthCallback, registerCustomer, saveCustomerProfile, signInCustomer, signOutCustomer } from "../lib/customer-account";
+import { POLICY_VERSION } from "../lib/policy-consent";
 
 const api = vi.hoisted(() => ({
   signUp: vi.fn(), signInWithPassword: vi.fn(), signOut: vi.fn(), getUser: vi.fn(),
@@ -15,7 +16,7 @@ beforeEach(() => {
 describe("Shared customer accounts", () => {
   it("uses the mobile profile fields during registration", async () => {
     await registerCustomer(" customer@example.invalid ", "password123", " Customer Name ", "071 234 5678");
-    expect(api.signUp).toHaveBeenCalledWith(expect.objectContaining({ email: "customer@example.invalid", options: expect.objectContaining({ data: { full_name: "Customer Name", phone: "+27712345678" } }) }));
+    expect(api.signUp).toHaveBeenCalledWith(expect.objectContaining({ email: "customer@example.invalid", options: expect.objectContaining({ data: { full_name: "Customer Name", phone: "+27712345678", policy_version: POLICY_VERSION, policy_client: "website" } }) }));
   });
   it("propagates invalid credentials and never claims sign-in succeeded", async () => {
     api.signInWithPassword.mockResolvedValue({ error: new Error("Invalid login credentials") });
