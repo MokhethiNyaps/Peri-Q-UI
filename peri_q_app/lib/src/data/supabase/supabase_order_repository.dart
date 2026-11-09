@@ -3,8 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:url_launcher/url_launcher.dart';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/payment_config.dart';
@@ -131,12 +129,12 @@ order_items (
         );
       }
       final checkoutUrl = await _requestCheckoutUrl(orderId);
-      if (!await _openSecurePaymentPage(checkoutUrl)) {
+      session.opened(orderId: orderId, checkoutUrl: checkoutUrl);
+      if (!await session.openPaymentPage()) {
         throw const OrderSubmissionException(
           'Could not open secure card checkout. Your cart is saved.',
         );
       }
-      session.opened(orderId: orderId, checkoutUrl: checkoutUrl);
       return await _awaitConfirmedPayment(orderId, session);
     } on PostgrestException catch (error) {
       throw OrderSubmissionException(_friendlyOrderError(error));
@@ -181,21 +179,6 @@ order_items (
     } finally {
       client.close();
     }
-  }
-
-  /// Opens the secure payment page in a browser sheet on top of the app
-  /// (Chrome Custom Tab on Android, Safari view on iOS) so the customer never
-  /// leaves RastasperiQ. Falls back to the full browser if no in-app browser
-  /// is available on the device.
-  Future<bool> _openSecurePaymentPage(Uri checkoutUrl) async {
-    try {
-      if (await launchUrl(checkoutUrl, mode: LaunchMode.inAppBrowserView)) {
-        return true;
-      }
-    } catch (_) {
-      // Fall through to the device browser.
-    }
-    return launchUrl(checkoutUrl, mode: LaunchMode.externalApplication);
   }
 
   /// Waits until the database shows the order as paid. The return link from

@@ -369,16 +369,11 @@ class _CardPaymentProgress extends StatelessWidget {
   const _CardPaymentProgress({super.key});
 
   Future<void> _reopen(BuildContext context) async {
-    final url = CardPaymentSession.instance.checkoutUrl;
-    if (url == null) return;
     var opened = false;
     try {
-      opened = await launchUrl(url, mode: LaunchMode.inAppBrowserView);
+      opened = await CardPaymentSession.instance.openPaymentPage();
     } catch (_) {
       opened = false;
-    }
-    if (!opened) {
-      opened = await launchUrl(url, mode: LaunchMode.externalApplication);
     }
     if (!opened && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -398,7 +393,7 @@ class _CardPaymentProgress extends StatelessWidget {
         final waitingForCustomer = stage == CardPaymentStage.awaitingCustomer;
         final (title, detail) = switch (stage) {
           CardPaymentStage.awaitingCustomer => (
-            'Finish paying in the secure window',
+            'Finish paying on the secure page',
             'Enter your card details on the secure payment page. '
                 "We'll bring you straight back here.",
           ),

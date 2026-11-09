@@ -18,6 +18,7 @@ import 'data/supabase/supabase_store_repository.dart';
 import 'repositories/notification_repository.dart';
 import 'screens/splash_screen.dart';
 import 'screens/reset_password_screen.dart';
+import 'screens/secure_payment_screen.dart';
 import 'screens/supabase_config_missing_screen.dart';
 
 class PeriQApp extends StatefulWidget {
@@ -68,6 +69,20 @@ class _PeriQAppState extends State<PeriQApp> {
       _handleDeepLink,
       onError: _handleDeepLinkError,
     );
+    CardPaymentSession.instance.presenter = _presentPaymentPage;
+  }
+
+  /// Card payments open in the app's own secure payment screen, so the
+  /// customer never sees a browser or the website.
+  Future<bool> _presentPaymentPage(Uri checkoutUrl, String orderId) async {
+    final navigator = _navigatorKey.currentState;
+    if (!mounted || navigator == null) return false;
+    unawaited(
+      navigator.push(
+        SecurePaymentScreen.route(checkoutUrl: checkoutUrl, orderId: orderId),
+      ),
+    );
+    return true;
   }
 
   void _handleDeepLink(Uri uri) {
@@ -163,6 +178,9 @@ class _PeriQAppState extends State<PeriQApp> {
   void dispose() {
     unawaited(_authSubscription?.cancel());
     unawaited(_deepLinkSubscription?.cancel());
+    if (CardPaymentSession.instance.presenter == _presentPaymentPage) {
+      CardPaymentSession.instance.presenter = null;
+    }
     controller?.dispose();
     super.dispose();
   }
