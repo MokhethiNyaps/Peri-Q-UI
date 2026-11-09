@@ -588,7 +588,7 @@ void main() {
         checkoutUrl: Uri.parse('https://pay.example/checkout/1'),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Finish paying in the secure window'), findsOneWidget);
+      expect(find.text('Finish paying on the secure page'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('checkout-reopen-payment')),
         findsOneWidget,
