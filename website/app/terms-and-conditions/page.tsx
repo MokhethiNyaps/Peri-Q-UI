@@ -1,170 +1,144 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, Mail, MessageCircle, Scale } from "lucide-react";
-import { mailtoUrl, siteConfig } from "@/lib/site";
+import { Scale } from "lucide-react";
+import { BusinessDetails, LegalPage, Pending } from "@/components/legal-page";
 
 export const metadata: Metadata = {
   title: "Terms and Conditions",
   description:
-    "Terms for using the RastasperiQ mobile ordering app and related services.",
+    "The terms that apply when you use the RastasperiQ website or Android app and order food.",
   alternates: { canonical: "/terms-and-conditions/" },
 };
 
 export default function TermsAndConditionsPage() {
   return (
-    <main id="main-content" className="bg-cream">
-      <header className="relative isolate overflow-hidden bg-charcoal py-16 text-white sm:py-24">
-        <div className="hero-grid absolute inset-0 -z-20 opacity-60" />
-        <div className="absolute -right-20 -top-32 -z-10 size-[30rem] rounded-full bg-peri-red/25 blur-3xl" />
-        <div className="policy-shell">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-sm font-bold text-white/60 transition-colors hover:text-white"
-          >
-            <ArrowLeft size={17} aria-hidden="true" />
-            Back to home
-          </Link>
-          <div className="mt-10 max-w-4xl">
-            <span className="grid size-14 place-items-center rounded-2xl bg-peri-red text-white shadow-xl">
-              <Scale size={25} aria-hidden="true" />
-            </span>
-            <h1 className="mt-7 font-display text-5xl font-black uppercase leading-[0.88] tracking-[-0.05em] sm:text-7xl lg:text-8xl">
-              Terms and conditions
-            </h1>
-            <p className="mt-7 max-w-2xl text-base leading-8 text-white/65 sm:text-lg">
-              These terms explain the basic rules for using the RastasperiQ
-              ordering app and related customer services.
-            </p>
-            <div className="mt-8 inline-flex items-center rounded-full border border-white/12 bg-white/7 px-4 py-2 text-xs font-bold text-white/70">
-              Effective date: 27 July 2026
-            </div>
-          </div>
-        </div>
-      </header>
+    <LegalPage
+      title="Terms and conditions"
+      href="/terms-and-conditions/"
+      icon={Scale}
+      intro="The agreement between you and us when you use the RastasperiQ website or Android app and order food for collection or delivery."
+    >
+      <p className="text-lg !leading-8 text-charcoal">
+        Please read these terms before you order. By placing an order you accept them. Nothing in these
+        terms limits rights you have under the Consumer Protection Act or the Electronic Communications
+        and Transactions Act that cannot legally be limited.
+      </p>
 
-      <div className="policy-shell py-14 lg:py-20">
-        <article className="policy-content mx-auto max-w-3xl">
-          <p className="!mt-0 text-lg !leading-8 text-charcoal">
-            By using the app or placing an order, you agree to these terms. If you do
-            not agree, please do not use the ordering service.
-          </p>
+      <h2>1. Who we are</h2>
+      <BusinessDetails />
 
-          <h2>1. About the service</h2>
-          <p>
-            The app is operated by <strong>RastasperiQ</strong> at {" "}
-            {siteConfig.address}. It allows customers to browse menu information, place
-            pickup or delivery orders when available, submit payment information, and
-            follow order status.
-          </p>
+      <h2>2. Accounts and guest checkout</h2>
+      <p>
+        You can order as a guest or with an account. Give accurate contact details, keep your password
+        private, and tell us straight away if you think someone else is using your account.
+      </p>
 
-          <h2>2. Accounts and guest checkout</h2>
-          <p>
-            You may use guest checkout or create an account. You are responsible for
-            providing accurate contact information and keeping account credentials
-            confidential. Tell us promptly if you believe your account is being used
-            without permission.
-          </p>
+      <h2>3. Menu, prices and availability</h2>
+      <ul>
+        <li>Prices are in South African rand and include <Pending>whether prices include VAT</Pending>.</li>
+        <li>Delivery, where available, costs the delivery fee shown at checkout before you pay.</li>
+        <li>Menu items, photos and descriptions are a guide. Portions and presentation may vary slightly.</li>
+        <li>
+          Items can sell out. If a price or item changes while you are ordering, checkout stops and shows
+          you the updated total before you pay.
+        </li>
+      </ul>
 
-          <h2>3. Menu information and availability</h2>
-          <p>
-            Menu items, prices, operating hours, preparation estimates, delivery options,
-            and availability may change. An item shown in the app may become unavailable
-            before an order is accepted. The amount confirmed during checkout is the amount
-            used for the order unless we contact you about an agreed change.
-          </p>
+      <h2>4. Allergens and food information</h2>
+      <p>
+        Our food is prepared in a kitchen that also handles other ingredients, so we cannot guarantee
+        that any item is free from a particular allergen.{" "}
+        <Pending>allergen and ingredient information for each menu item, and any certification
+        (for example halaal), supplied by the restaurant</Pending>
+      </p>
+      <p>
+        If you have an allergy or dietary requirement, contact us before you order. Order notes are
+        read by the kitchen, but they are not a guarantee.
+      </p>
 
-          <h2>4. Orders</h2>
-          <p>
-            Check your items, contact details, fulfilment choice, delivery address, and
-            notes before submitting. An order is subject to store availability and
-            confirmation. Please contact the store immediately if you submitted incorrect
-            information; changes may not be possible after preparation begins.
-          </p>
+      <h2>5. How an order is made</h2>
+      <ol className="mt-4 grid list-decimal gap-2 pl-5">
+        <li>You choose your items, collection or delivery, and enter your details.</li>
+        <li>Checkout shows your items, the delivery fee if any, and the total. Check them; you can go back and change them before you pay.</li>
+        <li>You pay by card on our payment provider&rsquo;s secure page.</li>
+        <li>
+          <strong>Your order is accepted, and the agreement is formed, when the payment is confirmed</strong> and
+          the order appears in your order history. If the payment fails or you cancel it, no order is
+          placed and you are not charged.
+        </li>
+      </ol>
+      <p>
+        Estimated preparation and delivery times are estimates, not guarantees. They can change with
+        demand, traffic and weather.
+      </p>
 
-          <h2>5. Payment</h2>
-          <p>
-            Pay upfront by card for collection and delivery. We create your
-            order only after payment is confirmed. If payment fails or is
-            cancelled, your cart remains available and no order is placed.
-          </p>
+      <h2>6. Payment</h2>
+      <p>
+        You pay in full by card before we prepare your order. Read our{" "}
+        <Link href="/payment-policy/">payment policy</Link>.
+      </p>
 
-          <h2>6. Pickup and delivery</h2>
-          <p>
-            Pickup and delivery availability depends on store settings and operating
-            conditions. Delivery customers must provide a complete, accurate address and
-            remain reachable using the supplied phone number. Preparation and delivery
-            times are estimates and can be affected by order volume, traffic, weather, or
-            other circumstances.
-          </p>
+      <h2>7. Collection and delivery</h2>
+      <ul>
+        <li>Collection: collect your order from the store once it is marked ready. <Pending>how long uncollected orders are kept</Pending></li>
+        <li>
+          Delivery: give a complete, accurate address and keep your phone on. Delivery area:{" "}
+          <Pending>delivery area</Pending>. <Pending>what happens if the driver cannot reach you</Pending>
+        </li>
+      </ul>
 
-          <h2>7. Cancellations, problems, and refunds</h2>
-          <p>
-            Contact us as soon as possible if you need to cancel or report a problem.
-            Cancellations may not be available once preparation has started. Refund or
-            replacement requests are reviewed according to the order circumstances and
-            applicable South African consumer law.
-          </p>
+      <h2>8. Cancellations and refunds</h2>
+      <p>
+        See our <Link href="/cancellation-policy/">cancellation policy</Link> and{" "}
+        <Link href="/refund-policy/">refund policy</Link>. Prepared food is perishable, so the
+        cooling-off period for online purchases does not apply to it.{" "}
+        <Pending>attorney to confirm that ECTA section 42 excludes prepared food</Pending>
+      </p>
 
-          <h2>8. Acceptable use</h2>
-          <p>
-            You must not misuse the app, attempt unauthorised access, interfere with the
-            service, submit fraudulent orders or payment proof, impersonate another person,
-            or use the service in a way that violates applicable law.
-          </p>
+      <h2>9. Problems with your order</h2>
+      <p>
+        If something is missing, wrong or not of acceptable quality, tell us as soon as possible,
+        ideally while you still have the food. Follow our{" "}
+        <Link href="/complaints/">complaints procedure</Link>.
+      </p>
 
-          <h2>9. Service availability</h2>
-          <p>
-            We aim to keep the app available, but uninterrupted operation cannot be
-            guaranteed. Maintenance, network failures, provider outages, or security work
-            may temporarily limit access. Where practical, the app may show the last saved
-            menu while a connection is unavailable.
-          </p>
+      <h2>10. Acceptable use</h2>
+      <p>
+        Do not misuse the service: no fraudulent orders or payments, attempts to access other people&rsquo;s
+        accounts or our systems, interference with the service, or impersonation of another person. We may
+        suspend accounts used in these ways.
+      </p>
 
-          <h2>10. Privacy and account deletion</h2>
-          <p>
-            Our <Link href="/privacy-policy/">Privacy Policy</Link> explains how information
-            is handled. You can delete an eligible account in the app or use the public {" "}
-            <Link href="/delete-account/">account-deletion page</Link> if you cannot access
-            the app.
-          </p>
+      <h2>11. Service availability</h2>
+      <p>
+        We aim to keep the website and app available, but we cannot guarantee they will always work.
+        Maintenance, network failures or provider outages can interrupt them.
+      </p>
 
-          <h2>11. Changes to these terms</h2>
-          <p>
-            We may update these terms when the service or legal requirements change. The
-            effective date above identifies the current version. Continued use after an
-            update means the revised terms apply to later use and orders.
-          </p>
+      <h2>12. Our responsibility to you</h2>
+      <p>
+        <Pending>limitation-of-liability wording, for attorney drafting in line with the Consumer
+        Protection Act</Pending>
+      </p>
 
-          <h2>12. Contact</h2>
-          <p>Contact the team if you have a question about these terms or an order.</p>
-          <div className="mt-7 grid gap-3 sm:grid-cols-2">
-            <a href={mailtoUrl} className="policy-card !no-underline">
-              <Mail className="text-peri-red" size={21} aria-hidden="true" />
-              <span className="mt-4 block text-xs font-black uppercase tracking-[0.14em] text-ash">
-                Email
-              </span>
-              <span className="mt-1 block break-all text-sm font-extrabold text-charcoal">
-                {siteConfig.email}
-              </span>
-            </a>
-            <a
-              href={siteConfig.whatsappUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="policy-card !no-underline"
-            >
-              <MessageCircle className="text-peri-red" size={21} aria-hidden="true" />
-              <span className="mt-4 block text-xs font-black uppercase tracking-[0.14em] text-ash">
-                WhatsApp
-              </span>
-              <span className="mt-1 block text-sm font-extrabold text-charcoal">
-                {siteConfig.phones[0]}
-              </span>
-            </a>
-          </div>
-        </article>
-      </div>
-    </main>
+      <h2>13. Privacy</h2>
+      <p>
+        Our <Link href="/privacy-policy/">privacy policy</Link> explains how we handle your personal
+        information.
+      </p>
+
+      <h2>14. Changes to these terms</h2>
+      <p>
+        We may update these terms. The terms that apply to an order are the ones shown when you placed
+        it. The version label at the top shows the current version.
+      </p>
+
+      <h2>15. Governing law and disputes</h2>
+      <p>
+        South African law applies to these terms. You can also take a dispute to the Consumer Goods and
+        Services Ombud or the National Consumer Commission, as explained in our{" "}
+        <Link href="/complaints/">complaints procedure</Link>.
+      </p>
+    </LegalPage>
   );
 }
-
